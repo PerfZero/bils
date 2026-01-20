@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { API_BASE_URL } from "../../config/api";
 
 const chunkItems = (items, size) => {
   if (!items?.length) {
@@ -26,27 +27,28 @@ export default function Header({ onProfileClick }) {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/categories/');
-        const data = await response.json();
-        
+        const response = await fetch(`${API_BASE_URL}/api/categories/`);
+        const payload = await response.json();
+        const data = Array.isArray(payload) ? payload : payload.results || [];
+
         // Transform API data to match expected format
-        const transformedData = data.map(category => ({
+        const transformedData = data.map((category) => ({
           label: category.name,
           href: category.href,
           code: category.slug,
-          children: category.children.map(child => ({
+          children: category.children.map((child) => ({
             label: child.name,
             href: child.href,
-            children: child.children.map(subchild => ({
+            children: child.children.map((subchild) => ({
               label: subchild.name,
-              href: subchild.href
-            }))
-          }))
+              href: subchild.href,
+            })),
+          })),
         }));
-        
+
         setCatalogItems(transformedData);
       } catch (error) {
-        console.error('Failed to fetch categories:', error);
+        console.error("Failed to fetch categories:", error);
         // Fallback to empty array if API fails
         setCatalogItems([]);
       } finally {
@@ -464,23 +466,24 @@ export default function Header({ onProfileClick }) {
                           </li>
                         ) : (
                           catalogItems.map((item, index) => (
-                          <li
-                            key={item.href}
-                            className={`a-menu__item a-menu__item--list${
-                              activeIndex === index
-                                ? " a-menu__item--active"
-                                : ""
-                            }`}
-                            onMouseEnter={() => {
-                              setActiveIndex(index);
-                              setActiveChildIndex(0);
-                            }}
-                          >
-                            <a href={item.href} className="a-menu__link">
-                              <span>{item.label}</span>
-                            </a>
-                          </li>
-                        )))}
+                            <li
+                              key={item.href}
+                              className={`a-menu__item a-menu__item--list${
+                                activeIndex === index
+                                  ? " a-menu__item--active"
+                                  : ""
+                              }`}
+                              onMouseEnter={() => {
+                                setActiveIndex(index);
+                                setActiveChildIndex(0);
+                              }}
+                            >
+                              <a href={item.href} className="a-menu__link">
+                                <span>{item.label}</span>
+                              </a>
+                            </li>
+                          ))
+                        )}
                       </ul>
                     </div>
                     {isCatalogOpen && activeItem?.children?.length > 0 && (
