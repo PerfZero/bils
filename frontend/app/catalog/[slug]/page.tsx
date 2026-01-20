@@ -22,9 +22,7 @@ export default function CatalogSlugPage({ params }) {
   useEffect(() => {
     const fetchCategory = async () => {
       try {
-        const rootResponse = await fetch(
-          "http://localhost:8000/api/categories/",
-        );
+        const rootResponse = await fetch(`${API_BASE_URL}/api/categories/`);
         const rootPayload = await rootResponse.json();
         const rootData = Array.isArray(rootPayload)
           ? rootPayload
