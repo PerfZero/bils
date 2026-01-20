@@ -1,0 +1,311 @@
+import uuid
+from django.db import models
+from mptt.models import MPTTModel, TreeForeignKey
+
+
+class Category(MPTTModel):
+    name = models.CharField("Название", max_length=120)
+    slug = models.SlugField("Слаг", max_length=140, unique=True)
+    description = models.TextField("Описание", blank=True)
+    image = models.ImageField("Изображение", upload_to='categories/', blank=True)
+    is_popular = models.BooleanField("Популярная на главной", default=False)
+    parent = TreeForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='children',
+        verbose_name="Родительская категория"
+    )
+    order = models.PositiveIntegerField("Порядок", default=0)
+    is_active = models.BooleanField("Активна", default=True)
+
+    # MPTT fields
+    lft = models.PositiveIntegerField(editable=False)
+    rght = models.PositiveIntegerField(editable=False)
+    tree_id = models.PositiveIntegerField(editable=False)
+    level = models.PositiveIntegerField(editable=False, null=True)
+
+    class MPTTMeta:
+        order_insertion_by = ['order', 'name']
+
+    class Meta:
+        verbose_name = "Категория"
+        verbose_name_plural = "Категории"
+        ordering = ['order', 'name']
+
+    def __str__(self):
+        return self.name
+
+
+class Brand(models.Model):
+    name = models.CharField("Название", max_length=120)
+    slug = models.SlugField("Слаг", max_length=140, unique=True)
+    letter = models.CharField("Буква", max_length=1, blank=True, db_index=True)
+    logo = models.ImageField("Логотип", upload_to="brands/", blank=True)
+    order = models.PositiveIntegerField("Порядок", default=0)
+    is_active = models.BooleanField("Активен", default=True)
+
+    class Meta:
+        verbose_name = "Бренд"
+        verbose_name_plural = "Бренды"
+        ordering = ["letter", "order", "name"]
+
+    def save(self, *args, **kwargs):
+        if not self.letter and self.name:
+            self.letter = self.name.strip()[:1].upper()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
+
+class Product(models.Model):
+    category = models.ForeignKey(
+        Category,
+        related_name="products",
+        on_delete=models.PROTECT,
+        verbose_name="Категория",
+    )
+    brand = models.ForeignKey(
+        Brand,
+        related_name="products",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Бренд",
+    )
+    code = models.CharField("Код", max_length=50, blank=True)
+    article = models.CharField("Артикул", max_length=50, blank=True)
+    name = models.CharField("Название", max_length=200)
+    slug = models.SlugField("Слаг", max_length=220, unique=True)
+    description = models.TextField("Описание", blank=True)
+    price = models.DecimalField("Цена", max_digits=10, decimal_places=2)
+    retail_price = models.DecimalField(
+        "Розничная цена", max_digits=10, decimal_places=2, blank=True, null=True
+    )
+    discount_percent = models.PositiveSmallIntegerField("Скидка, %", default=0)
+    min_bonus_price = models.DecimalField(
+        "Минимальная цена с бонусами", max_digits=10, decimal_places=2, blank=True, null=True
+    )
+    show_personal_price_difference = models.BooleanField(
+        "Показывать разницу персональной цены", default=True
+    )
+    image = models.ImageField("Изображение", upload_to="products/", blank=True)
+    rating = models.DecimalField(
+        "Рейтинг", max_digits=3, decimal_places=1, default=0
+    )
+    rating_count = models.PositiveIntegerField("Количество оценок", default=0)
+    is_new = models.BooleanField("Новинка", default=False)
+    is_active = models.BooleanField("Активен", default=True)
+    created_at = models.DateTimeField("Создан", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Товар"
+        verbose_name_plural = "Товары"
+
+    def __str__(self):
+        return self.name
+
+
+class ProductImage(models.Model):
+    product = models.ForeignKey(
+        Product,
+        related_name="images",
+        on_delete=models.CASCADE,
+        verbose_name="Товар",
+    )
+    image = models.ImageField("Изображение", upload_to="products/")
+    alt_text = models.CharField("Alt текст", max_length=200, blank=True)
+    is_main = models.BooleanField("Основное", default=False)
+    order = models.PositiveIntegerField("Порядок", default=0)
+
+    class Meta:
+        verbose_name = "Изображение товара"
+        verbose_name_plural = "Изображения товаров"
+        ordering = ["order", "id"]
+
+    def __str__(self):
+        return f"{self.product} ({self.order})"
+
+
+class Attribute(models.Model):
+    TYPE_TEXT = "text"
+    TYPE_NUMBER = "number"
+    TYPE_BOOLEAN = "boolean"
+
+    TYPE_CHOICES = [
+        (TYPE_TEXT, "Текст"),
+        (TYPE_NUMBER, "Число"),
+        (TYPE_BOOLEAN, "Да/Нет"),
+    ]
+
+    name = models.CharField("Название", max_length=120, unique=True)
+    slug = models.SlugField("Слаг", max_length=140, unique=True)
+    data_type = models.CharField(
+        "Тип данных", max_length=20, choices=TYPE_CHOICES, default=TYPE_TEXT
+    )
+    unit = models.CharField("Единица измерения", max_length=40, blank=True)
+    is_filterable = models.BooleanField("Фильтруется", default=True)
+
+    class Meta:
+        verbose_name = "Атрибут"
+        verbose_name_plural = "Атрибуты"
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
+class ProductAttribute(models.Model):
+    product = models.ForeignKey(
+        Product,
+        related_name="attributes",
+        on_delete=models.CASCADE,
+        verbose_name="Товар",
+    )
+    attribute = models.ForeignKey(
+        Attribute,
+        related_name="product_attributes",
+        on_delete=models.PROTECT,
+        verbose_name="Атрибут",
+    )
+    value_text = models.CharField("Текстовое значение", max_length=200, blank=True)
+    value_number = models.DecimalField(
+        "Числовое значение", max_digits=12, decimal_places=3, blank=True, null=True
+    )
+    value_bool = models.BooleanField("Булево значение", blank=True, null=True)
+    order = models.PositiveIntegerField("Порядок", default=0)
+
+    class Meta:
+        verbose_name = "Характеристика товара"
+        verbose_name_plural = "Характеристики товаров"
+        ordering = ["order", "id"]
+
+    def __str__(self):
+        value = None
+        if self.value_number is not None:
+            value = self.value_number
+        elif self.value_bool is not None:
+            value = self.value_bool
+        else:
+            value = self.value_text
+        return f"{self.attribute}: {value}"
+
+
+class Cart(models.Model):
+    token = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    created_at = models.DateTimeField("Создана", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Корзина"
+        verbose_name_plural = "Корзины"
+
+    def __str__(self):
+        return str(self.token)
+
+
+class CartItem(models.Model):
+    cart = models.ForeignKey(
+        Cart, related_name="items", on_delete=models.CASCADE, verbose_name="Корзина"
+    )
+    product = models.ForeignKey(
+        Product, on_delete=models.PROTECT, verbose_name="Товар"
+    )
+    quantity = models.PositiveIntegerField("Количество", default=1)
+    price = models.DecimalField("Цена", max_digits=10, decimal_places=2)
+
+    class Meta:
+        verbose_name = "Позиция корзины"
+        verbose_name_plural = "Позиции корзины"
+
+    def __str__(self):
+        return f"{self.product} x {self.quantity}"
+
+
+class Order(models.Model):
+    STATUS_NEW = "new"
+    STATUS_PAID = "paid"
+    STATUS_SHIPPED = "shipped"
+    STATUS_CANCELLED = "cancelled"
+
+    STATUS_CHOICES = [
+        (STATUS_NEW, "Новый"),
+        (STATUS_PAID, "Оплачен"),
+        (STATUS_SHIPPED, "Отправлен"),
+        (STATUS_CANCELLED, "Отменен"),
+    ]
+
+    status = models.CharField(
+        "Статус", max_length=20, choices=STATUS_CHOICES, default=STATUS_NEW
+    )
+    customer_name = models.CharField("Имя", max_length=120)
+    customer_email = models.EmailField("Email")
+    customer_phone = models.CharField("Телефон", max_length=40, blank=True)
+    address_line = models.CharField("Адрес", max_length=200)
+    city = models.CharField("Город", max_length=80)
+    postal_code = models.CharField("Индекс", max_length=20, blank=True)
+    total = models.DecimalField("Сумма", max_digits=10, decimal_places=2, default=0)
+    created_at = models.DateTimeField("Создан", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Заказ"
+        verbose_name_plural = "Заказы"
+
+    def __str__(self):
+        return f"Заказ #{self.id}"
+
+
+class OrderItem(models.Model):
+    order = models.ForeignKey(
+        Order, related_name="items", on_delete=models.CASCADE, verbose_name="Заказ"
+    )
+    product = models.ForeignKey(
+        Product, on_delete=models.PROTECT, verbose_name="Товар"
+    )
+    quantity = models.PositiveIntegerField("Количество", default=1)
+    price = models.DecimalField("Цена", max_digits=10, decimal_places=2)
+
+    class Meta:
+        verbose_name = "Позиция заказа"
+        verbose_name_plural = "Позиции заказа"
+
+    def __str__(self):
+        return f"{self.product} x {self.quantity}"
+
+
+class FAQCategory(models.Model):
+    name = models.CharField("Название категории", max_length=120)
+    slug = models.SlugField("Слаг", max_length=140, unique=True)
+    order = models.PositiveIntegerField("Порядок", default=0)
+
+    class Meta:
+        verbose_name = "FAQ категория"
+        verbose_name_plural = "FAQ категории"
+        ordering = ['order']
+
+    def __str__(self):
+        return self.name
+
+
+class FAQQuestion(models.Model):
+    category = models.ForeignKey(
+        FAQCategory,
+        related_name="questions",
+        on_delete=models.CASCADE,
+        verbose_name="Категория"
+    )
+    question = models.TextField("Вопрос")
+    answer = models.TextField("Ответ")
+    order = models.PositiveIntegerField("Порядок", default=0)
+    is_active = models.BooleanField("Активен", default=True)
+    created_at = models.DateTimeField("Создан", auto_now_add=True)
+    updated_at = models.DateTimeField("Обновлен", auto_now=True)
+
+    class Meta:
+        verbose_name = "FAQ вопрос"
+        verbose_name_plural = "FAQ вопросы"
+        ordering = ['order']
+
+    def __str__(self):
+        return self.question[:100]

@@ -1,0 +1,68 @@
+.grid {
+  margin-top: 8px;
+}
+
+.grid h2 {
+  font-size: 24px;
+  margin-bottom: 18px;
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+}
+
+.product-card {
+  background: var(--card);
+  border-radius: 16px;
+  border: 1px solid rgba(31, 30, 27, 0.08);
+  box-shadow: 0 14px 30px -26px var(--shadow);
+  overflow: hidden;
+  display: grid;
+}
+
+.image {
+  height: 140px;
+  background: linear-gradient(120deg, rgba(47, 110, 101, 0.3), rgba(240, 127, 46, 0.2));
+}
+
+.product-body {
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+}
+
+.product-title {
+  font-weight: 600;
+}
+
+.product-desc {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.product-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.price {
+  font-weight: 700;
+}
+
+.pill {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(47, 110, 101, 0.12);
+  color: var(--accent-2);
+}
+
+.empty {
+  padding: 20px;
+  border: 1px dashed rgba(31, 30, 27, 0.2);
+  border-radius: 12px;
+  color: var(--muted);
+}

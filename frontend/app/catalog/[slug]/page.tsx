@@ -1,0 +1,1632 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Breadcrumbs from "../../components/Breadcrumbs";
+import { CatalogListItem } from "../components/CatalogListItem";
+import { BaseFilter } from "../components/BaseFilter";
+import { ProductListItem } from "../components/ProductListItem";
+import { API_BASE_URL } from "../../../config/api";
+
+export default function CatalogSlugPage({ params }) {
+  const [category, setCategory] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [productsLoading, setProductsLoading] = useState(true);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pageParam = Number(searchParams.get("page") || "1");
+  const currentPage = Number.isNaN(pageParam) || pageParam < 1 ? 1 : pageParam;
+
+  useEffect(() => {
+    const fetchCategory = async () => {
+      try {
+        const rootResponse = await fetch(
+          "http://localhost:8000/api/categories/",
+        );
+        const rootPayload = await rootResponse.json();
+        const rootData = Array.isArray(rootPayload)
+          ? rootPayload
+          : rootPayload.results || [];
+
+        let foundCategory = null;
+        let categoryPath = [];
+
+        // Ищем категорию и строим путь
+        for (const rootCat of rootData) {
+          if (rootCat.slug === params.slug) {
+            foundCategory = rootCat;
+            categoryPath = [rootCat];
+            break;
+          }
+
+          // Ищем во втором уровне
+          for (const child of rootCat.children) {
+            if (child.slug === params.slug) {
+              foundCategory = child;
+              categoryPath = [rootCat, child];
+              break;
+            }
+
+            // Ищем в третьем уровне
+            for (const subChild of child.children || []) {
+              if (subChild.slug === params.slug) {
+                foundCategory = subChild;
+                categoryPath = [rootCat, child, subChild];
+                break;
+              }
+            }
+            if (foundCategory) break;
+          }
+          if (foundCategory) break;
+        }
+
+        setCategory({ ...foundCategory, path: categoryPath });
+
+        // Отладка
+        console.log("Found category:", foundCategory);
+        console.log("Category path:", categoryPath);
+      } catch (error) {
+        console.error("Failed to fetch category:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (params.slug) {
+      fetchCategory();
+    }
+  }, [params.slug]);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/api/products/?category=${params.slug}&page=${currentPage}`,
+        );
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          setProducts(data);
+          setTotalCount(data.length);
+        } else {
+          setProducts(data.results || []);
+          setTotalCount(data.count || 0);
+        }
+      } catch (error) {
+        console.error("Failed to fetch products:", error);
+        setProducts([]);
+        setTotalCount(0);
+      } finally {
+        setProductsLoading(false);
+      }
+    };
+
+    if (params.slug) {
+      fetchProducts();
+    }
+  }, [params.slug, currentPage]);
+
+  const pageSize = 24;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const pageHref = (page) => `/catalog/${params.slug}/?page=${page}`;
+  const pageNumbers = buildPagination(currentPage, totalPages);
+
+  const breadcrumbs = category?.path?.map((cat, index) => {
+    const isLast = index === category.path.length - 1;
+    const hasDropdown = index === 0 && category.path.length > 1; // Добавляем dropdown только для корневой категории
+
+    console.log(`Breadcrumbs ${index}:`, cat);
+    console.log(`Has dropdown:`, hasDropdown);
+    console.log(
+      `Dropdown items:`,
+      hasDropdown ? category.path[0].children || [] : [],
+    );
+
+    return {
+      label: cat.name,
+      href: isLast ? null : cat.href,
+      hasDropdown: hasDropdown,
+      dropdownItems: hasDropdown
+        ? category.path[0].children?.map((child) => ({
+            label: child.name,
+            href: child.href,
+          })) || []
+        : [],
+    };
+  }) || [
+    { label: "Главная", href: "/" },
+    { label: "Каталог", href: "/catalog" },
+    { label: loading ? "Загрузка..." : params.slug },
+  ];
+
+  // Добавляем главную и каталог если их нет
+  if (breadcrumbs.length > 0 && breadcrumbs[0].label !== "Главная") {
+    breadcrumbs.unshift({ label: "Каталог", href: "/catalog" });
+    breadcrumbs.unshift({ label: "Главная", href: "/" });
+  }
+
+  return (
+    <main className="a-page-catalog a-page-catalog--type-c a-page__main">
+      <div className="a-page-catalog__container">
+        <Breadcrumbs
+          items={breadcrumbs}
+          className="a-page-catalog__breadcrumbs"
+        />
+        <div className="a-back a-page-catalog__back">
+          <a
+            className="a-back__link nuxt-link-active"
+            href={
+              category?.path?.[category.path.length - 2]?.href || "/catalog"
+            }
+          >
+            <svg className="a-svg a-back__icon">
+              <use
+                xlinkHref="#icon-old-arrow"
+                xmlnsXlink="http://www.w3.org/1999/xlink"
+              />
+            </svg>
+            <span className="a-back__text">
+              {category?.path?.[category.path.length - 2]?.name || "Каталог"}
+            </span>
+          </a>
+        </div>
+      </div>
+      <div className="a-page-catalog__container">
+        <section className="a-page-catalog__section a-page-catalog__section--catalog">
+          <div className="a-page-catalog__title">
+            <div className="a-page-catalog__title-content">
+              <h1>
+                {loading
+                  ? "Загрузка..."
+                  : category?.path?.[category.path.length - 1]?.name ||
+                    params.slug}
+              </h1>
+            </div>
+            <div className="a-page-catalog__title-count">
+              Найдено {totalCount} товаров
+            </div>
+          </div>
+          <div className="a-page-catalog__wrap">
+            <div
+              className="a-page-catalog__sidebar-container"
+              data-v-sticky-container=""
+              style={{
+                position: "relative",
+              }}
+            >
+              <div className="a-page-catalog__sidebar" style={{}}>
+                <div
+                  className="a-page-catalog__sticky"
+                  data-v-sticky-inner=""
+                  style={{
+                    position: "relative",
+                  }}
+                >
+                  <BaseFilter />
+                  <ul className="a-page-catalog__sticky resize-sensor category-list__categories">
+                    <li className="category-list__category">
+                      <div>
+                        <a
+                          className="category-list__category-link"
+                          href="/catalog/napilniki-5832/"
+                        >
+                          Напильники
+                        </a>
+                      </div>
+                    </li>
+                    <li className="category-list__category">
+                      <div>
+                        <a
+                          className="category-list__category-link"
+                          href="/catalog/steklorezy-5830/"
+                        >
+                          Стеклорезы
+                        </a>
+                      </div>
+                    </li>
+                    <li className="category-list__category">
+                      <div>
+                        <a
+                          className="category-list__category-link"
+                          href="/catalog/izolenta-6561/"
+                        >
+                          Изолента
+                        </a>
+                      </div>
+                    </li>
+                    <li className="category-list__category">
+                      <div>
+                        <a
+                          className="category-list__category-link"
+                          href="/catalog/khomuty-6540/"
+                        >
+                          Хомуты
+                        </a>
+                      </div>
+                    </li>
+                    <li className="category-list__category">
+                      <div>
+                        <a
+                          className="category-list__category-link"
+                          href="/catalog/semniki-stopornykh-kolec-8107/"
+                        >
+                          Съемники стопорных колец
+                        </a>
+                      </div>
+                    </li>
+                    <li className="category-list__category">
+                      <div>
+                        <a
+                          className="category-list__category-link"
+                          href="/catalog/gvozdy-9239/"
+                        >
+                          Гвозди
+                        </a>
+                      </div>
+                    </li>
+                    <li className="category-list__category">
+                      <div>
+                        <a
+                          className="category-list__category-link"
+                          href="/catalog/mikrometry-9354/"
+                        >
+                          Микрометры
+                        </a>
+                      </div>
+                    </li>
+                    <li className="category-list__category">
+                      <div>
+                        <a
+                          className="category-list__category-link"
+                          href="/catalog/razmetochnyi-instrument-9599/"
+                        >
+                          Разметочный инструмент
+                        </a>
+                      </div>
+                    </li>
+                    <li className="category-list__category">
+                      <div>
+                        <a
+                          className="category-list__category-link"
+                          href="/catalog/kruglogubcy-9607/"
+                        >
+                          Круглогубцы
+                        </a>
+                      </div>
+                    </li>
+                  </ul>
+                  <div
+                    className="resize-sensor"
+                    style={{
+                      inset: "0px",
+                      opacity: "0",
+                      overflow: "hidden",
+                      position: "absolute",
+                      visibility: "hidden",
+                      zIndex: "-1",
+                    }}
+                  >
+                    <div
+                      className="resize-sensor-expand"
+                      style={{
+                        bottom: "0",
+                        left: "0",
+                        opacity: "0",
+                        overflow: "hidden",
+                        position: "absolute",
+                        right: "0",
+                        top: "0",
+                        visibility: "hidden",
+                        zIndex: "-1",
+                      }}
+                    >
+                      <div
+                        style={{
+                          height: "100000px",
+                          left: "0px",
+                          position: "absolute",
+                          top: "0px",
+                          transition: "all",
+                          width: "100000px",
+                        }}
+                      />
+                    </div>
+                    <div
+                      className="resize-sensor-shrink"
+                      style={{
+                        bottom: "0",
+                        left: "0",
+                        opacity: "0",
+                        overflow: "hidden",
+                        position: "absolute",
+                        right: "0",
+                        top: "0",
+                        visibility: "hidden",
+                        zIndex: "-1",
+                      }}
+                    >
+                      <div
+                        style={{
+                          height: "200%",
+                          left: "0",
+                          position: "absolute",
+                          top: "0",
+                          transition: "0s",
+                          width: "200%",
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div
+                className="resize-sensor"
+                style={{
+                  inset: "0px",
+                  opacity: "0",
+                  overflow: "hidden",
+                  position: "absolute",
+                  visibility: "hidden",
+                  zIndex: "-1",
+                }}
+              >
+                <div
+                  className="resize-sensor-expand"
+                  style={{
+                    bottom: "0",
+                    left: "0",
+                    opacity: "0",
+                    overflow: "hidden",
+                    position: "absolute",
+                    right: "0",
+                    top: "0",
+                    visibility: "hidden",
+                    zIndex: "-1",
+                  }}
+                >
+                  <div
+                    style={{
+                      height: "100000px",
+                      left: "0px",
+                      position: "absolute",
+                      top: "0px",
+                      transition: "all",
+                      width: "100000px",
+                    }}
+                  />
+                </div>
+                <div
+                  className="resize-sensor-shrink"
+                  style={{
+                    bottom: "0",
+                    left: "0",
+                    opacity: "0",
+                    overflow: "hidden",
+                    position: "absolute",
+                    right: "0",
+                    top: "0",
+                    visibility: "hidden",
+                    zIndex: "-1",
+                  }}
+                >
+                  <div
+                    style={{
+                      height: "200%",
+                      left: "0",
+                      position: "absolute",
+                      top: "0",
+                      transition: "0s",
+                      width: "200%",
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="a-page-catalog__main">
+              <div className="a-page-catalog__note">
+                {loading
+                  ? "Загрузка описания..."
+                  : category?.path?.[category.path.length - 1]?.description ||
+                    `В категории "${category?.path?.[category.path.length - 1]?.name || params.slug}" представлены товары для различных задач.`}
+              </div>
+              <div className="a-catalog-list">
+                <ul className="a-catalog-list__list">
+                  {category?.path?.[category.path.length - 1]?.children?.map(
+                    (childCategory) => (
+                      <CatalogListItem
+                        key={childCategory.id}
+                        category={childCategory}
+                      />
+                    ),
+                  ) || <CatalogListItem />}
+                </ul>
+              </div>
+              <div
+                className="a-product-list a-product-list--view-line-tile"
+                id="product-list"
+              >
+                <div className="a-product-list__header">
+                  <div className="a-product-list__panel">
+                    <div className="a-product-list__sort">
+                      <div className="a-sort-list">
+                        <span className="a-sort-list__title">
+                          Сортировать по:
+                        </span>
+                        <span className="a-sort-list__option">
+                          <input
+                            defaultValue="popular-desc"
+                            id="sort-9653-option-0"
+                            name="sort"
+                            type="radio"
+                          />
+                          <label htmlFor="sort-9653-option-0">
+                            Популярности
+                          </label>
+                        </span>
+                        <span className="a-sort-list__option">
+                          <input
+                            defaultValue="rate-desc"
+                            id="sort-9653-option-1"
+                            name="sort"
+                            type="radio"
+                          />
+                          <label htmlFor="sort-9653-option-1">Рейтингу</label>
+                        </span>
+                        <span className="a-sort-list__option">
+                          <input
+                            defaultValue="price-desc"
+                            id="sort-9653-option-2"
+                            name="sort"
+                            type="radio"
+                          />
+                          <label htmlFor="sort-9653-option-2">
+                            Сначала дороже
+                          </label>
+                        </span>
+                        <span className="a-sort-list__option">
+                          <input
+                            defaultValue="price-asc"
+                            id="sort-9653-option-3"
+                            name="sort"
+                            type="radio"
+                          />
+                          <label htmlFor="sort-9653-option-3">
+                            Сначала дешевле
+                          </label>
+                        </span>
+                      </div>
+                      <button
+                        className="a-page-catalog__button a-page-catalog__button--filter"
+                        type="button"
+                      >
+                        <span className="a-page-catalog__icon a-page-catalog__icon--filter">
+                          <svg className="a-svg">
+                            <use
+                              xlinkHref="#icon-old-funnel"
+                              xmlnsXlink="http://www.w3.org/1999/xlink"
+                            />
+                          </svg>
+                        </span>
+                        <span className="a-page-catalog__text">Фильтры</span>
+                      </button>
+                    </div>
+                    <div className="a-field-select">
+                      <div className="a-field-select__constrain" tabIndex="0">
+                        <div className="a-field-select__container">
+                          <div className="a-field-select__wrap">
+                            <input
+                              className="a-field-select__input"
+                              defaultValue="popular-desc"
+                              name="sort"
+                              type="hidden"
+                            />
+                            <div className="a-field-select__placeholder" />
+                            <div
+                              className="a-field-select__fake"
+                              title="Популярности"
+                            >
+                              Популярности
+                              <div className="a-field-select__icon">
+                                <svg className="a-svg">
+                                  <use
+                                    xlinkHref="#icon-old-arrow"
+                                    xmlnsXlink="http://www.w3.org/1999/xlink"
+                                  />
+                                </svg>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <ul className="a-field-select__list">
+                          <li
+                            className="a-field-select__item a-field-select__item--active"
+                            title="Популярности"
+                          >
+                            <div
+                              className="a-field-select__text"
+                              style={{
+                                "--filter-item-text": "'Популярности'",
+                              }}
+                            />
+                          </li>
+                          <li className="a-field-select__item" title="Рейтингу">
+                            <div
+                              className="a-field-select__text"
+                              style={{
+                                "--filter-item-text": "'Рейтингу'",
+                              }}
+                            />
+                          </li>
+                          <li
+                            className="a-field-select__item"
+                            title="Сначала дороже"
+                          >
+                            <div
+                              className="a-field-select__text"
+                              style={{
+                                "--filter-item-text": "'Сначала дороже'",
+                              }}
+                            />
+                          </li>
+                          <li
+                            className="a-field-select__item"
+                            title="Сначала дешевле"
+                          >
+                            <div
+                              className="a-field-select__text"
+                              style={{
+                                "--filter-item-text": "'Сначала дешевле'",
+                              }}
+                            />
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="a-product-list__main">
+                  <ul className="a-product-list__list">
+                    {productsLoading ? (
+                      <ProductListItem />
+                    ) : (
+                      products.map((product) => (
+                        <ProductListItem key={product.id} product={product} />
+                      ))
+                    )}
+                  </ul>
+                </div>
+                <div className="a-product-list__footer">
+                  <div className="a-product-list__pagination">
+                    <div className="a-product-list__more">
+                      <button
+                        className="a-main-button a-main-button--display-inline a-main-button--type-medium a-main-button--corner-round a-main-button--color-light-grey"
+                        type="button"
+                        disabled={currentPage >= totalPages}
+                        onClick={() => {
+                          if (currentPage < totalPages) {
+                            router.push(pageHref(currentPage + 1));
+                          }
+                        }}
+                      >
+                        <span className="a-main-button__wrap">
+                          <span className="a-main-button__content">
+                            Показать еще
+                          </span>
+                          <span className="a-main-button__constrain">
+                            <svg className="a-svg a-main-button__icon a-main-button__icon--right a-svg--medium a-main-button__icon--icon-meatballs a-main-button__icon--color">
+                              <use
+                                xlinkHref="#icon-meatballs"
+                                xmlnsXlink="http://www.w3.org/1999/xlink"
+                              />
+                            </svg>
+                          </span>
+                        </span>
+                      </button>
+                    </div>
+                    <div className="a-pagination">
+                      {currentPage > 1 ? (
+                        <a
+                          className="a-pagination__button"
+                          href={pageHref(currentPage - 1)}
+                        >
+                          <svg className="a-svg a-pagination__icon a-pagination__icon--prev">
+                            <use
+                              xlinkHref="#icon-old-arrow"
+                              xmlnsXlink="http://www.w3.org/1999/xlink"
+                            />
+                          </svg>
+                        </a>
+                      ) : (
+                        <span className="a-pagination__button">
+                          <svg className="a-svg a-pagination__icon a-pagination__icon--prev">
+                            <use
+                              xlinkHref="#icon-old-arrow"
+                              xmlnsXlink="http://www.w3.org/1999/xlink"
+                            />
+                          </svg>
+                        </span>
+                      )}
+                      <ul className="a-pagination__list">
+                        {pageNumbers.map((page) =>
+                          page === "..." ? (
+                            <li
+                              key={`page-${page}-${Math.random()}`}
+                              className="a-pagination__item"
+                            >
+                              <span className="a-pagination__button">...</span>
+                            </li>
+                          ) : (
+                            <li
+                              key={`page-${page}`}
+                              className={`a-pagination__item${page === currentPage ? " a-pagination__item--active" : ""}`}
+                            >
+                              {page === currentPage ? (
+                                <span className="a-pagination__button">
+                                  {page}
+                                </span>
+                              ) : (
+                                <a
+                                  className="a-pagination__button"
+                                  href={pageHref(page)}
+                                >
+                                  {page}
+                                </a>
+                              )}
+                            </li>
+                          ),
+                        )}
+                      </ul>
+                      {currentPage < totalPages ? (
+                        <a
+                          className="a-pagination__button"
+                          href={pageHref(currentPage + 1)}
+                        >
+                          <svg className="a-svg a-pagination__icon a-pagination__icon--next">
+                            <use
+                              xlinkHref="#icon-old-arrow"
+                              xmlnsXlink="http://www.w3.org/1999/xlink"
+                            />
+                          </svg>
+                        </a>
+                      ) : (
+                        <span className="a-pagination__button">
+                          <svg className="a-svg a-pagination__icon a-pagination__icon--next">
+                            <use
+                              xlinkHref="#icon-old-arrow"
+                              xmlnsXlink="http://www.w3.org/1999/xlink"
+                            />
+                          </svg>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="a-page-catalog__tags">
+                <div className="js-tags a-tags">
+                  <ul className="a-tags__groups">
+                    <li className="js-tags__group a-tags__group a-tags__group--hide">
+                      <div className="a-tags__title">Популярное:</div>
+                      <ul className="js-tags__list a-tags__list">
+                        <li className="js-tags__item a-tags__item">
+                          <div
+                            aria-label="шлифовальные ленты"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="шлифовальные ленты"
+                          >
+                            <a
+                              aria-label="шлифовальные ленты"
+                              className="a-ellipse-button__button"
+                              href="/catalog/shlifovalnye-lenty-6745/"
+                              title="шлифовальные ленты"
+                            >
+                              <span className="a-ellipse-button__text">
+                                шлифовальные ленты
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li className="js-tags__item a-tags__item">
+                          <div
+                            aria-label="чашки для УШМ"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="чашки для УШМ"
+                          >
+                            <a
+                              aria-label="чашки для УШМ"
+                              className="a-ellipse-button__button"
+                              href="/catalog/chashechnye-korshhetki-dlya-ushm-7932/"
+                              title="чашки для УШМ"
+                            >
+                              <span className="a-ellipse-button__text">
+                                чашки для УШМ
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li className="js-tags__item a-tags__item">
+                          <div
+                            aria-label="ножовки столярные"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="ножовки столярные"
+                          >
+                            <a
+                              aria-label="ножовки столярные"
+                              className="a-ellipse-button__button"
+                              href="/catalog/nozhovki-po-derevu-7995/"
+                              title="ножовки столярные"
+                            >
+                              <span className="a-ellipse-button__text">
+                                ножовки столярные
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li
+                          className="js-tags__item a-tags__item"
+                          style={{
+                            display: "none",
+                          }}
+                        >
+                          <div
+                            aria-label="миксеры"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="миксеры"
+                          >
+                            <a
+                              aria-label="миксеры"
+                              className="a-ellipse-button__button"
+                              href="/catalog/miksery-6575/"
+                              title="миксеры"
+                            >
+                              <span className="a-ellipse-button__text">
+                                миксеры
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li
+                          className="js-tags__item a-tags__item"
+                          style={{
+                            display: "none",
+                          }}
+                        >
+                          <div
+                            aria-label="угломеры"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="угломеры"
+                          >
+                            <a
+                              aria-label="угломеры"
+                              className="a-ellipse-button__button"
+                              href="/catalog/uglomery-5869/"
+                              title="угломеры"
+                            >
+                              <span className="a-ellipse-button__text">
+                                угломеры
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li
+                          className="js-tags__item a-tags__item"
+                          style={{
+                            display: "none",
+                          }}
+                        >
+                          <div
+                            aria-label="комплектующие для реноваторов"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="комплектующие для реноваторов"
+                          >
+                            <a
+                              aria-label="комплектующие для реноваторов"
+                              className="a-ellipse-button__button"
+                              href="/catalog/dlya-renovatorov-6383/"
+                              title="комплектующие для реноваторов"
+                            >
+                              <span className="a-ellipse-button__text">
+                                комплектующие для реноваторов
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li
+                          className="js-tags__item a-tags__item"
+                          style={{
+                            display: "none",
+                          }}
+                        >
+                          <div
+                            aria-label="кувалды"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="кувалды"
+                          >
+                            <a
+                              aria-label="кувалды"
+                              className="a-ellipse-button__button"
+                              href="/catalog/kuvaldy-5849/"
+                              title="кувалды"
+                            >
+                              <span className="a-ellipse-button__text">
+                                кувалды
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li
+                          className="js-tags__item a-tags__item"
+                          style={{
+                            display: "none",
+                          }}
+                        >
+                          <div
+                            aria-label="сумки"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="сумки"
+                          >
+                            <a
+                              aria-label="сумки"
+                              className="a-ellipse-button__button"
+                              href="/catalog/sumki-dlya-instrumenta-9334/"
+                              title="сумки"
+                            >
+                              <span className="a-ellipse-button__text">
+                                сумки
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li
+                          className="js-tags__item a-tags__item"
+                          style={{
+                            display: "none",
+                          }}
+                        >
+                          <div
+                            aria-label="штангенциркули"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="штангенциркули"
+                          >
+                            <a
+                              aria-label="штангенциркули"
+                              className="a-ellipse-button__button"
+                              href="/catalog/shtangencirkuli-5874/"
+                              title="штангенциркули"
+                            >
+                              <span className="a-ellipse-button__text">
+                                штангенциркули
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li
+                          className="js-tags__item a-tags__item"
+                          style={{
+                            display: "none",
+                          }}
+                        >
+                          <div
+                            aria-label="точила"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="точила"
+                          >
+                            <a
+                              aria-label="точила"
+                              className="a-ellipse-button__button"
+                              href="/catalog/tochilnye-stanki-6186/"
+                              title="точила"
+                            >
+                              <span className="a-ellipse-button__text">
+                                точила
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li
+                          className="js-tags__item a-tags__item"
+                          style={{
+                            display: "none",
+                          }}
+                        >
+                          <div
+                            aria-label="сверла"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="сверла"
+                          >
+                            <a
+                              aria-label="сверла"
+                              className="a-ellipse-button__button"
+                              href="/catalog/sverla-6569/"
+                              title="сверла"
+                            >
+                              <span className="a-ellipse-button__text">
+                                сверла
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li
+                          className="js-tags__item a-tags__item"
+                          style={{
+                            display: "none",
+                          }}
+                        >
+                          <div
+                            aria-label="ленточные шлифмашинки"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="ленточные шлифмашинки"
+                          >
+                            <a
+                              aria-label="ленточные шлифмашинки"
+                              className="a-ellipse-button__button"
+                              href="/catalog/lentochnye-shlifovalnye-mashiny-5788/"
+                              title="ленточные шлифмашинки"
+                            >
+                              <span className="a-ellipse-button__text">
+                                ленточные шлифмашинки
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li
+                          className="js-tags__item a-tags__item"
+                          style={{
+                            display: "none",
+                          }}
+                        >
+                          <div
+                            aria-label="дисковые пилы"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="дисковые пилы"
+                          >
+                            <a
+                              aria-label="дисковые пилы"
+                              className="a-ellipse-button__button"
+                              href="/catalog/cirkulyarnye-pily-5793/"
+                              title="дисковые пилы"
+                            >
+                              <span className="a-ellipse-button__text">
+                                дисковые пилы
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li
+                          className="js-tags__item a-tags__item"
+                          style={{
+                            display: "none",
+                          }}
+                        >
+                          <div
+                            aria-label="пилки лобзиковые"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="пилки лобзиковые"
+                          >
+                            <a
+                              aria-label="пилки лобзиковые"
+                              className="a-ellipse-button__button"
+                              href="/catalog/pilki-dlya-lobzikov-3146/"
+                              title="пилки лобзиковые"
+                            >
+                              <span className="a-ellipse-button__text">
+                                пилки лобзиковые
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li
+                          className="js-tags__item a-tags__item"
+                          style={{
+                            display: "none",
+                          }}
+                        >
+                          <div
+                            aria-label="гвоздодеры"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="гвоздодеры"
+                          >
+                            <a
+                              aria-label="гвоздодеры"
+                              className="a-ellipse-button__button"
+                              href="/catalog/gvozdoder-6450/"
+                              title="гвоздодеры"
+                            >
+                              <span className="a-ellipse-button__text">
+                                гвоздодеры
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li
+                          className="js-tags__item a-tags__item"
+                          style={{
+                            display: "none",
+                          }}
+                        >
+                          <div
+                            aria-label="буры"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="буры"
+                          >
+                            <a
+                              aria-label="буры"
+                              className="a-ellipse-button__button"
+                              href="/catalog/bury-6588/"
+                              title="буры"
+                            >
+                              <span className="a-ellipse-button__text">
+                                буры
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li
+                          className="js-tags__item a-tags__item"
+                          style={{
+                            display: "none",
+                          }}
+                        >
+                          <div
+                            aria-label="мультитулы"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="мультитулы"
+                          >
+                            <a
+                              aria-label="мультитулы"
+                              className="a-ellipse-button__button"
+                              href="/catalog/multituly-6875/"
+                              title="мультитулы"
+                            >
+                              <span className="a-ellipse-button__text">
+                                мультитулы
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li
+                          className="js-tags__item a-tags__item"
+                          style={{
+                            display: "none",
+                          }}
+                        >
+                          <div
+                            aria-label="коронки для древесины"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="коронки для древесины"
+                          >
+                            <a
+                              aria-label="коронки для древесины"
+                              className="a-ellipse-button__button"
+                              href="/catalog/koronki-po-derevu-7900/"
+                              title="коронки для древесины"
+                            >
+                              <span className="a-ellipse-button__text">
+                                коронки для древесины
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li
+                          className="js-tags__item a-tags__item"
+                          style={{
+                            display: "none",
+                          }}
+                        >
+                          <div
+                            aria-label="фрезы"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="фрезы"
+                          >
+                            <a
+                              aria-label="фрезы"
+                              className="a-ellipse-button__button"
+                              href="/catalog/dlya-frezernykh-stankov-6327/"
+                              title="фрезы"
+                            >
+                              <span className="a-ellipse-button__text">
+                                фрезы
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li
+                          className="js-tags__item a-tags__item"
+                          style={{
+                            display: "none",
+                          }}
+                        >
+                          <div
+                            aria-label="болторезы"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="болторезы"
+                          >
+                            <a
+                              aria-label="болторезы"
+                              className="a-ellipse-button__button"
+                              href="/catalog/boltorezy-5837/"
+                              title="болторезы"
+                            >
+                              <span className="a-ellipse-button__text">
+                                болторезы
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li
+                          className="js-tags__item a-tags__item"
+                          style={{
+                            display: "none",
+                          }}
+                        >
+                          <div
+                            aria-label="зажимной инструмент"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="зажимной инструмент"
+                          >
+                            <a
+                              aria-label="зажимной инструмент"
+                              className="a-ellipse-button__button"
+                              href="/catalog/zazhimnoj-instrument-5815/"
+                              title="зажимной инструмент"
+                            >
+                              <span className="a-ellipse-button__text">
+                                зажимной инструмент
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li
+                          className="js-tags__item a-tags__item"
+                          style={{
+                            display: "none",
+                          }}
+                        >
+                          <div
+                            aria-label="лезвия для ножа"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="лезвия для ножа"
+                          >
+                            <a
+                              aria-label="лезвия для ножа"
+                              className="a-ellipse-button__button"
+                              href="/catalog/lezviya-dlya-kancelyarskogo-nozha-7653/"
+                              title="лезвия для ножа"
+                            >
+                              <span className="a-ellipse-button__text">
+                                лезвия для ножа
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li
+                          className="js-tags__item a-tags__item"
+                          style={{
+                            display: "none",
+                          }}
+                        >
+                          <div
+                            aria-label="пневмогайковерты"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="пневмогайковерты"
+                          >
+                            <a
+                              aria-label="пневмогайковерты"
+                              className="a-ellipse-button__button"
+                              href="/catalog/pnevmaticheskie-gajkoverty-5801/"
+                              title="пневмогайковерты"
+                            >
+                              <span className="a-ellipse-button__text">
+                                пневмогайковерты
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li
+                          className="js-tags__item a-tags__item"
+                          style={{
+                            display: "none",
+                          }}
+                        >
+                          <div
+                            aria-label="струбцины"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="струбцины"
+                          >
+                            <a
+                              aria-label="струбцины"
+                              className="a-ellipse-button__button"
+                              href="/catalog/strubciny-5843/"
+                              title="струбцины"
+                            >
+                              <span className="a-ellipse-button__text">
+                                струбцины
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li
+                          className="js-tags__item a-tags__item"
+                          style={{
+                            display: "none",
+                          }}
+                        >
+                          <div
+                            aria-label="зубила"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="зубила"
+                          >
+                            <a
+                              aria-label="зубила"
+                              className="a-ellipse-button__button"
+                              href="/catalog/zubila-6590/"
+                              title="зубила"
+                            >
+                              <span className="a-ellipse-button__text">
+                                зубила
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li
+                          className="js-tags__item a-tags__item"
+                          style={{
+                            display: "none",
+                          }}
+                        >
+                          <div
+                            aria-label="штроборезы"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="штроборезы"
+                          >
+                            <a
+                              aria-label="штроборезы"
+                              className="a-ellipse-button__button"
+                              href="/catalog/shtroborezy-5766/"
+                              title="штроборезы"
+                            >
+                              <span className="a-ellipse-button__text">
+                                штроборезы
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li
+                          className="js-tags__item a-tags__item"
+                          style={{
+                            display: "none",
+                          }}
+                        >
+                          <div
+                            aria-label="труборезы"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="труборезы"
+                          >
+                            <a
+                              aria-label="труборезы"
+                              className="a-ellipse-button__button"
+                              href="/catalog/truborezy-5838/"
+                              title="труборезы"
+                            >
+                              <span className="a-ellipse-button__text">
+                                труборезы
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li
+                          className="js-tags__item a-tags__item"
+                          style={{
+                            display: "none",
+                          }}
+                        >
+                          <div
+                            aria-label="рюкзаки"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="рюкзаки"
+                          >
+                            <a
+                              aria-label="рюкзаки"
+                              className="a-ellipse-button__button"
+                              href="/catalog/ryukzaki-dlya-instrumenta-9335/"
+                              title="рюкзаки"
+                            >
+                              <span className="a-ellipse-button__text">
+                                рюкзаки
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li
+                          className="js-tags__item a-tags__item"
+                          style={{
+                            display: "none",
+                          }}
+                        >
+                          <div
+                            aria-label="пневмопистолеты"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="пневмопистолеты"
+                          >
+                            <a
+                              aria-label="пневмопистолеты"
+                              className="a-ellipse-button__button"
+                              href="/catalog/pnevmaticheskie-pistolety-7935/"
+                              title="пневмопистолеты"
+                            >
+                              <span className="a-ellipse-button__text">
+                                пневмопистолеты
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li
+                          className="js-tags__item a-tags__item"
+                          style={{
+                            display: "none",
+                          }}
+                        >
+                          <div
+                            aria-label="ударно-рычажный"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="ударно-рычажный"
+                          >
+                            <a
+                              aria-label="ударно-рычажный"
+                              className="a-ellipse-button__button"
+                              href="/catalog/udarno-rychazhnyj-instrument-5816/"
+                              title="ударно-рычажный"
+                            >
+                              <span className="a-ellipse-button__text">
+                                ударно-рычажный
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li
+                          className="js-tags__item a-tags__item"
+                          style={{
+                            display: "none",
+                          }}
+                        >
+                          <div
+                            aria-label="бокорезы"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="бокорезы"
+                          >
+                            <a
+                              aria-label="бокорезы"
+                              className="a-ellipse-button__button"
+                              href="/catalog/bokorezy-5840/"
+                              title="бокорезы"
+                            >
+                              <span className="a-ellipse-button__text">
+                                бокорезы
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li
+                          className="js-tags__item a-tags__item"
+                          style={{
+                            display: "none",
+                          }}
+                        >
+                          <div
+                            aria-label="длинногубцы"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="длинногубцы"
+                          >
+                            <a
+                              aria-label="длинногубцы"
+                              className="a-ellipse-button__button"
+                              href="/catalog/dlinnogubcy-9605/"
+                              title="длинногубцы"
+                            >
+                              <span className="a-ellipse-button__text">
+                                длинногубцы
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li
+                          className="js-tags__item a-tags__item"
+                          style={{
+                            display: "none",
+                          }}
+                        >
+                          <div
+                            aria-label="тиски слесарные"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="тиски слесарные"
+                          >
+                            <a
+                              aria-label="тиски слесарные"
+                              className="a-ellipse-button__button"
+                              href="/catalog/slesarnye-tiski-7850/"
+                              title="тиски слесарные"
+                            >
+                              <span className="a-ellipse-button__text">
+                                тиски слесарные
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li
+                          className="js-tags__item a-tags__item"
+                          style={{
+                            display: "none",
+                          }}
+                        >
+                          <div
+                            aria-label="шарнирно-губцевый"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="шарнирно-губцевый"
+                          >
+                            <a
+                              aria-label="шарнирно-губцевый"
+                              className="a-ellipse-button__button"
+                              href="/catalog/sharnirno-gubcevyj-instrument-5814/"
+                              title="шарнирно-губцевый"
+                            >
+                              <span className="a-ellipse-button__text">
+                                шарнирно-губцевый
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li
+                          className="js-tags__item a-tags__item"
+                          style={{
+                            display: "none",
+                          }}
+                        >
+                          <div
+                            aria-label="резьбонарезной"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="резьбонарезной"
+                          >
+                            <a
+                              aria-label="резьбонарезной"
+                              className="a-ellipse-button__button"
+                              href="/catalog/rezbonareznoj-instrument-5818/"
+                              title="резьбонарезной"
+                            >
+                              <span className="a-ellipse-button__text">
+                                резьбонарезной
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li
+                          className="js-tags__item a-tags__item"
+                          style={{
+                            display: "none",
+                          }}
+                        >
+                          <div
+                            aria-label="вибрационные машинки"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="вибрационные машинки"
+                          >
+                            <a
+                              aria-label="вибрационные машинки"
+                              className="a-ellipse-button__button"
+                              href="/catalog/vibracionnye-shlifovalnye-mashiny-5785/"
+                              title="вибрационные машинки"
+                            >
+                              <span className="a-ellipse-button__text">
+                                вибрационные машинки
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li
+                          className="js-tags__item a-tags__item"
+                          style={{
+                            display: "none",
+                          }}
+                        >
+                          <div
+                            aria-label="экстракторы болтов"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="экстракторы болтов"
+                          >
+                            <a
+                              aria-label="экстракторы болтов"
+                              className="a-ellipse-button__button"
+                              href="/catalog/ekstraktory-dlya-slomannykh-gaek-i-boltov-8063/"
+                              title="экстракторы болтов"
+                            >
+                              <span className="a-ellipse-button__text">
+                                экстракторы болтов
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li
+                          className="js-tags__item a-tags__item"
+                          style={{
+                            display: "none",
+                          }}
+                        >
+                          <div
+                            aria-label="со скидкой"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="со скидкой"
+                          >
+                            <a
+                              aria-label="со скидкой"
+                              className="a-ellipse-button__button"
+                              href="/sale/instrument-5748/"
+                              title="со скидкой"
+                            >
+                              <span className="a-ellipse-button__text">
+                                со скидкой
+                              </span>
+                            </a>
+                          </div>
+                        </li>
+                        <li
+                          className="js-tags__more a-tags__item a-tags__item--more"
+                          style={{}}
+                        >
+                          <div
+                            aria-label="ещё"
+                            className="a-ellipse-button a-ellipse-button--interactive a-ellipse-button--color-light-orange"
+                            title="ещё"
+                          >
+                            <button
+                              aria-label="ещё"
+                              className="a-ellipse-button__button"
+                              title="ещё"
+                              type="button"
+                            >
+                              <span className="a-ellipse-button__text">
+                                ещё
+                              </span>
+                              <span className="a-ellipse-button__icon">
+                                <svg className="a-svg">
+                                  <use
+                                    xlinkHref="#icon-meatballs"
+                                    xmlnsXlink="http://www.w3.org/1999/xlink"
+                                  />
+                                </svg>
+                              </span>
+                            </button>
+                          </div>
+                        </li>
+                      </ul>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  );
+}
+
+function buildPagination(current, total) {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+
+  const pages = new Set([1, total, current]);
+  [current - 1, current + 1].forEach((page) => {
+    if (page > 1 && page < total) pages.add(page);
+  });
+
+  const sorted = Array.from(pages).sort((a, b) => a - b);
+  const output = [];
+  for (let i = 0; i < sorted.length; i += 1) {
+    output.push(sorted[i]);
+    if (i < sorted.length - 1 && sorted[i + 1] - sorted[i] > 1) {
+      output.push("...");
+    }
+  }
+  return output;
+}
