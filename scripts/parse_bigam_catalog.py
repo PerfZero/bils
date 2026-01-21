@@ -5,6 +5,8 @@ import re
 import os
 import shutil
 import subprocess
+import time
+import threading
 import urllib.request
 import urllib.parse
 from html.parser import HTMLParser
@@ -12,6 +14,10 @@ from pathlib import Path
 
 
 CATEGORY_IMAGE_CACHE = {}
+VERBOSE = False
+RATE_LIMIT = 0.0
+LAST_REQUEST_AT = 0.0
+RATE_LOCK = threading.Lock()
 
 VOID_TAGS = {
     "area",
@@ -780,7 +786,17 @@ def with_page_param(url, page_number):
     return urllib.parse.urlunparse(parts._replace(query=new_query))
 
 
-def fetch_html(url):
+def fetch_html(url, retries=3, backoff=2.0):
+    global LAST_REQUEST_AT
+    if RATE_LIMIT and RATE_LIMIT > 0:
+        with RATE_LOCK:
+            now = time.time()
+            wait_for = (1.0 / RATE_LIMIT) - (now - LAST_REQUEST_AT)
+            if wait_for > 0:
+                if VERBOSE:
+                    print(f"  Rate limit sleep {wait_for:.2f}s: {url}", flush=True)
+                time.sleep(wait_for)
+            LAST_REQUEST_AT = time.time()
     request = urllib.request.Request(
         url,
         headers={
@@ -788,8 +804,26 @@ def fetch_html(url):
             "Accept": "text/html,application/xhtml+xml",
         },
     )
-    with urllib.request.urlopen(request, timeout=30) as response:
-        return response.read().decode("utf-8", errors="ignore")
+    for attempt in range(retries + 1):
+        try:
+            with urllib.request.urlopen(request, timeout=30) as response:
+                return response.read().decode("utf-8", errors="ignore")
+        except urllib.error.HTTPError as exc:
+            if exc.code == 429 and attempt < retries:
+                delay = backoff * (attempt + 1)
+                if VERBOSE:
+                    print(f"  429 retry in {delay:.1f}s: {url}", flush=True)
+                time.sleep(delay)
+                continue
+            raise
+        except Exception:
+            if attempt < retries:
+                delay = backoff * (attempt + 1)
+                if VERBOSE:
+                    print(f"  Retry in {delay:.1f}s: {url}", flush=True)
+                time.sleep(delay)
+                continue
+            raise
 
 
 def extract_meta_image(html, base_url):
@@ -1260,6 +1294,24 @@ def main():
         help="Number of threads for product details fetching",
     )
     parser.add_argument(
+        "--page-delay",
+        type=float,
+        default=0.0,
+        help="Delay in seconds between list pages",
+    )
+    parser.add_argument(
+        "--detail-delay",
+        type=float,
+        default=0.0,
+        help="Delay in seconds before each product detail request",
+    )
+    parser.add_argument(
+        "--rate-limit",
+        type=float,
+        default=0.0,
+        help="Global request rate limit (requests per second)",
+    )
+    parser.add_argument(
         "--verbose",
         action="store_true",
         help="Print detailed progress while parsing",
@@ -1280,6 +1332,10 @@ def main():
         help="Output only auto text blocks from a product page",
     )
     args = parser.parse_args()
+    global VERBOSE
+    VERBOSE = bool(args.verbose)
+    global RATE_LIMIT
+    RATE_LIMIT = float(args.rate_limit or 0.0)
 
     output_path = Path(args.output)
 
@@ -1332,6 +1388,8 @@ def main():
                 return
             if args.verbose:
                 print(f"  Fetch product: {href}", flush=True)
+            if args.detail_delay and args.detail_delay > 0:
+                time.sleep(args.detail_delay)
             try:
                 detail_html = fetch_html(href)
             except Exception:
@@ -1425,11 +1483,13 @@ def main():
         categories = extract_category_cards_from_nuxt(html, args.base_url)
     categories = apply_category_parent(categories, category_context)
 
+    pages_all = False
     if args.pages and not args.url:
         max_pages = 1
     elif args.pages:
         if str(args.pages).lower() == "all":
-            max_pages = extract_max_page(html)
+            pages_all = True
+            max_pages = None
         else:
             try:
                 max_pages = max(1, int(args.pages))
@@ -1440,7 +1500,9 @@ def main():
 
     products = []
     breadcrumbs_list = []
-    for page_number in range(1, max_pages + 1):
+    page_number = 1
+    max_pages_cap = 200 if pages_all else None
+    while True:
         if page_number == 1:
             page_html = html
             page_url = args.url if args.url else None
@@ -1448,7 +1510,14 @@ def main():
             page_url = with_page_param(args.url, page_number)
             if args.verbose:
                 print(f"Fetching page {page_number}: {page_url}", flush=True)
-            page_html = fetch_html(page_url)
+            try:
+                page_html = fetch_html(page_url)
+            except Exception as exc:
+                if args.verbose:
+                    print(f"Failed to fetch page {page_number}: {exc}", flush=True)
+                break
+            if args.page_delay and args.page_delay > 0:
+                time.sleep(args.page_delay)
         if args.verbose:
             print(f"Parsing page {page_number}", flush=True)
         page_products = parse_products(
@@ -1479,6 +1548,20 @@ def main():
         products.extend(page_products)
         if args.verbose:
             print(f"Total products so far: {len(products)}", flush=True)
+        if pages_all:
+            if not page_products:
+                if args.verbose:
+                    print(f"No products on page {page_number}; stopping.", flush=True)
+                break
+            if max_pages_cap and page_number >= max_pages_cap:
+                if args.verbose:
+                    print(f"Reached page cap {max_pages_cap}; stopping.", flush=True)
+                break
+            page_number += 1
+            continue
+        if max_pages and page_number >= max_pages:
+            break
+        page_number += 1
 
     if args.category_images:
         category_map = build_category_map(categories, breadcrumbs_list)
