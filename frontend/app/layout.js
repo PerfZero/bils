@@ -1,9 +1,9 @@
 import { Montserrat } from "next/font/google";
+import "./globals.css";
+import "./norm.css";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
-import "./globals.css";
-import "./norm.css";
 import SiteShell from "./components/SiteShell";
 import Sprite from "./components/Sprite";
 

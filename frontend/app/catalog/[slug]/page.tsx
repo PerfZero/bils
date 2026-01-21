@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import { CatalogListItem } from "../components/CatalogListItem";
@@ -40,6 +40,10 @@ export default function CatalogSlugPage({ params }) {
   const [draftCountries, setDraftCountries] = useState<string[]>([]);
   const [draftPriceMin, setDraftPriceMin] = useState("");
   const [draftPriceMax, setDraftPriceMax] = useState("");
+  const [isMobile, setIsMobile] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isSortOpen, setIsSortOpen] = useState(false);
+  const [selectedSort, setSelectedSort] = useState("popular-desc");
 
   useEffect(() => {
     setDraftBrands(selectedBrands);
@@ -61,6 +65,20 @@ export default function CatalogSlugPage({ params }) {
       setDraftPriceMax(String(priceBounds.max));
     }
   }, [priceBounds.min, priceBounds.max, priceMinParam, priceMaxParam]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const media = window.matchMedia("(max-width: 568px)");
+    const handleChange = () => setIsMobile(media.matches);
+
+    handleChange();
+    if (media.addEventListener) {
+      media.addEventListener("change", handleChange);
+      return () => media.removeEventListener("change", handleChange);
+    }
+    media.addListener(handleChange);
+    return () => media.removeListener(handleChange);
+  }, []);
 
   useEffect(() => {
     const fetchCategory = async () => {
@@ -330,6 +348,100 @@ export default function CatalogSlugPage({ params }) {
     breadcrumbs.unshift({ label: "Каталог", href: "/catalog" });
     breadcrumbs.unshift({ label: "Главная", href: "/" });
   }
+
+  const sortOptions = useMemo(
+    () => [
+      { value: "popular-desc", label: "По популярности" },
+      { value: "rate-desc", label: "По рейтингу" },
+      { value: "price-desc", label: "Сначала дороже" },
+      { value: "price-asc", label: "Сначала дешевле" },
+    ],
+    [],
+  );
+
+  const manufacturerLabelMap = useMemo(() => {
+    return new Map(
+      (manufacturerOptions || []).map((option) => [option.id, option.label]),
+    );
+  }, [manufacturerOptions]);
+
+  const countryLabelMap = useMemo(() => {
+    return new Map(
+      (countryOptions || []).map((option) => [option.id, option.label]),
+    );
+  }, [countryOptions]);
+
+  const activeFilterChips = useMemo(() => {
+    const chips: {
+      id: string;
+      label: string;
+      type: "brand" | "country" | "price";
+      value?: string;
+    }[] = [];
+
+    draftBrands.forEach((brandId) => {
+      const label = manufacturerLabelMap.get(brandId) || brandId;
+      chips.push({
+        id: `brand-${brandId}`,
+        label: `Бренд: ${label}`,
+        type: "brand",
+        value: brandId,
+      });
+    });
+
+    draftCountries.forEach((countryId) => {
+      const label = countryLabelMap.get(countryId) || countryId;
+      chips.push({
+        id: `country-${countryId}`,
+        label: `Страна: ${label}`,
+        type: "country",
+        value: countryId,
+      });
+    });
+
+    if (draftPriceMin || draftPriceMax) {
+      const parts: string[] = [];
+      if (draftPriceMin) parts.push(`от ${draftPriceMin}`);
+      if (draftPriceMax) parts.push(`до ${draftPriceMax}`);
+      chips.push({
+        id: "price",
+        label: `Цена: ${parts.join(" ")}`,
+        type: "price",
+      });
+    }
+
+    return chips;
+  }, [
+    draftBrands,
+    draftCountries,
+    draftPriceMin,
+    draftPriceMax,
+    manufacturerLabelMap,
+    countryLabelMap,
+  ]);
+
+  const handleFilterApply = () => {
+    handleApplyFilters();
+    setIsFilterOpen(false);
+  };
+
+  const handleRemoveChip = (chip: {
+    type: "brand" | "country" | "price";
+    value?: string;
+  }) => {
+    if (chip.type === "brand" && chip.value) {
+      handleBrandToggle(chip.value, false);
+      return;
+    }
+    if (chip.type === "country" && chip.value) {
+      handleCountryToggle(chip.value, false);
+      return;
+    }
+    if (chip.type === "price") {
+      setDraftPriceMin("");
+      setDraftPriceMax("");
+    }
+  };
 
   return (
     <main className="a-page-catalog a-page-catalog--type-c a-page__main">
@@ -625,24 +737,56 @@ export default function CatalogSlugPage({ params }) {
               </div>
             </div>
             <div className="a-page-catalog__main">
-              <div className="a-page-catalog__note">
-                {loading
-                  ? "Загрузка описания..."
-                  : category?.path?.[category.path.length - 1]?.description ||
-                    `В категории "${category?.path?.[category.path.length - 1]?.name || params.slug}" представлены товары для различных задач.`}
-              </div>
-              <div className="a-catalog-list">
-                <ul className="a-catalog-list__list">
-                  {category?.path?.[category.path.length - 1]?.children?.map(
-                    (childCategory) => (
-                      <CatalogListItem
-                        key={childCategory.id}
-                        category={childCategory}
-                      />
-                    ),
-                  ) || <CatalogListItem />}
-                </ul>
-              </div>
+              {!isMobile && (
+                <>
+                  <div className="a-page-catalog__note">
+                    {loading
+                      ? "Загрузка описания..."
+                      : category?.path?.[category.path.length - 1]
+                          ?.description ||
+                        `В категории "${category?.path?.[category.path.length - 1]?.name || params.slug}" представлены товары для различных задач.`}
+                  </div>
+                  <div className="a-catalog-list">
+                    <ul className="a-catalog-list__list">
+                      {category?.path?.[
+                        category.path.length - 1
+                      ]?.children?.map((childCategory) => (
+                        <CatalogListItem
+                          key={childCategory.id}
+                          category={childCategory}
+                        />
+                      )) || <CatalogListItem />}
+                    </ul>
+                  </div>
+                </>
+              )}
+              {isMobile && (
+                <div className="a-page-catalog__buttons">
+                  <div className="catalog-mobile-groups">
+                    <div className="catalog-mobile-groups__container">
+                      <ul className="catalog-mobile-groups__list catalog-mobile-groups__list--list">
+                        {category?.path?.[
+                          category.path.length - 1
+                        ]?.children?.map((childCategory) => (
+                          <li
+                            key={childCategory.id || childCategory.slug}
+                            className="catalog-mobile-groups__item catalog-mobile-groups__item--list"
+                          >
+                            <a
+                              href={childCategory.href}
+                              className="catalog-mobile-groups__link"
+                            >
+                              <span className="catalog-mobile-groups__text">
+                                {childCategory.name}
+                              </span>
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
               <div
                 className="a-product-list a-product-list--view-line-tile"
                 id="product-list"
@@ -654,52 +798,33 @@ export default function CatalogSlugPage({ params }) {
                         <span className="a-sort-list__title">
                           Сортировать по:
                         </span>
-                        <span className="a-sort-list__option">
-                          <input
-                            defaultValue="popular-desc"
-                            id="sort-9653-option-0"
-                            name="sort"
-                            type="radio"
-                          />
-                          <label htmlFor="sort-9653-option-0">
-                            Популярности
-                          </label>
-                        </span>
-                        <span className="a-sort-list__option">
-                          <input
-                            defaultValue="rate-desc"
-                            id="sort-9653-option-1"
-                            name="sort"
-                            type="radio"
-                          />
-                          <label htmlFor="sort-9653-option-1">Рейтингу</label>
-                        </span>
-                        <span className="a-sort-list__option">
-                          <input
-                            defaultValue="price-desc"
-                            id="sort-9653-option-2"
-                            name="sort"
-                            type="radio"
-                          />
-                          <label htmlFor="sort-9653-option-2">
-                            Сначала дороже
-                          </label>
-                        </span>
-                        <span className="a-sort-list__option">
-                          <input
-                            defaultValue="price-asc"
-                            id="sort-9653-option-3"
-                            name="sort"
-                            type="radio"
-                          />
-                          <label htmlFor="sort-9653-option-3">
-                            Сначала дешевле
-                          </label>
-                        </span>
+                        {sortOptions.map((option, index) => (
+                          <span
+                            key={option.value}
+                            className="a-sort-list__option"
+                          >
+                            <input
+                              id={`sort-9653-option-${index}`}
+                              name="sort"
+                              type="radio"
+                              value={option.value}
+                              checked={selectedSort === option.value}
+                              onChange={() => setSelectedSort(option.value)}
+                            />
+                            <label htmlFor={`sort-9653-option-${index}`}>
+                              {option.label}
+                            </label>
+                          </span>
+                        ))}
                       </div>
                       <button
                         className="a-page-catalog__button a-page-catalog__button--filter"
                         type="button"
+                        onClick={() => {
+                          if (isMobile) {
+                            setIsFilterOpen(true);
+                          }
+                        }}
                       >
                         <span className="a-page-catalog__icon a-page-catalog__icon--filter">
                           <svg className="a-svg">
@@ -712,22 +837,124 @@ export default function CatalogSlugPage({ params }) {
                         <span className="a-page-catalog__text">Фильтры</span>
                       </button>
                     </div>
-                    <div className="a-field-select">
-                      <div className="a-field-select__constrain" tabIndex="0">
+                    {isMobile && (
+                      <div className="a-page-catalog__filter-shortcuts">
+                        <div className="a-filter-shortcuts a-filter-shortcuts--limit-prev a-filter-shortcuts--limit-next">
+                          <div className="a-filter-shortcuts__container">
+                            <div className="a-filter-shortcuts__wrap">
+                              <ul className="a-filter-shortcuts__list">
+                                <li className="a-filter-shortcuts__item">
+                                  <div
+                                    aria-label="Цена"
+                                    className="a-ellipse-button a-ellipse-button--color-light-blue"
+                                    title="Цена"
+                                  >
+                                    <div
+                                      aria-label="Цена"
+                                      className="a-ellipse-button__button"
+                                      title="Цена"
+                                      role="button"
+                                      tabIndex={0}
+                                      onClick={() => setIsFilterOpen(true)}
+                                      onKeyDown={(event) => {
+                                        if (
+                                          event.key === "Enter" ||
+                                          event.key === " "
+                                        ) {
+                                          event.preventDefault();
+                                          setIsFilterOpen(true);
+                                        }
+                                      }}
+                                    >
+                                      <span className="a-ellipse-button__text">
+                                        Цена
+                                      </span>
+                                    </div>
+                                  </div>
+                                </li>
+                                <li className="a-filter-shortcuts__item">
+                                  <div
+                                    aria-label="Бренд"
+                                    className="a-ellipse-button a-ellipse-button--color-light-blue"
+                                    title="Бренд"
+                                  >
+                                    <div
+                                      aria-label="Бренд"
+                                      className="a-ellipse-button__button"
+                                      title="Бренд"
+                                      role="button"
+                                      tabIndex={0}
+                                      onClick={() => setIsFilterOpen(true)}
+                                      onKeyDown={(event) => {
+                                        if (
+                                          event.key === "Enter" ||
+                                          event.key === " "
+                                        ) {
+                                          event.preventDefault();
+                                          setIsFilterOpen(true);
+                                        }
+                                      }}
+                                    >
+                                      <span className="a-ellipse-button__text">
+                                        Бренд
+                                      </span>
+                                    </div>
+                                  </div>
+                                </li>
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    <div
+                      className={`a-field-select${isSortOpen ? " a-field-select--focus a-field-select--open" : ""}`}
+                    >
+                      <div
+                        className="a-field-select__constrain"
+                        tabIndex={0}
+                        onBlur={(event) => {
+                          if (
+                            event.relatedTarget &&
+                            event.currentTarget.contains(event.relatedTarget)
+                          ) {
+                            return;
+                          }
+                          setIsSortOpen(false);
+                        }}
+                      >
                         <div className="a-field-select__container">
                           <div className="a-field-select__wrap">
                             <input
                               className="a-field-select__input"
-                              defaultValue="popular-desc"
+                              value={selectedSort}
                               name="sort"
                               type="hidden"
                             />
                             <div className="a-field-select__placeholder" />
                             <div
                               className="a-field-select__fake"
-                              title="Популярности"
+                              title={
+                                sortOptions.find(
+                                  (option) => option.value === selectedSort,
+                                )?.label
+                              }
+                              role="button"
+                              tabIndex={0}
+                              onClick={() => setIsSortOpen((prev) => !prev)}
+                              onKeyDown={(event) => {
+                                if (
+                                  event.key === "Enter" ||
+                                  event.key === " "
+                                ) {
+                                  event.preventDefault();
+                                  setIsSortOpen((prev) => !prev);
+                                }
+                              }}
                             >
-                              Популярности
+                              {sortOptions.find(
+                                (option) => option.value === selectedSort,
+                              )?.label || "По популярности"}
                               <div className="a-field-select__icon">
                                 <svg className="a-svg">
                                   <use
@@ -740,47 +967,25 @@ export default function CatalogSlugPage({ params }) {
                           </div>
                         </div>
                         <ul className="a-field-select__list">
-                          <li
-                            className="a-field-select__item a-field-select__item--active"
-                            title="Популярности"
-                          >
-                            <div
-                              className="a-field-select__text"
-                              style={{
-                                "--filter-item-text": "'Популярности'",
+                          {sortOptions.map((option) => (
+                            <li
+                              key={option.value}
+                              className={`a-field-select__item${selectedSort === option.value ? " a-field-select__item--active" : ""}`}
+                              title={option.label}
+                              tabIndex={-1}
+                              onClick={() => {
+                                setSelectedSort(option.value);
+                                setIsSortOpen(false);
                               }}
-                            />
-                          </li>
-                          <li className="a-field-select__item" title="Рейтингу">
-                            <div
-                              className="a-field-select__text"
-                              style={{
-                                "--filter-item-text": "'Рейтингу'",
-                              }}
-                            />
-                          </li>
-                          <li
-                            className="a-field-select__item"
-                            title="Сначала дороже"
-                          >
-                            <div
-                              className="a-field-select__text"
-                              style={{
-                                "--filter-item-text": "'Сначала дороже'",
-                              }}
-                            />
-                          </li>
-                          <li
-                            className="a-field-select__item"
-                            title="Сначала дешевле"
-                          >
-                            <div
-                              className="a-field-select__text"
-                              style={{
-                                "--filter-item-text": "'Сначала дешевле'",
-                              }}
-                            />
-                          </li>
+                            >
+                              <div
+                                className="a-field-select__text"
+                                style={{
+                                  "--filter-item-text": `'${option.label}'`,
+                                }}
+                              />
+                            </li>
+                          ))}
                         </ul>
                       </div>
                     </div>
@@ -1803,10 +2008,190 @@ export default function CatalogSlugPage({ params }) {
                   </ul>
                 </div>
               </div>
+              {isMobile && (
+                <div className="a-page-catalog__note">
+                  {loading
+                    ? "Загрузка описания..."
+                    : category?.path?.[category.path.length - 1]?.description ||
+                      `В категории "${category?.path?.[category.path.length - 1]?.name || params.slug}" представлены товары для различных задач.`}
+                </div>
+              )}
             </div>
           </div>
         </section>
       </div>
+      {isMobile && isFilterOpen && (
+        <div id="modals-container">
+          <div className="vm--container scrollable">
+            <div
+              data-modal="filter"
+              aria-expanded="true"
+              className="vm--overlay"
+              onClick={() => setIsFilterOpen(false)}
+            >
+              <div className="vm--top-right-slot" />
+            </div>
+            <div
+              aria-expanded="true"
+              role="dialog"
+              aria-modal="true"
+              className="vm--modal a-full-modal-parent"
+              style={{
+                left: "0px",
+                width: "425px",
+                height: "776px",
+                top: "0px",
+              }}
+            >
+              <div className="a-full-modal">
+                <div className="a-full-modal__wrap">
+                  <div className="a-full-modal__content">
+                    <div
+                      className="a-filter-modal-content"
+                      style={{ height: "776px" }}
+                    >
+                      <div className="a-filter-modal-content__header">
+                        <div className="a-filter-modal-content__left-action">
+                          <button
+                            aria-label="Очистить"
+                            title="Очистить"
+                            type="button"
+                            className="a-link-button"
+                            onClick={handleClearFilters}
+                          >
+                            <span className="a-link-button__content a-link-button__content--blue">
+                              Очистить
+                            </span>
+                          </button>
+                        </div>
+                        <div className="a-filter-modal-content__text a-title-h3">
+                          Фильтры
+                        </div>
+                        <div className="a-filter-modal-content__right-action">
+                          <button
+                            type="button"
+                            className="a-filter-modal-content__close"
+                            onClick={() => setIsFilterOpen(false)}
+                          >
+                            <svg className="a-svg">
+                              <use
+                                xlinkHref="#icon-cross"
+                                xmlnsXlink="http://www.w3.org/1999/xlink"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                      <div className="a-filter-modal-content__content">
+                        <BaseFilter
+                          manufacturerOptions={manufacturerOptions}
+                          countryOptions={countryOptions}
+                          selectedManufacturers={draftBrands}
+                          selectedCountries={draftCountries}
+                          priceMinBound={priceBounds.min}
+                          priceMaxBound={priceBounds.max}
+                          priceMin={draftPriceMin}
+                          priceMax={draftPriceMax}
+                          onPriceMinChange={setDraftPriceMin}
+                          onPriceMaxChange={setDraftPriceMax}
+                          onManufacturerToggle={handleBrandToggle}
+                          onCountryToggle={handleCountryToggle}
+                          onApply={handleApplyFilters}
+                          onClearAll={handleClearFilters}
+                          totalCount={totalCount}
+                          showActions={false}
+                        />
+                      </div>
+                      <div className="a-filter-modal-content__buttons">
+                        <div className="vue-portal-target">
+                          <div className="a-base-filter-bar a-base-filter-bar--limit-prev">
+                            <div className="a-base-filter-bar__title-remove">
+                              <button
+                                aria-label=""
+                                title=""
+                                type="button"
+                                className="a-link-button a-base-filter-bar__remove"
+                                onClick={handleClearFilters}
+                              >
+                                <span className="a-link-button__icon a-link-button__icon--blue">
+                                  <svg className="a-svg a-svg--medium">
+                                    <use
+                                      xlinkHref="#icon-cross"
+                                      xmlnsXlink="http://www.w3.org/1999/xlink"
+                                    />
+                                  </svg>
+                                </span>
+                                <span className="a-link-button__content a-link-button__content--blue" />
+                              </button>
+                            </div>
+                            <div
+                              body-scroll-lock-ignore=""
+                              className="a-base-filter-bar__container"
+                            >
+                              <div className="a-base-filter-bar__wrap">
+                                <ul className="a-base-filter-bar__list">
+                                  {activeFilterChips.map((chip) => (
+                                    <li
+                                      key={chip.id}
+                                      className="a-base-filter-bar__item"
+                                    >
+                                      <div
+                                        aria-label={chip.label}
+                                        title={chip.label}
+                                        className="a-ellipse-button a-ellipse-button--remove a-ellipse-button--color-blue"
+                                      >
+                                        <div
+                                          aria-label={chip.label}
+                                          title={chip.label}
+                                          className="a-ellipse-button__button"
+                                        >
+                                          <span className="a-ellipse-button__text">
+                                            {chip.label}
+                                          </span>
+                                        </div>
+                                        <button
+                                          type="button"
+                                          title="Убрать"
+                                          className="a-ellipse-button__remove"
+                                          onClick={() => handleRemoveChip(chip)}
+                                        >
+                                          <svg className="a-svg">
+                                            <use
+                                              xlinkHref="#icon-cross"
+                                              xmlnsXlink="http://www.w3.org/1999/xlink"
+                                            />
+                                          </svg>
+                                        </button>
+                                      </div>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="a-filter-modal-content__button">
+                          <button
+                            type="button"
+                            className="a-main-button a-main-button--display-block a-main-button--type-medium a-main-button--corner-round a-main-button--color-orange"
+                            onClick={handleFilterApply}
+                          >
+                            <span className="a-main-button__wrap">
+                              <span className="a-main-button__content">
+                                Показать {totalCount} товаров
+                              </span>
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

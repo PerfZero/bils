@@ -39,6 +39,7 @@ type BaseFilterProps = {
   onApply?: () => void;
   onClearAll?: () => void;
   totalCount?: number;
+  showActions?: boolean;
 };
 
 export function BaseFilter({
@@ -57,6 +58,7 @@ export function BaseFilter({
   onApply,
   onClearAll,
   totalCount,
+  showActions = true,
 }: BaseFilterProps) {
   const railRef = useRef<HTMLDivElement | null>(null);
   const [dragHandle, setDragHandle] = useState<"min" | "max" | null>(null);
@@ -492,76 +494,82 @@ export function BaseFilter({
                 </li>
               );
             })}
-            <li className="a-base-filter__action">
+            {showActions && (
+              <li className="a-base-filter__action">
+                <button
+                  className="a-main-button a-base-filter__all-filters a-main-button--display-block a-main-button--type-medium a-main-button--corner-round a-main-button--color-light-blue"
+                  style={{
+                    display: "none",
+                  }}
+                  type="button"
+                >
+                  <span className="a-main-button__wrap">
+                    <span className="a-main-button__content">Все фильтры</span>
+                  </span>
+                </button>
+                <button
+                  className="a-main-button a-main-button--display-block a-main-button--type-medium a-main-button--corner-round a-main-button--color-blue"
+                  type="button"
+                  onClick={onApply}
+                >
+                  <span className="a-main-button__wrap">
+                    <span
+                      className="seo-text a-main-button__content"
+                      style={{
+                        "--seo-text": `'Показать ${totalCount || 0} товаров'`,
+                      }}
+                    />
+                  </span>
+                </button>
+                <button
+                  aria-label="Очистить все"
+                  className="a-link-button"
+                  title="Очистить все"
+                  type="button"
+                  onClick={onClearAll}
+                >
+                  <span
+                    className="seo-text a-link-button__content a-link-button__content--blue"
+                    style={{
+                      "--seo-text": "'Очистить все'",
+                    }}
+                  />
+                </button>
+              </li>
+            )}
+          </ul>
+        </div>
+        {showActions && (
+          <>
+            <div
+              className="a-base-filter__flow"
+              style={{
+                display: "none",
+                top: "0px",
+              }}
+            >
               <button
-                className="a-main-button a-base-filter__all-filters a-main-button--display-block a-main-button--type-medium a-main-button--corner-round a-main-button--color-light-blue"
-                style={{
-                  display: "none",
-                }}
+                className="a-main-button a-main-button--display-inline a-main-button--type-medium a-main-button--corner-round a-main-button--color-blue"
                 type="button"
-              >
-                <span className="a-main-button__wrap">
-                  <span className="a-main-button__content">Все фильтры</span>
-                </span>
-              </button>
-              <button
-                className="a-main-button a-main-button--display-block a-main-button--type-medium a-main-button--corner-round a-main-button--color-blue"
-                type="button"
-                onClick={onApply}
               >
                 <span className="a-main-button__wrap">
                   <span
                     className="seo-text a-main-button__content"
                     style={{
-                      "--seo-text": `'Показать ${totalCount || 0} товаров'`,
+                      "--seo-text": "'Показать 10000 товаров'",
                     }}
                   />
                 </span>
               </button>
-              <button
-                aria-label="Очистить все"
-                className="a-link-button"
-                title="Очистить все"
-                type="button"
-                onClick={onClearAll}
-              >
-                <span
-                  className="seo-text a-link-button__content a-link-button__content--blue"
-                  style={{
-                    "--seo-text": "'Очистить все'",
-                  }}
-                />
-              </button>
-            </li>
-          </ul>
-        </div>
-        <div
-          className="a-base-filter__flow"
-          style={{
-            display: "none",
-            top: "0px",
-          }}
-        >
-          <button
-            className="a-main-button a-main-button--display-inline a-main-button--type-medium a-main-button--corner-round a-main-button--color-blue"
-            type="button"
-          >
-            <span className="a-main-button__wrap">
-              <span
-                className="seo-text a-main-button__content"
-                style={{
-                  "--seo-text": "'Показать 10000 товаров'",
-                }}
-              />
-            </span>
-          </button>
-        </div>
-        <div
-          className="v-portal"
-          style={{
-            display: "none",
-          }}
-        />
+            </div>
+            <div
+              className="v-portal"
+              style={{
+                display: "none",
+              }}
+            />
+          </>
+        )}
       </div>
     </div>
   );

@@ -20,6 +20,9 @@ const chunkItems = (items, size) => {
 export default function Header({ onProfileClick }) {
   const [isSticky, setIsSticky] = useState(false);
   const [isCatalogOpen, setIsCatalogOpen] = useState(false);
+  const [isHamburgerOpen, setIsHamburgerOpen] = useState(false);
+  const [isHamburgerCatalogOpen, setIsHamburgerCatalogOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [activeChildIndex, setActiveChildIndex] = useState(0);
   const [catalogItems, setCatalogItems] = useState([]);
@@ -34,6 +37,18 @@ export default function Header({ onProfileClick }) {
     window.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 568px)");
+    const update = () => setIsMobile(media.matches);
+    update();
+    if (media.addEventListener) {
+      media.addEventListener("change", update);
+      return () => media.removeEventListener("change", update);
+    }
+    media.addListener(update);
+    return () => media.removeListener(update);
   }, []);
 
   useEffect(() => {
@@ -460,7 +475,9 @@ export default function Header({ onProfileClick }) {
                           />
                         </svg>
                       </span>
-                      <span className="a-helper__label">Сравнение</span>
+                      {!isMobile && (
+                        <span className="a-helper__label">Сравнение</span>
+                      )}
                     </span>
                   </button>
                 </a>
@@ -534,7 +551,23 @@ export default function Header({ onProfileClick }) {
                 </button>
               </li>
             </ul>
-            <button type="button" title="Меню" className="a-bar__hamburger">
+            <button
+              type="button"
+              title="Меню"
+              className={
+                "a-bar__hamburger" +
+                (isHamburgerOpen ? " a-bar__hamburger--open" : "")
+              }
+              onClick={() =>
+                setIsHamburgerOpen((prev) => {
+                  if (prev) {
+                    setIsHamburgerCatalogOpen(false);
+                  }
+                  return !prev;
+                })
+              }
+              aria-expanded={isHamburgerOpen}
+            >
               <svg className="a-svg a-bar__hamburger-icon a-bar__hamburger-icon--open">
                 <use
                   xmlnsXlink="http://www.w3.org/1999/xlink"
@@ -551,6 +584,279 @@ export default function Header({ onProfileClick }) {
           </div>
         </div>
         <div className="a-header__constrain a-header__constrain--anchors-bar vue-portal-target" />
+        {isHamburgerOpen && (
+          <div className="hamburger">
+            <div className="hamburger__city">
+              <button
+                aria-label=""
+                title=""
+                type="button"
+                className="a-link-button"
+              >
+                <span className="a-link-button__icon a-link-button__icon--blue">
+                  <svg className="a-svg a-svg--sm">
+                    <use
+                      xmlnsXlink="http://www.w3.org/1999/xlink"
+                      xlinkHref="#icon-plane"
+                    />
+                  </svg>
+                </span>
+                <span className="a-link-button__content a-link-button__content--blue a-link-button__content--underline a-link-button__content--underline-dashed">
+                  <span>Москва</span>
+                </span>
+              </button>
+            </div>
+            <ul className="hamburger__menu">
+              <li className="hamburger__menu-item">
+                <button
+                  aria-label=""
+                  title=""
+                  type="button"
+                  className="a-link-button"
+                  onClick={onProfileClick}
+                >
+                  <span className="a-link-button__icon a-link-button__icon--orange">
+                    <svg className="a-svg a-svg--sm">
+                      <use
+                        xmlnsXlink="http://www.w3.org/1999/xlink"
+                        xlinkHref="#icon-person-stroke"
+                      />
+                    </svg>
+                  </span>
+                  <span className="a-link-button__content a-link-button__content--black">
+                    <span>Профиль</span>
+                  </span>
+                </button>
+              </li>
+              <li className="hamburger__menu-item">
+                <a href="/promo/" className="a-link-button">
+                  <span className="a-link-button__icon a-link-button__icon--blue">
+                    <svg className="a-svg a-svg--sm">
+                      <use
+                        xmlnsXlink="http://www.w3.org/1999/xlink"
+                        xlinkHref="#icon-menu-item-sale"
+                      />
+                    </svg>
+                  </span>
+                  <span className="a-link-button__content a-link-button__content--black">
+                    <span>Акции</span>
+                  </span>
+                </a>
+              </li>
+              <li className="hamburger__menu-item">
+                <div className="hamburger__item-horizon">
+                  <button
+                    aria-label=""
+                    title=""
+                    type="button"
+                    className="a-link-button"
+                    onClick={() => setIsHamburgerCatalogOpen((prev) => !prev)}
+                  >
+                    <span className="a-link-button__icon a-link-button__icon--blue">
+                      <svg className="a-svg a-svg--sm">
+                        <use
+                          xmlnsXlink="http://www.w3.org/1999/xlink"
+                          xlinkHref="#icon-catalog-navbar"
+                        />
+                      </svg>
+                    </span>
+                    <span className="a-link-button__content a-link-button__content--black">
+                      <span>Каталог товаров</span>
+                    </span>
+                  </button>
+                  <svg className="a-svg hamburger__menu-chevron--grey a-svg--small">
+                    <use
+                      xmlnsXlink="http://www.w3.org/1999/xlink"
+                      xlinkHref={
+                        isHamburgerCatalogOpen
+                          ? "#icon-chevron-up"
+                          : "#icon-chevron-down"
+                      }
+                    />
+                  </svg>
+                </div>
+                {isHamburgerCatalogOpen && (
+                  <ul className="hamburger__catalog">
+                    <li className="hamburger__catalog-item">
+                      <a
+                        href="/catalog/instrument-5748/"
+                        className="a-link-button"
+                      >
+                        <span className="a-link-button__content a-link-button__content--black">
+                          Инструменты
+                        </span>
+                      </a>
+                    </li>
+                    <li className="hamburger__catalog-item">
+                      <a
+                        href="/catalog/vse-dlya-sada-i-ogoroda-5880/"
+                        className="a-link-button"
+                      >
+                        <span className="a-link-button__content a-link-button__content--black">
+                          Сад
+                        </span>
+                      </a>
+                    </li>
+                    <li className="hamburger__catalog-item">
+                      <a
+                        href="/catalog/otoplenie-6071/"
+                        className="a-link-button"
+                      >
+                        <span className="a-link-button__content a-link-button__content--black">
+                          Отопление
+                        </span>
+                      </a>
+                    </li>
+                    <li className="hamburger__catalog-item">
+                      <a
+                        href="/catalog/vodosnabzhenie-santekhnika-i-otoplenie-6069/"
+                        className="a-link-button"
+                      >
+                        <span className="a-link-button__content a-link-button__content--black">
+                          Водоснабжение
+                        </span>
+                      </a>
+                    </li>
+                    <li className="hamburger__catalog-item">
+                      <a
+                        href="/catalog/svarochnoe-oborudovanie-6350/"
+                        className="a-link-button"
+                      >
+                        <span className="a-link-button__content a-link-button__content--black">
+                          Сварка
+                        </span>
+                      </a>
+                    </li>
+                    <li className="hamburger__catalog-item">
+                      <a
+                        href="/catalog/stroitelnaya-tekhnika-6029/"
+                        className="a-link-button"
+                      >
+                        <span className="a-link-button__content a-link-button__content--black">
+                          Техника
+                        </span>
+                      </a>
+                    </li>
+                    <li className="hamburger__catalog-item">
+                      <button
+                        aria-label="Все категории"
+                        title="Все категории"
+                        type="button"
+                        className="a-link-button"
+                      >
+                        <span className="a-link-button__content a-link-button__content--black">
+                          Все категории
+                        </span>
+                      </button>
+                    </li>
+                  </ul>
+                )}
+              </li>
+              <li className="hamburger__menu-item">
+                <a href="/brands/" className="a-link-button">
+                  <span className="a-link-button__icon a-link-button__icon--blue">
+                    <svg className="a-svg a-svg--sm">
+                      <use
+                        xmlnsXlink="http://www.w3.org/1999/xlink"
+                        xlinkHref="#icon-menu-item-catalog"
+                      />
+                    </svg>
+                  </span>
+                  <span className="a-link-button__content a-link-button__content--black">
+                    <span>Бренды</span>
+                  </span>
+                </a>
+              </li>
+              <li className="hamburger__menu-item">
+                <a href="/shops/" className="a-link-button">
+                  <span className="a-link-button__icon a-link-button__icon--blue">
+                    <svg className="a-svg a-svg--sm">
+                      <use
+                        xmlnsXlink="http://www.w3.org/1999/xlink"
+                        xlinkHref="#icon-menu-item-shops"
+                      />
+                    </svg>
+                  </span>
+                  <span className="a-link-button__content a-link-button__content--black">
+                    <span>Магазины</span>
+                  </span>
+                </a>
+              </li>
+            </ul>
+            <div>
+              <div className="hamburger__contacts-label">Интернет-магазин</div>
+              <a
+                href="tel:+74951525679"
+                className="a-link-button hamburger__contacts-link"
+              >
+                <span className="a-link-button__content a-link-button__content--blue">
+                  8 (495) 152-56-79
+                </span>
+              </a>
+            </div>
+            <ul>
+              <li className="hamburger__link">
+                <a href="/about/" className="a-link-button">
+                  <span className="a-link-button__content a-link-button__content--grey">
+                    О компании
+                  </span>
+                </a>
+              </li>
+              <li className="hamburger__link">
+                <a href="/corporate/" className="a-link-button">
+                  <span className="a-link-button__content a-link-button__content--grey">
+                    Юридическим лицам
+                  </span>
+                </a>
+              </li>
+              <li className="hamburger__link">
+                <a href="/service/" className="a-link-button">
+                  <span className="a-link-button__content a-link-button__content--grey">
+                    Сервисный центр
+                  </span>
+                </a>
+              </li>
+              <li className="hamburger__link">
+                <a href="/customer/delivery/" className="a-link-button">
+                  <span className="a-link-button__content a-link-button__content--grey">
+                    Условия доставки
+                  </span>
+                </a>
+              </li>
+              <li className="hamburger__link">
+                <button
+                  aria-label="Статус заказа"
+                  title="Статус заказа"
+                  type="button"
+                  className="a-link-button"
+                >
+                  <span className="a-link-button__content a-link-button__content--grey">
+                    Статус заказа
+                  </span>
+                </button>
+              </li>
+              <li className="hamburger__link">
+                <button
+                  aria-label="Оплатить заказ"
+                  title="Оплатить заказ"
+                  type="button"
+                  className="a-link-button"
+                >
+                  <span className="a-link-button__content a-link-button__content--grey">
+                    Оплатить заказ
+                  </span>
+                </button>
+              </li>
+              <li className="hamburger__link">
+                <a href="/shops/" className="a-link-button">
+                  <span className="a-link-button__content a-link-button__content--grey">
+                    Контакты
+                  </span>
+                </a>
+              </li>
+            </ul>
+          </div>
+        )}
       </div>
       <div className="a-header__bottom">
         <div className="a-header__container a-bar">
