@@ -173,6 +173,7 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
 class BrandViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Brand.objects.filter(is_active=True).order_by("letter", "order", "name")
     serializer_class = BrandSerializer
+    pagination_class = None
 
     def get_queryset(self):
         queryset = super().get_queryset()
