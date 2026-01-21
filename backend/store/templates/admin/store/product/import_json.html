@@ -168,6 +168,13 @@
                         errorsListEl.appendChild(li);
                     });
                 }
+                if (payload.skip_errors && payload.skip_errors.length) {
+                    payload.skip_errors.forEach(function (entry) {
+                        var li = document.createElement("li");
+                        li.textContent = entry;
+                        errorsListEl.appendChild(li);
+                    });
+                }
             }
         };
 

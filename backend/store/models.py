@@ -1,6 +1,7 @@
 import uuid
 from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.conf import settings
 from mptt.models import MPTTModel, TreeForeignKey
 
 
@@ -78,7 +79,7 @@ class Product(models.Model):
     )
     code = models.CharField("Код", max_length=50, blank=True)
     article = models.CharField("Артикул", max_length=50, blank=True)
-    name = models.CharField("Название", max_length=200)
+    name = models.CharField("Название", max_length=255)
     slug = models.SlugField("Слаг", max_length=220, unique=True)
     description = models.TextField("Описание", blank=True)
     description_full = models.TextField("Описание для вкладки", blank=True)
@@ -111,6 +112,56 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class ProductImportLog(models.Model):
+    STATUS_QUEUED = "queued"
+    STATUS_RUNNING = "running"
+    STATUS_DONE = "done"
+    STATUS_ERROR = "error"
+
+    STATUS_CHOICES = [
+        (STATUS_QUEUED, "В очереди"),
+        (STATUS_RUNNING, "Выполняется"),
+        (STATUS_DONE, "Завершен"),
+        (STATUS_ERROR, "Ошибка"),
+    ]
+
+    created_at = models.DateTimeField("Создан", auto_now_add=True)
+    updated_at = models.DateTimeField("Обновлен", auto_now=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name="product_import_logs",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Пользователь",
+    )
+    file_name = models.CharField("Файл", max_length=255, blank=True)
+    job_id = models.UUIDField("ID задачи", null=True, blank=True, db_index=True)
+    status = models.CharField(
+        "Статус", max_length=20, choices=STATUS_CHOICES, default=STATUS_QUEUED
+    )
+    total = models.PositiveIntegerField("Всего", default=0)
+    processed = models.PositiveIntegerField("Обработано", default=0)
+    created = models.PositiveIntegerField("Создано", default=0)
+    updated = models.PositiveIntegerField("Обновлено", default=0)
+    skipped = models.PositiveIntegerField("Пропущено", default=0)
+    errors = models.PositiveIntegerField("Ошибок", default=0)
+    image_count = models.PositiveIntegerField("Изображений", default=0)
+    image_attempts = models.PositiveIntegerField("Попыток загрузки", default=0)
+    image_errors = models.JSONField("Ошибки изображений", default=list, blank=True)
+    import_errors = models.JSONField("Ошибки импорта", default=list, blank=True)
+    skip_errors = models.JSONField("Причины пропусков", default=list, blank=True)
+    error_message = models.TextField("Ошибка", blank=True)
+
+    class Meta:
+        verbose_name = "Лог импорта товаров"
+        verbose_name_plural = "Логи импорта товаров"
+        ordering = ["-created_at", "-id"]
+
+    def __str__(self):
+        return f"Импорт {self.created_at:%Y-%m-%d %H:%M:%S}"
 
 
 class ProductComplectation(models.Model):

@@ -18,11 +18,23 @@ const chunkItems = (items, size) => {
 };
 
 export default function Header({ onProfileClick }) {
+  const [isSticky, setIsSticky] = useState(false);
   const [isCatalogOpen, setIsCatalogOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [activeChildIndex, setActiveChildIndex] = useState(0);
   const [catalogItems, setCatalogItems] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsSticky(window.scrollY > 0);
+    };
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -63,9 +75,124 @@ export default function Header({ onProfileClick }) {
   const activeChild = activeItem?.children?.[activeChildIndex];
   const depthThreeColumns = chunkItems(activeChild?.children, 10);
   const brands = activeItem?.brands ?? [];
+  const isStickyCatalogOpen = isCatalogOpen && isSticky;
+  const isBottomCatalogOpen = isCatalogOpen && !isSticky;
+
+  const renderCatalogPlane = (isOpen) => (
+    <div className="js-menu__plane a-menu__plane" style={{ height: "640px" }}>
+      <div
+        className="a-menu__depth a-menu__depth--1"
+        style={{ display: isOpen ? "block" : "none" }}
+      >
+        <ul className="a-menu__list">
+          {loading ? (
+            <li className="a-menu__item a-menu__item--list">
+              <span className="a-menu__link">Загрузка...</span>
+            </li>
+          ) : (
+            catalogItems.map((item, index) => (
+              <li
+                key={item.href}
+                className={`a-menu__item a-menu__item--list${
+                  activeIndex === index ? " a-menu__item--active" : ""
+                }`}
+                onMouseEnter={() => {
+                  setActiveIndex(index);
+                  setActiveChildIndex(0);
+                }}
+              >
+                <a href={item.href} className="a-menu__link">
+                  <span>{item.label}</span>
+                </a>
+              </li>
+            ))
+          )}
+        </ul>
+      </div>
+      {isOpen && activeItem?.children?.length > 0 && (
+        <div className="a-menu__depth a-menu__depth--2">
+          <div className="a-menu__group a-menu__group--active">
+            <a href={activeItem.href} className="a-menu__title">
+              {activeItem.label}
+            </a>
+            <ul className="a-menu__list">
+              {activeItem.children.map((child, index) => (
+                <li
+                  key={child.href}
+                  className={`a-menu__item a-menu__item--list${
+                    activeChildIndex === index ? " a-menu__item--active" : ""
+                  }`}
+                  onMouseEnter={() => setActiveChildIndex(index)}
+                >
+                  <a href={child.href} className="a-menu__link">
+                    <span>{child.label}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+      {isOpen && depthThreeColumns.length > 0 && (
+        <div className="a-menu__depth a-menu__depth--3">
+          <div className="a-menu__group a-menu__group--active">
+            <a href={activeChild.href} className="a-menu__title">
+              {activeChild.label}
+            </a>
+            <div className="a-menu__columns">
+              {depthThreeColumns.map((column, columnIndex) => (
+                <div className="a-menu__column" key={columnIndex}>
+                  <div>
+                    <ul className="a-menu__list">
+                      {column.map((childItem) => (
+                        <li className="a-menu__item" key={childItem.href}>
+                          <a href={childItem.href} className="a-menu__link">
+                            <span>{childItem.label}</span>
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+      {isOpen && brands.length > 0 && (
+        <div className="a-menu__depth a-menu__depth--4">
+          <div className="a-menu__title">Популярные бренды</div>
+          <ul className="a-menu__list">
+            {brands.map((brand) => (
+              <a
+                key={brand.href}
+                href={brand.href}
+                className="a-picture-card a-menu__item-picture"
+                code={activeItem.code}
+              >
+                <img
+                  src={brand.src}
+                  alt={brand.alt}
+                  className="a-picture-card__picture a-lazy-load a-is-loaded"
+                />
+                <span />
+              </a>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
 
   return (
-    <header className="a-header a-page__header a-header--main-desktop">
+    <header
+      className={`a-header a-page__header a-header--main-desktop${
+        isSticky ? " a-header--sticky-desktop" : ""
+      }`}
+    >
+      {isCatalogOpen && (
+        <div className="a-overlay" onClick={() => setIsCatalogOpen(false)} />
+      )}
       <div className="a-header__stub" />
       <div className="a-header__top">
         <div className="a-header__container a-bar">
@@ -201,16 +328,36 @@ export default function Header({ onProfileClick }) {
               </Link>
             </div>
             <div className="a-bar__buttons">
-              <div className="a-menu__item a-menu__item--main a-menu__item--list">
-                <div className="a-bar__button a-button a-button--orange">
+              <div
+                className={`a-menu__item a-menu__item--main a-menu__item--list${
+                  isStickyCatalogOpen ? " a-menu__item--active" : ""
+                }`}
+              >
+                <div
+                  role="button"
+                  tabIndex={0}
+                  className="a-bar__button a-button a-button--orange"
+                  onClick={() => setIsCatalogOpen((prev) => !prev)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setIsCatalogOpen((prev) => !prev);
+                    }
+                  }}
+                >
                   <span>Каталог товаров</span>{" "}
                   <svg className="a-svg a-menu__icon">
                     <use
                       xmlnsXlink="http://www.w3.org/1999/xlink"
-                      xlinkHref="#icon-old-hamburger-open-right"
+                      xlinkHref={
+                        isStickyCatalogOpen
+                          ? "#icon-old-hamburger-close"
+                          : "#icon-old-hamburger-open-right"
+                      }
                     />
                   </svg>
                 </div>
+                {renderCatalogPlane(isStickyCatalogOpen)}
               </div>
             </div>
             <div className="a-bar__search">
@@ -408,12 +555,6 @@ export default function Header({ onProfileClick }) {
       <div className="a-header__bottom">
         <div className="a-header__container a-bar">
           <div className="a-bar__menu">
-            {isCatalogOpen && (
-              <div
-                className="a-overlay a-overlay--active"
-                onClick={() => setIsCatalogOpen(false)}
-              />
-            )}
             <nav
               className="js-menu a-menu"
               onMouseLeave={() => {
@@ -424,14 +565,14 @@ export default function Header({ onProfileClick }) {
               <ul className="a-menu__list">
                 <li
                   className={`a-menu__item a-menu__item--main a-menu__item--list${
-                    isCatalogOpen ? " a-menu__item--active" : ""
+                    isBottomCatalogOpen ? " a-menu__item--active" : ""
                   }`}
                 >
                   <button
                     type="button"
                     className="a-main-button a-menu__link a-main-button--display-inline a-main-button--type-medium a-main-button--corner-round"
                     onClick={() => setIsCatalogOpen((prev) => !prev)}
-                    aria-expanded={isCatalogOpen}
+                    aria-expanded={isBottomCatalogOpen}
                   >
                     <span className="a-main-button__wrap">
                       <span className="a-main-button__constrain">
@@ -455,117 +596,7 @@ export default function Header({ onProfileClick }) {
                     className="js-menu__plane a-menu__plane"
                     style={{ height: "640px" }}
                   >
-                    <div
-                      className="a-menu__depth a-menu__depth--1"
-                      style={{ display: isCatalogOpen ? "block" : "none" }}
-                    >
-                      <ul className="a-menu__list">
-                        {loading ? (
-                          <li className="a-menu__item a-menu__item--list">
-                            <span className="a-menu__link">Загрузка...</span>
-                          </li>
-                        ) : (
-                          catalogItems.map((item, index) => (
-                            <li
-                              key={item.href}
-                              className={`a-menu__item a-menu__item--list${
-                                activeIndex === index
-                                  ? " a-menu__item--active"
-                                  : ""
-                              }`}
-                              onMouseEnter={() => {
-                                setActiveIndex(index);
-                                setActiveChildIndex(0);
-                              }}
-                            >
-                              <a href={item.href} className="a-menu__link">
-                                <span>{item.label}</span>
-                              </a>
-                            </li>
-                          ))
-                        )}
-                      </ul>
-                    </div>
-                    {isCatalogOpen && activeItem?.children?.length > 0 && (
-                      <div className="a-menu__depth a-menu__depth--2">
-                        <div className="a-menu__group a-menu__group--active">
-                          <a href={activeItem.href} className="a-menu__title">
-                            {activeItem.label}
-                          </a>
-                          <ul className="a-menu__list">
-                            {activeItem.children.map((child, index) => (
-                              <li
-                                key={child.href}
-                                className={`a-menu__item a-menu__item--list${
-                                  activeChildIndex === index
-                                    ? " a-menu__item--active"
-                                    : ""
-                                }`}
-                                onMouseEnter={() => setActiveChildIndex(index)}
-                              >
-                                <a href={child.href} className="a-menu__link">
-                                  <span>{child.label}</span>
-                                </a>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    )}
-                    {isCatalogOpen && depthThreeColumns.length > 0 && (
-                      <div className="a-menu__depth a-menu__depth--3">
-                        <div className="a-menu__group a-menu__group--active">
-                          <a href={activeChild.href} className="a-menu__title">
-                            {activeChild.label}
-                          </a>
-                          <div className="a-menu__columns">
-                            {depthThreeColumns.map((column, columnIndex) => (
-                              <div className="a-menu__column" key={columnIndex}>
-                                <div>
-                                  <ul className="a-menu__list">
-                                    {column.map((childItem) => (
-                                      <li
-                                        className="a-menu__item"
-                                        key={childItem.href}
-                                      >
-                                        <a
-                                          href={childItem.href}
-                                          className="a-menu__link"
-                                        >
-                                          <span>{childItem.label}</span>
-                                        </a>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    {isCatalogOpen && brands.length > 0 && (
-                      <div className="a-menu__depth a-menu__depth--4">
-                        <div className="a-menu__title">Популярные бренды</div>
-                        <ul className="a-menu__list">
-                          {brands.map((brand) => (
-                            <a
-                              key={brand.href}
-                              href={brand.href}
-                              className="a-picture-card a-menu__item-picture"
-                              code={activeItem.code}
-                            >
-                              <img
-                                src={brand.src}
-                                alt={brand.alt}
-                                className="a-picture-card__picture a-lazy-load a-is-loaded"
-                              />
-                              <span />
-                            </a>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                    {renderCatalogPlane(isBottomCatalogOpen)}
                   </div>
                 </li>
                 <li className="a-menu__item">

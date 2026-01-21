@@ -94,10 +94,7 @@ function buildQuery({ letter, category }) {
 }
 
 export default function BrandsPage() {
-  const breadcrumbs = [
-    { label: "Главная", href: "/" },
-    { label: "Бренды" },
-  ];
+  const breadcrumbs = [{ label: "Главная", href: "/" }, { label: "Бренды" }];
   const searchParams = useSearchParams();
   const selectedLetter = normalizeLetter(searchParams.get("letter"));
   const selectedCategory = searchParams.get("category") || "";
@@ -121,7 +118,8 @@ export default function BrandsPage() {
           `${API_BASE_URL}/api/brands/${query ? `?${query}` : ""}`,
         );
         const data = await response.json();
-        setBrands(Array.isArray(data) ? data : []);
+        const items = Array.isArray(data?.results) ? data.results : data;
+        setBrands(Array.isArray(items) ? items : []);
       } catch (error) {
         console.error("Failed to fetch brands:", error);
         setBrands([]);
@@ -207,7 +205,9 @@ export default function BrandsPage() {
                           })}`}
                           title={letter}
                         >
-                          <span className="a-ellipse-button__text">{letter}</span>
+                          <span className="a-ellipse-button__text">
+                            {letter}
+                          </span>
                         </a>
                       </div>
                     </li>
@@ -238,7 +238,9 @@ export default function BrandsPage() {
                           })}`}
                           title={letter}
                         >
-                          <span className="a-ellipse-button__text">{letter}</span>
+                          <span className="a-ellipse-button__text">
+                            {letter}
+                          </span>
                         </a>
                       </div>
                     </li>

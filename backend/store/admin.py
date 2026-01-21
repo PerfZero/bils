@@ -34,6 +34,7 @@ from .models import (
     ProductComplectation,
     ProductDocument,
     ProductReview,
+    ProductImportLog,
     FAQCategory,
     FAQQuestion,
 )
@@ -160,6 +161,11 @@ class ProductAdmin(admin.ModelAdmin):
     def _update_import_status(self, job_id, payload):
         cache.set(self._cache_key(job_id), payload, timeout=60 * 60)
 
+    def _update_import_log(self, log_id, payload):
+        if not log_id:
+            return
+        ProductImportLog.objects.filter(id=log_id).update(**payload)
+
     def _process_import(
         self,
         items,
@@ -167,6 +173,7 @@ class ProductAdmin(admin.ModelAdmin):
         default_category,
         download_images,
         job_id=None,
+        log_id=None,
     ):
         created_count = 0
         updated_count = 0
@@ -176,30 +183,48 @@ class ProductAdmin(admin.ModelAdmin):
         image_attempts = 0
         image_errors = []
         import_errors = []
+        skip_errors = []
         processed = 0
         total = len(items)
 
         def emit():
-            if job_id is None:
-                return
-            self._update_import_status(
-                job_id,
+            if job_id is not None:
+                self._update_import_status(
+                    job_id,
+                    {
+                        "status": "running",
+                        "processed": processed,
+                        "total": total,
+                        "created": created_count,
+                        "updated": updated_count,
+                        "skipped": skipped_count,
+                        "errors": error_count,
+                        "images": image_count,
+                        "image_attempts": image_attempts,
+                        "image_errors": image_errors,
+                        "import_errors": import_errors,
+                        "skip_errors": skip_errors,
+                    },
+                )
+            self._update_import_log(
+                log_id,
                 {
-                    "status": "running",
+                    "status": ProductImportLog.STATUS_RUNNING,
                     "processed": processed,
                     "total": total,
                     "created": created_count,
                     "updated": updated_count,
                     "skipped": skipped_count,
                     "errors": error_count,
-                    "images": image_count,
+                    "image_count": image_count,
                     "image_attempts": image_attempts,
                     "image_errors": image_errors,
                     "import_errors": import_errors,
+                    "skip_errors": skip_errors,
                 },
             )
 
-        if job_id is not None:
+        if job_id is not None or log_id is not None:
             emit()
 
         if categories_payload:
@@ -209,18 +234,25 @@ class ProductAdmin(admin.ModelAdmin):
             processed += 1
             if not isinstance(item, dict):
                 skipped_count += 1
+                if len(skip_errors) < 10:
+                    skip_errors.append("skip: invalid item")
                 emit()
                 continue
 
             name = (item.get("name") or "").strip()
             if not name:
                 skipped_count += 1
+                if len(skip_errors) < 10:
+                    skip_errors.append("skip: missing name")
                 emit()
                 continue
 
             price = parse_decimal(item.get("price"))
             if price is None:
                 skipped_count += 1
+                if len(skip_errors) < 10:
+                    ref = (item.get("slug") or item.get("href") or name)[:200]
+                    skip_errors.append(f"skip: missing price ({ref})")
                 emit()
                 continue
 
@@ -244,6 +276,9 @@ class ProductAdmin(admin.ModelAdmin):
                     )
                     if not category:
                         skipped_count += 1
+                        if len(skip_errors) < 10:
+                            ref = (slug or item.get("href") or name)[:200]
+                            skip_errors.append(f"skip: missing category ({ref})")
                         emit()
                         continue
 
@@ -447,11 +482,12 @@ class ProductAdmin(admin.ModelAdmin):
             "image_attempts": image_attempts,
             "image_errors": image_errors,
             "import_errors": import_errors,
+            "skip_errors": skip_errors,
         }
         return summary
 
     def _run_import_job(
-        self, job_id, items, categories_payload, default_category, download_images
+        self, job_id, items, categories_payload, default_category, download_images, log_id
     ):
         close_old_connections()
         total = len(items)
@@ -462,6 +498,7 @@ class ProductAdmin(admin.ModelAdmin):
                 default_category,
                 download_images=download_images,
                 job_id=job_id,
+                log_id=log_id,
             )
             payload = {
                 "status": "done",
@@ -476,14 +513,36 @@ class ProductAdmin(admin.ModelAdmin):
                 "image_attempts": summary["image_attempts"],
                 "image_errors": summary["image_errors"],
                 "import_errors": summary.get("import_errors", []),
+                "skip_errors": summary.get("skip_errors", []),
                 "summary": summary,
             }
+            self._update_import_log(
+                log_id,
+                {
+                    "status": ProductImportLog.STATUS_DONE,
+                    "processed": total,
+                    "total": total,
+                    "created": summary["created"],
+                    "updated": summary["updated"],
+                    "skipped": summary["skipped"],
+                    "errors": summary["errors"],
+                    "image_count": summary["image_count"],
+                    "image_attempts": summary["image_attempts"],
+                    "image_errors": summary.get("image_errors", []),
+                    "import_errors": summary.get("import_errors", []),
+                    "skip_errors": summary.get("skip_errors", []),
+                },
+            )
         except Exception as exc:
             payload = {
                 "status": "error",
                 "finished": True,
                 "error": str(exc),
             }
+            self._update_import_log(
+                log_id,
+                {"status": ProductImportLog.STATUS_ERROR, "error_message": str(exc)},
+            )
         self._update_import_status(job_id, payload)
 
     def import_status_view(self, request, job_id):
@@ -526,8 +585,19 @@ class ProductAdmin(admin.ModelAdmin):
                     )
                     return redirect("..")
 
+                uploaded_file = form.cleaned_data.get("file")
+                log = ProductImportLog.objects.create(
+                    user=request.user if request.user.is_authenticated else None,
+                    file_name=getattr(uploaded_file, "name", "") or "",
+                    status=ProductImportLog.STATUS_QUEUED,
+                    total=len(items),
+                )
+
                 if request.headers.get("X-Requested-With") == "XMLHttpRequest":
                     job_id = uuid.uuid4()
+                    ProductImportLog.objects.filter(id=log.id).update(
+                        job_id=job_id, status=ProductImportLog.STATUS_QUEUED
+                    )
                     self._update_import_status(
                         job_id,
                         {
@@ -542,6 +612,7 @@ class ProductAdmin(admin.ModelAdmin):
                             "image_attempts": 0,
                             "image_errors": [],
                             "import_errors": [],
+                            "skip_errors": [],
                         },
                     )
                     thread = threading.Thread(
@@ -552,17 +623,23 @@ class ProductAdmin(admin.ModelAdmin):
                             categories_payload,
                             default_category,
                             download_images,
+                            log.id,
                         ),
                         daemon=True,
                     )
                     thread.start()
                     return JsonResponse({"job_id": str(job_id)})
 
+                self._update_import_log(
+                    log.id,
+                    {"status": ProductImportLog.STATUS_RUNNING},
+                )
                 summary = self._process_import(
                     items,
                     categories_payload,
                     default_category,
                     download_images=download_images,
+                    log_id=log.id,
                 )
 
                 error_hint = ""
@@ -584,6 +661,23 @@ class ProductAdmin(admin.ModelAdmin):
                     if summary["errors"] == 0
                     else messages.WARNING,
                 )
+                self._update_import_log(
+                    log.id,
+                    {
+                        "status": ProductImportLog.STATUS_DONE,
+                        "processed": len(items),
+                        "total": len(items),
+                        "created": summary["created"],
+                        "updated": summary["updated"],
+                        "skipped": summary["skipped"],
+                        "errors": summary["errors"],
+                        "image_count": summary["image_count"],
+                        "image_attempts": summary["image_attempts"],
+                        "image_errors": summary.get("image_errors", []),
+                        "import_errors": summary.get("import_errors", []),
+                        "skip_errors": summary.get("skip_errors", []),
+                    },
+                )
                 return redirect("..")
             if request.headers.get("X-Requested-With") == "XMLHttpRequest":
                 return JsonResponse({"errors": form.errors}, status=400)
@@ -596,6 +690,46 @@ class ProductAdmin(admin.ModelAdmin):
             {"form": form, "title": "Импорт товаров"},
         )
 
+
+@admin.register(ProductImportLog)
+class ProductImportLogAdmin(admin.ModelAdmin):
+    list_display = (
+        "created_at",
+        "status",
+        "file_name",
+        "user",
+        "total",
+        "processed",
+        "created",
+        "updated",
+        "skipped",
+        "errors",
+    )
+    list_filter = ("status", "created_at", "user")
+    search_fields = ("file_name", "user__username", "user__email")
+    readonly_fields = (
+        "created_at",
+        "updated_at",
+        "user",
+        "file_name",
+        "job_id",
+        "status",
+        "total",
+        "processed",
+        "created",
+        "updated",
+        "skipped",
+        "errors",
+        "image_count",
+        "image_attempts",
+        "image_errors",
+        "import_errors",
+        "skip_errors",
+        "error_message",
+    )
+
+    def has_add_permission(self, request):
+        return False
 
 def parse_decimal(value):
     if value is None or value == "":
