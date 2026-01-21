@@ -46170,7 +46170,7 @@ a:hover {
     }
 
     .a-page-main__popular-categories .a-page-main__title {
-        margin-bottom: 24px;
+        margin-bottom: 24px !important;
     }
 
     .a-page-main__brands {
