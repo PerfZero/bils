@@ -325,6 +325,8 @@ export default function BrandsPage() {
                             <img
                               alt={brand.name}
                               className="a-lazy-load a-is-loaded"
+                              loading="lazy"
+                              decoding="async"
                               src={normalizeImageUrl(brand.logo)}
                             />
                           ) : (
