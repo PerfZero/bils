@@ -105,6 +105,11 @@ class ProductImportForm(forms.Form):
         required=False,
         help_text="Используется, если в JSON нет категории",
     )
+    download_images = forms.BooleanField(
+        label="Импортировать изображения",
+        required=False,
+        initial=True,
+    )
 
 
 @admin.register(Product)
@@ -434,7 +439,9 @@ class ProductAdmin(admin.ModelAdmin):
         }
         return summary
 
-    def _run_import_job(self, job_id, items, categories_payload, default_category):
+    def _run_import_job(
+        self, job_id, items, categories_payload, default_category, download_images
+    ):
         close_old_connections()
         total = len(items)
         try:
@@ -442,7 +449,7 @@ class ProductAdmin(admin.ModelAdmin):
                 items,
                 categories_payload,
                 default_category,
-                download_images=True,
+                download_images=download_images,
                 job_id=job_id,
             )
             payload = {
@@ -478,7 +485,7 @@ class ProductAdmin(admin.ModelAdmin):
             form = ProductImportForm(request.POST, request.FILES)
             if form.is_valid():
                 default_category = form.cleaned_data["category"]
-                download_images = True
+                download_images = form.cleaned_data.get("download_images", True)
 
                 try:
                     payload = json.loads(
@@ -526,7 +533,13 @@ class ProductAdmin(admin.ModelAdmin):
                     )
                     thread = threading.Thread(
                         target=self._run_import_job,
-                        args=(job_id, items, categories_payload, default_category),
+                        args=(
+                            job_id,
+                            items,
+                            categories_payload,
+                            default_category,
+                            download_images,
+                        ),
                         daemon=True,
                     )
                     thread.start()
@@ -667,6 +680,25 @@ def import_categories(categories, download_images):
     for category_data in categories:
         if not isinstance(category_data, dict):
             continue
+        parent = None
+        parent_data = category_data.get("parent") if isinstance(category_data, dict) else None
+        if isinstance(parent_data, dict):
+            parent_slug = (parent_data.get("slug") or "").strip()
+            parent_href = parent_data.get("href") or ""
+            if not parent_slug and parent_href:
+                parent_slug = category_slug_from_href(parent_href) or ""
+            parent_name = (parent_data.get("name") or "").strip()
+            if parent_slug:
+                parent, _ = Category.objects.get_or_create(
+                    slug=parent_slug,
+                    defaults={
+                        "name": parent_name or parent_slug,
+                        "is_active": True,
+                    },
+                )
+                if parent_name and parent.name != parent_name:
+                    parent.name = parent_name
+                    parent.save(update_fields=["name"])
         slug = (category_data.get("slug") or "").strip()
         href = category_data.get("href") or ""
         if not slug and href:
@@ -675,13 +707,18 @@ def import_categories(categories, download_images):
         image_url = category_data.get("image")
         if not slug:
             continue
+        if parent and parent.slug == slug:
+            parent = None
         category, created = Category.objects.get_or_create(
             slug=slug,
-            defaults={"name": name or slug, "is_active": True},
+            defaults={"name": name or slug, "is_active": True, "parent": parent},
         )
         if name and category.name != name:
             category.name = name
             category.save(update_fields=["name"])
+        if parent and category.parent_id != parent.id:
+            category.parent = parent
+            category.save(update_fields=["parent"])
         maybe_update_category_image(category, image_url, download_images)
 
 

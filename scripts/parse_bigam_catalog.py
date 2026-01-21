@@ -203,7 +203,7 @@ def extract_product_id(product_node):
     return None
 
 
-def extract_images(product_node, base_url, product_name, product_id):
+def extract_images(product_node, base_url, product_name, product_id, max_images=None):
     container = find_first(
         product_node,
         lambda n: n.tag == "div"
@@ -224,6 +224,8 @@ def extract_images(product_node, base_url, product_name, product_id):
                 "is_main": len(images) == 0,
             }
         )
+        if max_images and len(images) >= max_images:
+            break
     return images
 
 
@@ -493,7 +495,7 @@ def extract_documents_auto_text(parser_root):
     return text_content(text_node) or None
 
 
-def extract_gallery_images(root_node, base_url, product_name):
+def extract_gallery_images(root_node, base_url, product_name, max_images=None):
     gallery = find_first(
         root_node,
         lambda n: n.tag == "div" and has_class(n, "a-gallery-carousel__gallery"),
@@ -502,6 +504,8 @@ def extract_gallery_images(root_node, base_url, product_name):
     seen = set()
 
     def add_image(url):
+        if max_images and len(images) >= max_images:
+            return
         if not url:
             return
         normalized = normalize_url(url, base_url)
@@ -516,6 +520,8 @@ def extract_gallery_images(root_node, base_url, product_name):
                 "is_main": len(images) == 0,
             }
         )
+        if max_images and len(images) >= max_images:
+            return
 
     if gallery:
         for img in find_all(gallery, lambda n: n.tag == "img"):
@@ -601,7 +607,14 @@ def extract_price_block(product_node):
     }
 
 
-def parse_products(html, base_url, limit=None, page_url=None):
+def parse_products(
+    html,
+    base_url,
+    limit=None,
+    page_url=None,
+    category_context=None,
+    max_images=None,
+):
     parser = TreeBuilder()
     parser.feed(html)
     product_nodes = find_all(
@@ -609,7 +622,9 @@ def parse_products(html, base_url, limit=None, page_url=None):
         lambda n: n.tag == "li" and has_class(n, "a-product-list__item"),
     )
 
-    category = extract_category_context(html, base_url, page_url=page_url)
+    if category_context is None:
+        category_context = extract_category_context(html, base_url, page_url=page_url)
+    category = category_context
 
     products = []
     for node in product_nodes:
@@ -629,7 +644,9 @@ def parse_products(html, base_url, limit=None, page_url=None):
 
         product_id = extract_product_id(node)
         code = extract_code(node)
-        images = extract_images(node, base_url, name, product_id)
+        images = extract_images(
+            node, base_url, name, product_id, max_images=max_images
+        )
         image = images[0]["url"] if images else None
 
         price_data = extract_price_block(node)
@@ -657,6 +674,110 @@ def parse_products(html, base_url, limit=None, page_url=None):
             break
 
     return products
+
+
+def apply_category_parent(categories, category_context):
+    if not categories or not category_context:
+        return categories
+    parent_slug = category_context.get("slug")
+    if not parent_slug:
+        return categories
+    parent_payload = {
+        "name": category_context.get("name"),
+        "slug": parent_slug,
+        "href": category_context.get("href"),
+    }
+    for item in categories:
+        if not isinstance(item, dict):
+            continue
+        if item.get("slug") == parent_slug:
+            continue
+        item.setdefault("parent", parent_payload)
+    return categories
+
+
+def build_category_map(categories, breadcrumbs_list):
+    category_map = {}
+
+    def upsert(item, parent=None):
+        if not item:
+            return
+        slug = (item.get("slug") or "").strip()
+        if not slug:
+            return
+        entry = category_map.get(slug, {})
+        entry["slug"] = slug
+        entry["name"] = item.get("name") or entry.get("name")
+        entry["href"] = item.get("href") or entry.get("href")
+        image = item.get("image")
+        if image:
+            entry["image"] = image
+        if parent and parent.get("slug") != slug:
+            entry.setdefault(
+                "parent",
+                {
+                    "name": parent.get("name"),
+                    "slug": parent.get("slug"),
+                    "href": parent.get("href"),
+                },
+            )
+        category_map[slug] = entry
+
+    for item in categories or []:
+        if not isinstance(item, dict):
+            continue
+        upsert(item, parent=item.get("parent"))
+
+    for breadcrumbs in breadcrumbs_list or []:
+        if not isinstance(breadcrumbs, list):
+            continue
+        parent = None
+        for crumb in breadcrumbs:
+            if not isinstance(crumb, dict):
+                continue
+            href = crumb.get("href") or ""
+            if "/catalog/" not in href:
+                continue
+            upsert(crumb, parent=parent)
+            parent = {"name": crumb.get("name"), "slug": crumb.get("slug"), "href": href}
+
+    return category_map
+
+
+def fill_category_images(category_map, base_url):
+    for item in category_map.values():
+        if item.get("image"):
+            continue
+        href = item.get("href")
+        image = get_category_image(href, base_url) if href else None
+        if image:
+            item["image"] = image
+    return list(category_map.values())
+
+
+def extract_max_page(html):
+    pages = set()
+    for match in re.findall(r"[?&]PAGEN_1=(\d+)", html):
+        try:
+            pages.add(int(match))
+        except ValueError:
+            continue
+    for match in re.findall(r"/page-(\d+)/", html):
+        try:
+            pages.add(int(match))
+        except ValueError:
+            continue
+    return max(pages) if pages else 1
+
+
+def with_page_param(url, page_number):
+    if not url:
+        return url
+    parts = urllib.parse.urlparse(url)
+    query = urllib.parse.parse_qs(parts.query, keep_blank_values=True)
+    query["PAGEN_1"] = [str(page_number)]
+    new_query = urllib.parse.urlencode(query, doseq=True)
+    return urllib.parse.urlunparse(parts._replace(query=new_query))
 
 
 def fetch_html(url):
@@ -701,7 +822,7 @@ def get_category_image(href, base_url):
     return image
 
 
-def parse_product_page(html, base_url, page_url=None):
+def parse_product_page(html, base_url, page_url=None, max_images=None):
     parser = TreeBuilder()
     parser.feed(html)
 
@@ -710,7 +831,9 @@ def parse_product_page(html, base_url, page_url=None):
         lambda n: n.tag == "h1" and has_class(n, "a-page-detail__title"),
     )
     name = text_content(name_node) if name_node else None
-    gallery_images = extract_gallery_images(parser.root, base_url, name)
+    gallery_images = extract_gallery_images(
+        parser.root, base_url, name, max_images=max_images
+    )
     main_image = gallery_images[0]["url"] if gallery_images else None
 
     article = None
@@ -1116,6 +1239,32 @@ def main():
         "--limit", type=int, default=0, help="Limit number of products"
     )
     parser.add_argument(
+        "--pages",
+        help="Number of list pages to fetch, or 'all' for pagination",
+    )
+    parser.add_argument(
+        "--max-images",
+        type=int,
+        default=5,
+        help="Maximum number of images per product (0 for no limit)",
+    )
+    parser.add_argument(
+        "--category-images",
+        action="store_true",
+        help="Fetch category images from category pages (og:image)",
+    )
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=8,
+        help="Number of threads for product details fetching",
+    )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Print detailed progress while parsing",
+    )
+    parser.add_argument(
         "--details",
         action="store_true",
         help="Fetch product pages for breadcrumbs, code, article, ratings",
@@ -1138,12 +1287,18 @@ def main():
         input_path = Path(args.input)
         html = input_path.read_text(encoding="utf-8", errors="ignore")
     else:
+        if args.verbose and args.url:
+            print(f"Fetching page 1: {args.url}", flush=True)
         html = fetch_html(args.url or args.product_url)
 
     limit = args.limit if args.limit and args.limit > 0 else None
+    max_images = args.max_images if args.max_images and args.max_images > 0 else None
+
     if args.product_url or args.autotext_only:
         page_url = args.product_url or args.url
-        product = parse_product_page(html, args.base_url, page_url=page_url)
+        product = parse_product_page(
+            html, args.base_url, page_url=page_url, max_images=max_images
+        )
         if args.autotext_only:
             payload = {
                 "auto_text": product.get("auto_text"),
@@ -1164,19 +1319,25 @@ def main():
         return
 
     page_url = args.url if args.url else None
-    products = parse_products(html, args.base_url, limit=limit, page_url=page_url)
+    category_context = extract_category_context(
+        html, args.base_url, page_url=page_url
+    )
 
     if args.details:
-        for product in products:
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
+        def enrich_product(product):
             href = product.get("href")
             if not href:
-                continue
+                return
+            if args.verbose:
+                print(f"  Fetch product: {href}", flush=True)
             try:
                 detail_html = fetch_html(href)
             except Exception:
-                continue
+                return
             details = parse_product_page(
-                detail_html, args.base_url, page_url=href
+                detail_html, args.base_url, page_url=href, max_images=max_images
             )
             attributes_missing = not details.get("attributes")
             complectation_missing = not details.get("complectation_items")
@@ -1193,7 +1354,7 @@ def main():
                     spec_html = None
                 if spec_html:
                     spec_details = parse_product_page(
-                        spec_html, args.base_url, page_url=spec_url
+                        spec_html, args.base_url, page_url=spec_url, max_images=max_images
                     )
                     spec_attributes = spec_details.get("attributes") or []
                     if spec_attributes:
@@ -1220,7 +1381,10 @@ def main():
                     documents_html = None
                 if documents_html:
                     documents_details = parse_product_page(
-                        documents_html, args.base_url, page_url=documents_url
+                        documents_html,
+                        args.base_url,
+                        page_url=documents_url,
+                        max_images=max_images,
                     )
                     if documents_missing and documents_details.get("documents"):
                         details["documents"] = documents_details.get("documents")
@@ -1259,6 +1423,66 @@ def main():
     categories = extract_category_cards(html, args.base_url)
     if not categories:
         categories = extract_category_cards_from_nuxt(html, args.base_url)
+    categories = apply_category_parent(categories, category_context)
+
+    if args.pages and not args.url:
+        max_pages = 1
+    elif args.pages:
+        if str(args.pages).lower() == "all":
+            max_pages = extract_max_page(html)
+        else:
+            try:
+                max_pages = max(1, int(args.pages))
+            except ValueError:
+                max_pages = 1
+    else:
+        max_pages = 1
+
+    products = []
+    breadcrumbs_list = []
+    for page_number in range(1, max_pages + 1):
+        if page_number == 1:
+            page_html = html
+            page_url = args.url if args.url else None
+        else:
+            page_url = with_page_param(args.url, page_number)
+            if args.verbose:
+                print(f"Fetching page {page_number}: {page_url}", flush=True)
+            page_html = fetch_html(page_url)
+        if args.verbose:
+            print(f"Parsing page {page_number}", flush=True)
+        page_products = parse_products(
+            page_html,
+            args.base_url,
+            limit=limit,
+            page_url=page_url,
+            category_context=category_context,
+            max_images=max_images,
+        )
+        if args.verbose:
+            print(f"Found {len(page_products)} products on page {page_number}", flush=True)
+        if args.details:
+            workers = max(1, int(args.workers or 1))
+            if args.verbose:
+                print(f"Fetching details with {workers} threads", flush=True)
+            with ThreadPoolExecutor(max_workers=workers) as executor:
+                futures = [executor.submit(enrich_product, product) for product in page_products]
+                for future in as_completed(futures):
+                    try:
+                        future.result()
+                    except Exception:
+                        if args.verbose:
+                            print("  Error while fetching product details", flush=True)
+            for product in page_products:
+                if isinstance(product, dict) and product.get("breadcrumbs"):
+                    breadcrumbs_list.append(product.get("breadcrumbs"))
+        products.extend(page_products)
+        if args.verbose:
+            print(f"Total products so far: {len(products)}", flush=True)
+
+    if args.category_images:
+        category_map = build_category_map(categories, breadcrumbs_list)
+        categories = fill_category_images(category_map, args.base_url)
     if categories:
         payload = {"products": products, "categories": categories}
     else:

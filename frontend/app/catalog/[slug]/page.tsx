@@ -71,39 +71,33 @@ export default function CatalogSlugPage({ params }) {
           ? rootPayload
           : rootPayload.results || [];
 
-        let foundCategory = null;
-        let categoryPath = [];
-
-        // Ищем категорию и строим путь
-        for (const rootCat of rootData) {
-          if (rootCat.slug === params.slug) {
-            foundCategory = rootCat;
-            categoryPath = [rootCat];
-            break;
-          }
-
-          // Ищем во втором уровне
-          for (const child of rootCat.children) {
-            if (child.slug === params.slug) {
-              foundCategory = child;
-              categoryPath = [rootCat, child];
-              break;
+        const findCategoryPath = (nodes, targetSlug, path = []) => {
+          for (const node of nodes || []) {
+            const nextPath = [...path, node];
+            if (node.slug === targetSlug) {
+              return nextPath;
             }
-
-            // Ищем в третьем уровне
-            for (const subChild of child.children || []) {
-              if (subChild.slug === params.slug) {
-                foundCategory = subChild;
-                categoryPath = [rootCat, child, subChild];
-                break;
-              }
+            const found = findCategoryPath(
+              node.children || [],
+              targetSlug,
+              nextPath,
+            );
+            if (found) {
+              return found;
             }
-            if (foundCategory) break;
           }
-          if (foundCategory) break;
-        }
+          return null;
+        };
 
-        setCategory({ ...foundCategory, path: categoryPath });
+        const categoryPath = findCategoryPath(rootData, params.slug) || [];
+        const foundCategory =
+          categoryPath.length > 0
+            ? categoryPath[categoryPath.length - 1]
+            : null;
+
+        setCategory(
+          foundCategory ? { ...foundCategory, path: categoryPath } : null,
+        );
 
         // Отладка
         console.log("Found category:", foundCategory);
@@ -313,20 +307,12 @@ export default function CatalogSlugPage({ params }) {
 
   const breadcrumbs = category?.path?.map((cat, index) => {
     const isLast = index === category.path.length - 1;
-    const hasDropdown = index === 0 && category.path.length > 1; // Добавляем dropdown только для корневой категории
-
-    console.log(`Breadcrumbs ${index}:`, cat);
-    console.log(`Has dropdown:`, hasDropdown);
-    console.log(
-      `Dropdown items:`,
-      hasDropdown ? category.path[0].children || [] : [],
-    );
+    const hasDropdown = index === 0 && category.path.length > 1;
 
     return {
       label: cat.name,
       href: isLast ? null : cat.href,
-      hasDropdown: hasDropdown,
-      dropdownItems: hasDropdown
+      dropdown: hasDropdown
         ? category.path[0].children?.map((child) => ({
             label: child.name,
             href: child.href,
