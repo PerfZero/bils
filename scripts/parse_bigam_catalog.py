@@ -763,7 +763,25 @@ def fill_category_images(category_map, base_url):
 
 def extract_max_page(html):
     pages = set()
+    for match in re.findall(r'"pageCount"\s*:\s*"?(\d+)"?', html):
+        try:
+            pages.add(int(match))
+        except ValueError:
+            continue
+    for match in re.findall(r'"totalPages"\s*:\s*"?(\d+)"?', html):
+        try:
+            pages.add(int(match))
+        except ValueError:
+            continue
+    if pages:
+        return max(pages)
+    pages = set()
     for match in re.findall(r"[?&]PAGEN_1=(\d+)", html):
+        try:
+            pages.add(int(match))
+        except ValueError:
+            continue
+    for match in re.findall(r"[?&]page=(\d+)", html):
         try:
             pages.add(int(match))
         except ValueError:
@@ -781,7 +799,7 @@ def with_page_param(url, page_number):
         return url
     parts = urllib.parse.urlparse(url)
     query = urllib.parse.parse_qs(parts.query, keep_blank_values=True)
-    query["PAGEN_1"] = [str(page_number)]
+    query["page"] = [str(page_number)]
     new_query = urllib.parse.urlencode(query, doseq=True)
     return urllib.parse.urlunparse(parts._replace(query=new_query))
 
@@ -1489,7 +1507,9 @@ def main():
     elif args.pages:
         if str(args.pages).lower() == "all":
             pages_all = True
-            max_pages = None
+            max_pages = extract_max_page(html)
+            if max_pages <= 1:
+                max_pages = None
         else:
             try:
                 max_pages = max(1, int(args.pages))
@@ -1497,11 +1517,19 @@ def main():
                 max_pages = 1
     else:
         max_pages = 1
+    if args.verbose:
+        if pages_all:
+            if max_pages is None:
+                print("Pages: auto (no max found)", flush=True)
+            else:
+                print(f"Pages: auto (max {max_pages})", flush=True)
+        else:
+            print(f"Pages: {max_pages}", flush=True)
 
     products = []
     breadcrumbs_list = []
     page_number = 1
-    max_pages_cap = 200 if pages_all else None
+    max_pages_cap = 200 if pages_all and max_pages is None else None
     while True:
         if page_number == 1:
             page_html = html
@@ -1548,7 +1576,7 @@ def main():
         products.extend(page_products)
         if args.verbose:
             print(f"Total products so far: {len(products)}", flush=True)
-        if pages_all:
+        if pages_all and max_pages is None:
             if not page_products:
                 if args.verbose:
                     print(f"No products on page {page_number}; stopping.", flush=True)

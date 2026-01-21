@@ -175,6 +175,7 @@ class ProductAdmin(admin.ModelAdmin):
         image_count = 0
         image_attempts = 0
         image_errors = []
+        import_errors = []
         processed = 0
         total = len(items)
 
@@ -194,239 +195,248 @@ class ProductAdmin(admin.ModelAdmin):
                     "images": image_count,
                     "image_attempts": image_attempts,
                     "image_errors": image_errors,
+                    "import_errors": import_errors,
                 },
             )
 
         if job_id is not None:
             emit()
 
-        with transaction.atomic():
-            if categories_payload:
+        if categories_payload:
+            with transaction.atomic():
                 import_categories(categories_payload, download_images)
-            for item in items:
-                processed += 1
-                if not isinstance(item, dict):
-                    skipped_count += 1
-                    emit()
-                    continue
+        for item in items:
+            processed += 1
+            if not isinstance(item, dict):
+                skipped_count += 1
+                emit()
+                continue
 
-                name = (item.get("name") or "").strip()
-                if not name:
-                    skipped_count += 1
-                    emit()
-                    continue
+            name = (item.get("name") or "").strip()
+            if not name:
+                skipped_count += 1
+                emit()
+                continue
 
-                price = parse_decimal(item.get("price"))
-                if price is None:
-                    skipped_count += 1
-                    emit()
-                    continue
+            price = parse_decimal(item.get("price"))
+            if price is None:
+                skipped_count += 1
+                emit()
+                continue
 
-                code = (item.get("code") or "").strip() or None
-                article = (item.get("article") or "").strip() or None
-                slug = (item.get("slug") or "").strip() or None
-                description = item.get("description") or ""
-                description_full = item.get("description_full") or ""
-                auto_text = item.get("auto_text") or item.get("autoText") or ""
-                tabs_auto_text = item.get("tabs_auto_text") or item.get(
-                    "tabsAutoText"
-                ) or []
-                documents_auto_text = item.get("documents_auto_text") or item.get(
-                    "documentsAutoText"
-                ) or ""
+            code = (item.get("code") or "").strip() or None
+            article = (item.get("article") or "").strip() or None
+            slug = (item.get("slug") or "").strip() or None
+            description = item.get("description") or ""
+            description_full = item.get("description_full") or ""
+            auto_text = item.get("auto_text") or item.get("autoText") or ""
+            tabs_auto_text = item.get("tabs_auto_text") or item.get(
+                "tabsAutoText"
+            ) or []
+            documents_auto_text = item.get("documents_auto_text") or item.get(
+                "documentsAutoText"
+            ) or ""
 
-                category = resolve_category(
-                    item, default_category, download_images=download_images
-                )
-                if not category:
-                    skipped_count += 1
-                    emit()
-                    continue
+            try:
+                with transaction.atomic():
+                    category = resolve_category(
+                        item, default_category, download_images=download_images
+                    )
+                    if not category:
+                        skipped_count += 1
+                        emit()
+                        continue
 
-                product = None
-                if code:
-                    product = Product.objects.filter(code=code).first()
-                if not product and slug:
-                    product = Product.objects.filter(slug=slug).first()
-                if not product:
-                    product = Product(category=category, name=name)
-                    created = True
-                else:
-                    created = False
+                    product = None
+                    if code:
+                        product = Product.objects.filter(code=code).first()
+                    if not product and slug:
+                        product = Product.objects.filter(slug=slug).first()
+                    if not product:
+                        product = Product(category=category, name=name)
+                        created = True
+                    else:
+                        created = False
 
-                if not slug:
-                    slug = slug_from_href(item.get("href"))
-                if not slug:
-                    slug = unique_slug(name, product.id if not created else None)
-                else:
-                    slug = unique_slug(slug, product.id if not created else None)
+                    if not slug:
+                        slug = slug_from_href(item.get("href"))
+                    if not slug:
+                        slug = unique_slug(name, product.id if not created else None)
+                    else:
+                        slug = unique_slug(slug, product.id if not created else None)
 
-                brand = resolve_brand(item.get("brand"), download_logo=download_images)
+                    brand = resolve_brand(
+                        item.get("brand"), download_logo=download_images
+                    )
 
-                product.category = category
-                product.brand = brand
-                product.name = name
-                product.slug = slug
-                product.code = code or ""
-                product.article = article or ""
-                product.description = description
-                product.description_full = description_full
-                product.auto_text = auto_text
-                product.tabs_auto_text = (
-                    tabs_auto_text
-                    if isinstance(tabs_auto_text, list)
-                    else [str(tabs_auto_text)]
-                )
-                product.documents_auto_text = documents_auto_text
-                product.price = price
-                product.retail_price = parse_decimal(item.get("retail_price"))
-                discount_percent = int(item.get("discount_percent") or 0)
-                product.discount_percent = max(0, discount_percent)
-                product.min_bonus_price = parse_decimal(item.get("min_bonus_price"))
-                product.show_personal_price_difference = bool(
-                    item.get("show_personal_price_difference", True)
-                )
-                product.rating = Decimal(str(item.get("rating") or 0))
-                product.rating_count = int(item.get("rating_count") or 0)
-                product.is_new = bool(item.get("is_new", False))
-                product.is_active = bool(item.get("is_active", True))
-                product.save()
+                    product.category = category
+                    product.brand = brand
+                    product.name = name
+                    product.slug = slug
+                    product.code = code or ""
+                    product.article = article or ""
+                    product.description = description
+                    product.description_full = description_full
+                    product.auto_text = auto_text
+                    product.tabs_auto_text = (
+                        tabs_auto_text
+                        if isinstance(tabs_auto_text, list)
+                        else [str(tabs_auto_text)]
+                    )
+                    product.documents_auto_text = documents_auto_text
+                    product.price = price
+                    product.retail_price = parse_decimal(item.get("retail_price"))
+                    discount_percent = int(item.get("discount_percent") or 0)
+                    product.discount_percent = max(0, discount_percent)
+                    product.min_bonus_price = parse_decimal(item.get("min_bonus_price"))
+                    product.show_personal_price_difference = bool(
+                        item.get("show_personal_price_difference", True)
+                    )
+                    product.rating = Decimal(str(item.get("rating") or 0))
+                    product.rating_count = int(item.get("rating_count") or 0)
+                    product.is_new = bool(item.get("is_new", False))
+                    product.is_active = bool(item.get("is_active", True))
+                    product.save()
 
-                if created:
-                    created_count += 1
-                else:
-                    updated_count += 1
+                    if created:
+                        created_count += 1
+                    else:
+                        updated_count += 1
 
-                attributes = item.get("attributes") or []
-                if attributes:
-                    ProductAttribute.objects.filter(product=product).delete()
-                    for order, attribute in enumerate(attributes):
-                        if not isinstance(attribute, dict):
-                            continue
-                        attr_name = (attribute.get("name") or "").strip()
-                        value = attribute.get("value")
-                        if not attr_name or value is None:
-                            continue
-                        attr_obj, _ = Attribute.objects.get_or_create(
-                            name=attr_name,
-                            defaults={
-                                "slug": unique_attribute_slug(attr_name),
-                            },
-                        )
-                        value_type, val_num, val_bool, val_text = normalize_value(
-                            value
-                        )
-                        if attr_obj.data_type != value_type:
-                            attr_obj.data_type = value_type
-                            attr_obj.save(update_fields=["data_type"])
-                        ProductAttribute.objects.create(
-                            product=product,
-                            attribute=attr_obj,
-                            value_number=val_num,
-                            value_bool=val_bool,
-                            value_text=val_text,
-                            order=order,
-                        )
-
-                complectation_items = item.get("complectation_items") or []
-                if complectation_items:
-                    ProductComplectation.objects.filter(product=product).delete()
-                    for order, complectation in enumerate(complectation_items):
-                        if not isinstance(complectation, dict):
-                            continue
-                        item_name = (complectation.get("name") or "").strip()
-                        if not item_name:
-                            continue
-                        ProductComplectation.objects.create(
-                            product=product,
-                            name=item_name,
-                            quantity=(complectation.get("quantity") or "").strip(),
-                            order=order,
-                        )
-
-                if download_images:
-                    images = item.get("images") or []
-                    image_url = item.get("image")
-                    if image_url and not images:
-                        images = [{"url": image_url, "is_main": True}]
-
-                    if images:
-                        ProductImage.objects.filter(product=product).delete()
-                    main_set = False
-                    for idx, image in enumerate(images):
-                        if not isinstance(image, dict):
-                            continue
-                        url = image.get("url") or ""
-                        if not url:
-                            continue
-                        image_attempts += 1
-                        try:
-                            content_bytes, filename = download_image(
-                                url, product.slug, idx
+                    attributes = item.get("attributes") or []
+                    if attributes:
+                        ProductAttribute.objects.filter(product=product).delete()
+                        for order, attribute in enumerate(attributes):
+                            if not isinstance(attribute, dict):
+                                continue
+                            attr_name = (attribute.get("name") or "").strip()
+                            value = attribute.get("value")
+                            if not attr_name or value is None:
+                                continue
+                            attr_obj, _ = Attribute.objects.get_or_create(
+                                name=attr_name,
+                                defaults={
+                                    "slug": unique_attribute_slug(attr_name),
+                                },
                             )
-                        except Exception as exc:
-                            error_count += 1
-                            if len(image_errors) < 5:
-                                image_errors.append(f"{url}: {exc}")
-                            continue
-                        if not main_set:
+                            value_type, val_num, val_bool, val_text = normalize_value(
+                                value
+                            )
+                            if attr_obj.data_type != value_type:
+                                attr_obj.data_type = value_type
+                                attr_obj.save(update_fields=["data_type"])
+                            ProductAttribute.objects.create(
+                                product=product,
+                                attribute=attr_obj,
+                                value_number=val_num,
+                                value_bool=val_bool,
+                                value_text=val_text,
+                                order=order,
+                            )
+
+                    complectation_items = item.get("complectation_items") or []
+                    if complectation_items:
+                        ProductComplectation.objects.filter(product=product).delete()
+                        for order, complectation in enumerate(complectation_items):
+                            if not isinstance(complectation, dict):
+                                continue
+                            item_name = (complectation.get("name") or "").strip()
+                            if not item_name:
+                                continue
+                            ProductComplectation.objects.create(
+                                product=product,
+                                name=item_name,
+                                quantity=(complectation.get("quantity") or "").strip(),
+                                order=order,
+                            )
+
+                    if download_images:
+                        images = item.get("images") or []
+                        image_url = item.get("image")
+                        if image_url and not images:
+                            images = [{"url": image_url, "is_main": True}]
+
+                        if images:
+                            ProductImage.objects.filter(product=product).delete()
+                        main_set = False
+                        for idx, image in enumerate(images):
+                            if not isinstance(image, dict):
+                                continue
+                            url = image.get("url") or ""
+                            if not url:
+                                continue
+                            image_attempts += 1
                             try:
-                                product.image.save(
-                                    filename, ContentFile(content_bytes), save=True
+                                content_bytes, filename = download_image(
+                                    url, product.slug, idx
                                 )
                             except Exception as exc:
                                 error_count += 1
                                 if len(image_errors) < 5:
-                                    image_errors.append(f"{url} (main): {exc}")
+                                    image_errors.append(f"{url}: {exc}")
                                 continue
-                            main_set = True
+                            if not main_set:
+                                try:
+                                    product.image.save(
+                                        filename, ContentFile(content_bytes), save=True
+                                    )
+                                except Exception as exc:
+                                    error_count += 1
+                                    if len(image_errors) < 5:
+                                        image_errors.append(f"{url} (main): {exc}")
+                                    continue
+                                main_set = True
+                                image_count += 1
+                                continue
+                            try:
+                                ProductImage.objects.create(
+                                    product=product,
+                                    image=ContentFile(content_bytes, name=filename),
+                                    alt_text=image.get("alt") or "",
+                                    is_main=image.get("is_main", False),
+                                    order=idx,
+                                )
+                            except Exception as exc:
+                                error_count += 1
+                                if len(image_errors) < 5:
+                                    image_errors.append(f"{url} (extra): {exc}")
+                                continue
                             image_count += 1
-                            continue
-                        try:
-                            ProductImage.objects.create(
-                                product=product,
-                                image=ContentFile(content_bytes, name=filename),
-                                alt_text=image.get("alt") or "",
-                                is_main=image.get("is_main", False),
-                                order=idx,
-                            )
-                        except Exception as exc:
-                            error_count += 1
-                            if len(image_errors) < 5:
-                                image_errors.append(f"{url} (extra): {exc}")
-                            continue
-                        image_count += 1
 
-                documents = item.get("documents") or []
-                if documents:
-                    ProductDocument.objects.filter(product=product).delete()
-                    for order, document in enumerate(documents):
-                        if not isinstance(document, dict):
-                            continue
-                        url = (document.get("url") or document.get("href") or "").strip()
-                        if not url:
-                            continue
-                        try:
-                            content_bytes, filename = download_file(url)
-                        except Exception as exc:
-                            error_count += 1
-                            if len(image_errors) < 5:
-                                image_errors.append(f"{url}: {exc}")
-                            continue
-                        try:
-                            ProductDocument.objects.create(
-                                product=product,
-                                title=(document.get("title") or document.get("name") or "").strip(),
-                                file=ContentFile(content_bytes, name=filename),
-                                order=order,
-                            )
-                        except Exception as exc:
-                            error_count += 1
-                            if len(image_errors) < 5:
-                                image_errors.append(f"{url} (doc): {exc}")
-                            continue
-
-                emit()
+                    documents = item.get("documents") or []
+                    if documents:
+                        ProductDocument.objects.filter(product=product).delete()
+                        for order, document in enumerate(documents):
+                            if not isinstance(document, dict):
+                                continue
+                            url = (document.get("url") or document.get("href") or "").strip()
+                            if not url:
+                                continue
+                            try:
+                                content_bytes, filename = download_file(url)
+                            except Exception as exc:
+                                error_count += 1
+                                if len(image_errors) < 5:
+                                    image_errors.append(f"{url}: {exc}")
+                                continue
+                            try:
+                                ProductDocument.objects.create(
+                                    product=product,
+                                    title=(document.get("title") or document.get("name") or "").strip(),
+                                    file=ContentFile(content_bytes, name=filename),
+                                    order=order,
+                                )
+                            except Exception as exc:
+                                error_count += 1
+                                if len(image_errors) < 5:
+                                    image_errors.append(f"{url} (doc): {exc}")
+                                continue
+            except Exception as exc:
+                error_count += 1
+                if len(import_errors) < 10:
+                    ref = slug or name
+                    import_errors.append(f"{ref}: {exc}")
+            emit()
 
         summary = {
             "created": created_count,
@@ -436,6 +446,7 @@ class ProductAdmin(admin.ModelAdmin):
             "image_count": image_count,
             "image_attempts": image_attempts,
             "image_errors": image_errors,
+            "import_errors": import_errors,
         }
         return summary
 
@@ -464,6 +475,7 @@ class ProductAdmin(admin.ModelAdmin):
                 "images": summary["image_count"],
                 "image_attempts": summary["image_attempts"],
                 "image_errors": summary["image_errors"],
+                "import_errors": summary.get("import_errors", []),
                 "summary": summary,
             }
         except Exception as exc:
@@ -529,6 +541,7 @@ class ProductAdmin(admin.ModelAdmin):
                             "images": 0,
                             "image_attempts": 0,
                             "image_errors": [],
+                            "import_errors": [],
                         },
                     )
                     thread = threading.Thread(

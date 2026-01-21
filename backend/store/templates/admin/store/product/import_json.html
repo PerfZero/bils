@@ -161,6 +161,13 @@
                         errorsListEl.appendChild(li);
                     });
                 }
+                if (payload.import_errors && payload.import_errors.length) {
+                    payload.import_errors.forEach(function (entry) {
+                        var li = document.createElement("li");
+                        li.textContent = entry;
+                        errorsListEl.appendChild(li);
+                    });
+                }
             }
         };
 
