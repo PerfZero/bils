@@ -592,12 +592,7 @@ export default function Header({ onProfileClick }) {
                       </span>
                     </span>
                   </button>
-                  <div
-                    className="js-menu__plane a-menu__plane"
-                    style={{ height: "640px" }}
-                  >
-                    {renderCatalogPlane(isBottomCatalogOpen)}
-                  </div>
+                  {renderCatalogPlane(isBottomCatalogOpen)}
                 </li>
                 <li className="a-menu__item">
                   <a href="/promo/" className="a-menu__link">
