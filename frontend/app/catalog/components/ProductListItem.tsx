@@ -43,8 +43,9 @@ export function ProductListItem({ product }: ProductListItemProps) {
             },
           ]
         : [];
+  const limitedImages = images.slice(0, 6);
   const fallbackImage = "/images/layouts/no_picture.svg";
-  const hasGallery = images.length > 1;
+  const hasGallery = limitedImages.length > 1;
   const ratingValue = Number(product.rating || 0);
   const ratingActive = Math.round(ratingValue);
   const priceValue = Number(product.price || 0);
@@ -88,8 +89,8 @@ export function ProductListItem({ product }: ProductListItemProps) {
                 }
               }}
             >
-              {images.length > 0 ? (
-                images.map((image: any, index: number) => (
+              {limitedImages.length > 0 ? (
+                limitedImages.map((image: any, index: number) => (
                   <div
                     key={image.id || `${product.id}-${index}`}
                     className="a-picture-card"
@@ -117,7 +118,7 @@ export function ProductListItem({ product }: ProductListItemProps) {
               {hasGallery ? (
                 <>
                   <div className="product-card-line-tile__picture-overlay">
-                    {images.map((_: any, index: number) => (
+                    {limitedImages.map((_: any, index: number) => (
                       <div
                         key={`overlay-${product.id}-${index}`}
                         onMouseEnter={() => setActiveIndex(index)}
@@ -125,7 +126,7 @@ export function ProductListItem({ product }: ProductListItemProps) {
                     ))}
                   </div>
                   <div className="product-card-line-tile__picture-thumbs">
-                    {images.map((_: any, index: number) => (
+                    {limitedImages.map((_: any, index: number) => (
                       <div
                         key={`thumb-${product.id}-${index}`}
                         className={
@@ -195,7 +196,7 @@ export function ProductListItem({ product }: ProductListItemProps) {
           </div>
           <div className="product-card-line-tile__props">
             {product.attributes?.length
-              ? product.attributes.map((attribute: any) => (
+              ? product.attributes.slice(0, 6).map((attribute: any) => (
                   <div key={attribute.id}>
                     <span
                       className="seo-text"

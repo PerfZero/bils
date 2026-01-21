@@ -1,5 +1,6 @@
 import uuid
 from django.db import models
+from django.core.validators import MaxValueValidator, MinValueValidator
 from mptt.models import MPTTModel, TreeForeignKey
 
 
@@ -80,6 +81,10 @@ class Product(models.Model):
     name = models.CharField("Название", max_length=200)
     slug = models.SlugField("Слаг", max_length=220, unique=True)
     description = models.TextField("Описание", blank=True)
+    description_full = models.TextField("Описание для вкладки", blank=True)
+    auto_text = models.TextField("Автотекст", blank=True)
+    tabs_auto_text = models.JSONField("Автотекст вкладок", blank=True, default=list)
+    documents_auto_text = models.TextField("Текст документов", blank=True)
     price = models.DecimalField("Цена", max_digits=10, decimal_places=2)
     retail_price = models.DecimalField(
         "Розничная цена", max_digits=10, decimal_places=2, blank=True, null=True
@@ -108,6 +113,26 @@ class Product(models.Model):
         return self.name
 
 
+class ProductComplectation(models.Model):
+    product = models.ForeignKey(
+        Product,
+        related_name="complectation_items",
+        on_delete=models.CASCADE,
+        verbose_name="Товар",
+    )
+    name = models.CharField("Название", max_length=200)
+    quantity = models.CharField("Количество", max_length=50, blank=True)
+    order = models.PositiveIntegerField("Порядок", default=0)
+
+    class Meta:
+        verbose_name = "Комплектация товара"
+        verbose_name_plural = "Комплектации товаров"
+        ordering = ["order", "id"]
+
+    def __str__(self):
+        return f"{self.product}: {self.name}"
+
+
 class ProductImage(models.Model):
     product = models.ForeignKey(
         Product,
@@ -127,6 +152,58 @@ class ProductImage(models.Model):
 
     def __str__(self):
         return f"{self.product} ({self.order})"
+
+
+class ProductDocument(models.Model):
+    product = models.ForeignKey(
+        Product,
+        related_name="documents",
+        on_delete=models.CASCADE,
+        verbose_name="Товар",
+    )
+    title = models.CharField("Название", max_length=200, blank=True)
+    file = models.FileField("Файл", upload_to="products/documents/")
+    order = models.PositiveIntegerField("Порядок", default=0)
+    created_at = models.DateTimeField("Создан", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Документ товара"
+        verbose_name_plural = "Документы товаров"
+        ordering = ["order", "id"]
+
+    def __str__(self):
+        return f"{self.product}: {self.title or self.file.name}"
+
+
+class ProductReview(models.Model):
+    product = models.ForeignKey(
+        Product,
+        related_name="reviews",
+        on_delete=models.CASCADE,
+        verbose_name="Товар",
+    )
+    author_name = models.CharField("Имя", max_length=120)
+    author_email = models.EmailField("E-mail", blank=True)
+    rating = models.PositiveSmallIntegerField(
+        "Оценка",
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+    )
+    comment = models.TextField("Комментарий")
+    pros = models.TextField("Достоинства", blank=True)
+    cons = models.TextField("Недостатки", blank=True)
+    is_anonymous = models.BooleanField("Анонимный отзыв", default=False)
+    is_active = models.BooleanField("Активен", default=True)
+    likes = models.PositiveIntegerField("Лайки", default=0)
+    dislikes = models.PositiveIntegerField("Дизлайки", default=0)
+    created_at = models.DateTimeField("Создан", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Отзыв"
+        verbose_name_plural = "Отзывы"
+        ordering = ["-created_at", "id"]
+
+    def __str__(self):
+        return f"{self.product}: {self.author_name} ({self.rating})"
 
 
 class Attribute(models.Model):

@@ -2,15 +2,20 @@ import json
 import mimetypes
 import re
 import ssl
+import threading
 import urllib.request
 import urllib.parse
+import uuid
 from pathlib import Path
 from decimal import Decimal, InvalidOperation
 
 from django import forms
 from django.contrib import admin, messages
+from django.core.cache import cache
 from django.core.files.base import ContentFile
+from django.db import close_old_connections
 from django.db import transaction
+from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import path
 from django.utils.text import slugify
@@ -26,6 +31,9 @@ from .models import (
     Attribute,
     ProductAttribute,
     ProductImage,
+    ProductComplectation,
+    ProductDocument,
+    ProductReview,
     FAQCategory,
     FAQQuestion,
 )
@@ -63,6 +71,32 @@ class ProductAttributeInline(admin.TabularInline):
     fields = ("attribute", "value_text", "value_number", "value_bool", "order")
 
 
+class ProductComplectationInline(admin.TabularInline):
+    model = ProductComplectation
+    extra = 0
+    fields = ("name", "quantity", "order")
+
+
+class ProductDocumentInline(admin.TabularInline):
+    model = ProductDocument
+    extra = 0
+    fields = ("title", "file", "order")
+
+
+class ProductReviewInline(admin.TabularInline):
+    model = ProductReview
+    extra = 0
+    fields = (
+        "author_name",
+        "author_email",
+        "rating",
+        "is_anonymous",
+        "is_active",
+        "created_at",
+    )
+    readonly_fields = ("created_at",)
+
+
 class ProductImportForm(forms.Form):
     file = forms.FileField(label="JSON файл")
     category = forms.ModelChoiceField(
@@ -90,7 +124,13 @@ class ProductAdmin(admin.ModelAdmin):
     list_filter = ("is_active", "is_new", "brand", "category")
     search_fields = ("name", "slug", "code", "article")
     prepopulated_fields = {"slug": ("name",)}
-    inlines = [ProductImageInline, ProductAttributeInline]
+    inlines = [
+        ProductImageInline,
+        ProductAttributeInline,
+        ProductComplectationInline,
+        ProductDocumentInline,
+        ProductReviewInline,
+    ]
     change_list_template = "admin/store/product/change_list.html"
 
     def get_urls(self):
@@ -101,20 +141,342 @@ class ProductAdmin(admin.ModelAdmin):
                 self.admin_site.admin_view(self.import_json_view),
                 name="store_product_import",
             ),
+            path(
+                "import-json/status/<uuid:job_id>/",
+                self.admin_site.admin_view(self.import_status_view),
+                name="store_product_import_status",
+            ),
         ]
         return custom_urls + urls
+
+    def _cache_key(self, job_id):
+        return f"store_product_import_{job_id}"
+
+    def _update_import_status(self, job_id, payload):
+        cache.set(self._cache_key(job_id), payload, timeout=60 * 60)
+
+    def _process_import(
+        self,
+        items,
+        categories_payload,
+        default_category,
+        download_images,
+        job_id=None,
+    ):
+        created_count = 0
+        updated_count = 0
+        skipped_count = 0
+        error_count = 0
+        image_count = 0
+        image_attempts = 0
+        image_errors = []
+        processed = 0
+        total = len(items)
+
+        def emit():
+            if job_id is None:
+                return
+            self._update_import_status(
+                job_id,
+                {
+                    "status": "running",
+                    "processed": processed,
+                    "total": total,
+                    "created": created_count,
+                    "updated": updated_count,
+                    "skipped": skipped_count,
+                    "errors": error_count,
+                    "images": image_count,
+                    "image_attempts": image_attempts,
+                    "image_errors": image_errors,
+                },
+            )
+
+        if job_id is not None:
+            emit()
+
+        with transaction.atomic():
+            if categories_payload:
+                import_categories(categories_payload, download_images)
+            for item in items:
+                processed += 1
+                if not isinstance(item, dict):
+                    skipped_count += 1
+                    emit()
+                    continue
+
+                name = (item.get("name") or "").strip()
+                if not name:
+                    skipped_count += 1
+                    emit()
+                    continue
+
+                price = parse_decimal(item.get("price"))
+                if price is None:
+                    skipped_count += 1
+                    emit()
+                    continue
+
+                code = (item.get("code") or "").strip() or None
+                article = (item.get("article") or "").strip() or None
+                slug = (item.get("slug") or "").strip() or None
+                description = item.get("description") or ""
+                description_full = item.get("description_full") or ""
+                auto_text = item.get("auto_text") or item.get("autoText") or ""
+                tabs_auto_text = item.get("tabs_auto_text") or item.get(
+                    "tabsAutoText"
+                ) or []
+                documents_auto_text = item.get("documents_auto_text") or item.get(
+                    "documentsAutoText"
+                ) or ""
+
+                category = resolve_category(
+                    item, default_category, download_images=download_images
+                )
+                if not category:
+                    skipped_count += 1
+                    emit()
+                    continue
+
+                product = None
+                if code:
+                    product = Product.objects.filter(code=code).first()
+                if not product and slug:
+                    product = Product.objects.filter(slug=slug).first()
+                if not product:
+                    product = Product(category=category, name=name)
+                    created = True
+                else:
+                    created = False
+
+                if not slug:
+                    slug = slug_from_href(item.get("href"))
+                if not slug:
+                    slug = unique_slug(name, product.id if not created else None)
+                else:
+                    slug = unique_slug(slug, product.id if not created else None)
+
+                brand = resolve_brand(item.get("brand"), download_logo=download_images)
+
+                product.category = category
+                product.brand = brand
+                product.name = name
+                product.slug = slug
+                product.code = code or ""
+                product.article = article or ""
+                product.description = description
+                product.description_full = description_full
+                product.auto_text = auto_text
+                product.tabs_auto_text = (
+                    tabs_auto_text
+                    if isinstance(tabs_auto_text, list)
+                    else [str(tabs_auto_text)]
+                )
+                product.documents_auto_text = documents_auto_text
+                product.price = price
+                product.retail_price = parse_decimal(item.get("retail_price"))
+                discount_percent = int(item.get("discount_percent") or 0)
+                product.discount_percent = max(0, discount_percent)
+                product.min_bonus_price = parse_decimal(item.get("min_bonus_price"))
+                product.show_personal_price_difference = bool(
+                    item.get("show_personal_price_difference", True)
+                )
+                product.rating = Decimal(str(item.get("rating") or 0))
+                product.rating_count = int(item.get("rating_count") or 0)
+                product.is_new = bool(item.get("is_new", False))
+                product.is_active = bool(item.get("is_active", True))
+                product.save()
+
+                if created:
+                    created_count += 1
+                else:
+                    updated_count += 1
+
+                attributes = item.get("attributes") or []
+                if attributes:
+                    ProductAttribute.objects.filter(product=product).delete()
+                    for order, attribute in enumerate(attributes):
+                        if not isinstance(attribute, dict):
+                            continue
+                        attr_name = (attribute.get("name") or "").strip()
+                        value = attribute.get("value")
+                        if not attr_name or value is None:
+                            continue
+                        attr_obj, _ = Attribute.objects.get_or_create(
+                            name=attr_name,
+                            defaults={
+                                "slug": unique_attribute_slug(attr_name),
+                            },
+                        )
+                        value_type, val_num, val_bool, val_text = normalize_value(
+                            value
+                        )
+                        if attr_obj.data_type != value_type:
+                            attr_obj.data_type = value_type
+                            attr_obj.save(update_fields=["data_type"])
+                        ProductAttribute.objects.create(
+                            product=product,
+                            attribute=attr_obj,
+                            value_number=val_num,
+                            value_bool=val_bool,
+                            value_text=val_text,
+                            order=order,
+                        )
+
+                complectation_items = item.get("complectation_items") or []
+                if complectation_items:
+                    ProductComplectation.objects.filter(product=product).delete()
+                    for order, complectation in enumerate(complectation_items):
+                        if not isinstance(complectation, dict):
+                            continue
+                        item_name = (complectation.get("name") or "").strip()
+                        if not item_name:
+                            continue
+                        ProductComplectation.objects.create(
+                            product=product,
+                            name=item_name,
+                            quantity=(complectation.get("quantity") or "").strip(),
+                            order=order,
+                        )
+
+                if download_images:
+                    images = item.get("images") or []
+                    image_url = item.get("image")
+                    if image_url and not images:
+                        images = [{"url": image_url, "is_main": True}]
+
+                    if images:
+                        ProductImage.objects.filter(product=product).delete()
+                    main_set = False
+                    for idx, image in enumerate(images):
+                        if not isinstance(image, dict):
+                            continue
+                        url = image.get("url") or ""
+                        if not url:
+                            continue
+                        image_attempts += 1
+                        try:
+                            content_bytes, filename = download_image(
+                                url, product.slug, idx
+                            )
+                        except Exception as exc:
+                            error_count += 1
+                            if len(image_errors) < 5:
+                                image_errors.append(f"{url}: {exc}")
+                            continue
+                        if not main_set:
+                            try:
+                                product.image.save(
+                                    filename, ContentFile(content_bytes), save=True
+                                )
+                            except Exception as exc:
+                                error_count += 1
+                                if len(image_errors) < 5:
+                                    image_errors.append(f"{url} (main): {exc}")
+                                continue
+                            main_set = True
+                            image_count += 1
+                            continue
+                        try:
+                            ProductImage.objects.create(
+                                product=product,
+                                image=ContentFile(content_bytes, name=filename),
+                                alt_text=image.get("alt") or "",
+                                is_main=image.get("is_main", False),
+                                order=idx,
+                            )
+                        except Exception as exc:
+                            error_count += 1
+                            if len(image_errors) < 5:
+                                image_errors.append(f"{url} (extra): {exc}")
+                            continue
+                        image_count += 1
+
+                documents = item.get("documents") or []
+                if documents:
+                    ProductDocument.objects.filter(product=product).delete()
+                    for order, document in enumerate(documents):
+                        if not isinstance(document, dict):
+                            continue
+                        url = (document.get("url") or document.get("href") or "").strip()
+                        if not url:
+                            continue
+                        try:
+                            content_bytes, filename = download_file(url)
+                        except Exception as exc:
+                            error_count += 1
+                            if len(image_errors) < 5:
+                                image_errors.append(f"{url}: {exc}")
+                            continue
+                        try:
+                            ProductDocument.objects.create(
+                                product=product,
+                                title=(document.get("title") or document.get("name") or "").strip(),
+                                file=ContentFile(content_bytes, name=filename),
+                                order=order,
+                            )
+                        except Exception as exc:
+                            error_count += 1
+                            if len(image_errors) < 5:
+                                image_errors.append(f"{url} (doc): {exc}")
+                            continue
+
+                emit()
+
+        summary = {
+            "created": created_count,
+            "updated": updated_count,
+            "skipped": skipped_count,
+            "errors": error_count,
+            "image_count": image_count,
+            "image_attempts": image_attempts,
+            "image_errors": image_errors,
+        }
+        return summary
+
+    def _run_import_job(self, job_id, items, categories_payload, default_category):
+        close_old_connections()
+        total = len(items)
+        try:
+            summary = self._process_import(
+                items,
+                categories_payload,
+                default_category,
+                download_images=True,
+                job_id=job_id,
+            )
+            payload = {
+                "status": "done",
+                "finished": True,
+                "processed": total,
+                "total": total,
+                "created": summary["created"],
+                "updated": summary["updated"],
+                "skipped": summary["skipped"],
+                "errors": summary["errors"],
+                "images": summary["image_count"],
+                "image_attempts": summary["image_attempts"],
+                "image_errors": summary["image_errors"],
+                "summary": summary,
+            }
+        except Exception as exc:
+            payload = {
+                "status": "error",
+                "finished": True,
+                "error": str(exc),
+            }
+        self._update_import_status(job_id, payload)
+
+    def import_status_view(self, request, job_id):
+        payload = cache.get(self._cache_key(job_id))
+        if not payload:
+            return JsonResponse({"status": "missing"}, status=404)
+        return JsonResponse(payload)
 
     def import_json_view(self, request):
         if request.method == "POST":
             form = ProductImportForm(request.POST, request.FILES)
             if form.is_valid():
-                created_count = 0
-                updated_count = 0
-                skipped_count = 0
-                error_count = 0
-                image_count = 0
-                image_attempts = 0
-                image_errors = []
                 default_category = form.cleaned_data["category"]
                 download_images = True
 
@@ -131,7 +493,9 @@ class ProductAdmin(admin.ModelAdmin):
                     return redirect("..")
 
                 items = payload
+                categories_payload = []
                 if isinstance(payload, dict):
+                    categories_payload = payload.get("categories") or []
                     items = payload.get("products") or payload.get("items") or payload
                 if isinstance(items, dict):
                     items = [items]
@@ -143,183 +507,60 @@ class ProductAdmin(admin.ModelAdmin):
                     )
                     return redirect("..")
 
-                with transaction.atomic():
-                    for item in items:
-                        if not isinstance(item, dict):
-                            skipped_count += 1
-                            continue
+                if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                    job_id = uuid.uuid4()
+                    self._update_import_status(
+                        job_id,
+                        {
+                            "status": "queued",
+                            "processed": 0,
+                            "total": len(items),
+                            "created": 0,
+                            "updated": 0,
+                            "skipped": 0,
+                            "errors": 0,
+                            "images": 0,
+                            "image_attempts": 0,
+                            "image_errors": [],
+                        },
+                    )
+                    thread = threading.Thread(
+                        target=self._run_import_job,
+                        args=(job_id, items, categories_payload, default_category),
+                        daemon=True,
+                    )
+                    thread.start()
+                    return JsonResponse({"job_id": str(job_id)})
 
-                        name = (item.get("name") or "").strip()
-                        if not name:
-                            skipped_count += 1
-                            continue
-
-                        price = parse_decimal(item.get("price"))
-                        if price is None:
-                            skipped_count += 1
-                            continue
-
-                        code = (item.get("code") or "").strip() or None
-                        article = (item.get("article") or "").strip() or None
-                        slug = (item.get("slug") or "").strip() or None
-                        description = item.get("description") or ""
-
-                        category = resolve_category(item, default_category)
-                        if not category:
-                            skipped_count += 1
-                            continue
-
-                        product = None
-                        if code:
-                            product = Product.objects.filter(code=code).first()
-                        if not product and slug:
-                            product = Product.objects.filter(slug=slug).first()
-                        if not product:
-                            product = Product(category=category, name=name)
-                            created = True
-                        else:
-                            created = False
-
-                        if not slug:
-                            slug = slug_from_href(item.get("href"))
-                        if not slug:
-                            slug = unique_slug(name, product.id if not created else None)
-                        else:
-                            slug = unique_slug(slug, product.id if not created else None)
-
-                        brand = resolve_brand(item.get("brand"), download_logo=download_images)
-
-                        product.category = category
-                        product.brand = brand
-                        product.name = name
-                        product.slug = slug
-                        product.code = code or ""
-                        product.article = article or ""
-                        product.description = description
-                        product.price = price
-                        product.retail_price = parse_decimal(item.get("retail_price"))
-                        product.discount_percent = int(item.get("discount_percent") or 0)
-                        product.min_bonus_price = parse_decimal(item.get("min_bonus_price"))
-                        product.show_personal_price_difference = bool(
-                            item.get("show_personal_price_difference", True)
-                        )
-                        product.rating = Decimal(str(item.get("rating") or 0))
-                        product.rating_count = int(item.get("rating_count") or 0)
-                        product.is_new = bool(item.get("is_new", False))
-                        product.is_active = bool(item.get("is_active", True))
-                        product.save()
-
-                        if created:
-                            created_count += 1
-                        else:
-                            updated_count += 1
-
-                        attributes = item.get("attributes") or []
-                        if attributes:
-                            ProductAttribute.objects.filter(product=product).delete()
-                            for order, attribute in enumerate(attributes):
-                                if not isinstance(attribute, dict):
-                                    continue
-                                attr_name = (attribute.get("name") or "").strip()
-                                value = attribute.get("value")
-                                if not attr_name or value is None:
-                                    continue
-                                attr_obj, _ = Attribute.objects.get_or_create(
-                                    name=attr_name,
-                                    defaults={
-                                        "slug": unique_attribute_slug(attr_name),
-                                    },
-                                )
-                                value_type, val_num, val_bool, val_text = normalize_value(
-                                    value
-                                )
-                                if attr_obj.data_type != value_type:
-                                    attr_obj.data_type = value_type
-                                    attr_obj.save(update_fields=["data_type"])
-                                ProductAttribute.objects.create(
-                                    product=product,
-                                    attribute=attr_obj,
-                                    value_number=val_num,
-                                    value_bool=val_bool,
-                                    value_text=val_text,
-                                    order=order,
-                                )
-
-                        if download_images:
-                            images = item.get("images") or []
-                            image_url = item.get("image")
-                            if image_url and not images:
-                                images = [{"url": image_url, "is_main": True}]
-
-                            if images:
-                                ProductImage.objects.filter(product=product).delete()
-                            main_set = False
-                            for idx, image in enumerate(images):
-                                if not isinstance(image, dict):
-                                    continue
-                                url = image.get("url") or ""
-                                if not url:
-                                    continue
-                                image_attempts += 1
-                                try:
-                                    content_bytes, filename = download_image(
-                                        url, product.slug, idx
-                                    )
-                                except Exception as exc:
-                                    error_count += 1
-                                    if len(image_errors) < 5:
-                                        image_errors.append(f"{url}: {exc}")
-                                    continue
-                                if not main_set:
-                                    try:
-                                        product.image.save(
-                                            filename,
-                                            ContentFile(content_bytes),
-                                            save=True,
-                                        )
-                                    except Exception as exc:
-                                        error_count += 1
-                                        if len(image_errors) < 5:
-                                            image_errors.append(
-                                                f"{url} (main): {exc}"
-                                            )
-                                        continue
-                                    main_set = True
-                                    image_count += 1
-                                    continue
-                                try:
-                                    ProductImage.objects.create(
-                                        product=product,
-                                        image=ContentFile(content_bytes, name=filename),
-                                        alt_text=image.get("alt") or "",
-                                        is_main=image.get("is_main", False),
-                                        order=idx,
-                                    )
-                                except Exception as exc:
-                                    error_count += 1
-                                    if len(image_errors) < 5:
-                                        image_errors.append(
-                                            f"{url} (extra): {exc}"
-                                        )
-                                    continue
-                                image_count += 1
+                summary = self._process_import(
+                    items,
+                    categories_payload,
+                    default_category,
+                    download_images=download_images,
+                )
 
                 error_hint = ""
-                if image_errors:
-                    error_hint = " Примеры ошибок: " + " | ".join(image_errors)
+                if summary["image_errors"]:
+                    error_hint = " Примеры ошибок: " + " | ".join(
+                        summary["image_errors"]
+                    )
 
                 self.message_user(
                     request,
                     (
-                        f"Импорт завершен. Создано: {created_count}, "
-                        f"обновлено: {updated_count}, пропущено: {skipped_count}, "
-                        f"ошибок: {error_count}, изображений: {image_count}, "
-                        f"попыток загрузки: {image_attempts}."
+                        f"Импорт завершен. Создано: {summary['created']}, "
+                        f"обновлено: {summary['updated']}, пропущено: {summary['skipped']}, "
+                        f"ошибок: {summary['errors']}, изображений: {summary['image_count']}, "
+                        f"попыток загрузки: {summary['image_attempts']}."
                         f"{error_hint}"
                     ),
-                    level=messages.SUCCESS if error_count == 0 else messages.WARNING,
+                    level=messages.SUCCESS
+                    if summary["errors"] == 0
+                    else messages.WARNING,
                 )
                 return redirect("..")
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return JsonResponse({"errors": form.errors}, status=400)
         else:
             form = ProductImportForm()
 
@@ -377,7 +618,7 @@ def resolve_brand(raw_brand, download_logo=False):
     return brand
 
 
-def resolve_category(item, default_category):
+def resolve_category(item, default_category, download_images=False):
     category_data = None
     if isinstance(item, dict):
         category_data = item.get("category")
@@ -388,19 +629,60 @@ def resolve_category(item, default_category):
     if isinstance(category_data, dict):
         slug = (category_data.get("slug") or "").strip()
         name = (category_data.get("name") or "").strip()
+        image_url = category_data.get("image")
         if slug:
             category = Category.objects.filter(slug=slug).first()
             if category:
+                maybe_update_category_image(category, image_url, download_images)
                 return category
         if name:
             category = Category.objects.filter(name__iexact=name).first()
             if category:
+                maybe_update_category_image(category, image_url, download_images)
                 return category
     if breadcrumbs:
         created = ensure_category_from_breadcrumbs(breadcrumbs)
         if created:
+            image_url = None
+            if isinstance(category_data, dict):
+                image_url = category_data.get("image")
+            maybe_update_category_image(created, image_url, download_images)
             return created
     return default_category
+
+
+def category_slug_from_href(href):
+    if not href:
+        return None
+    path = urllib.parse.urlparse(href).path
+    match = re.search(r"/catalog/([^/]+)/", path)
+    if match:
+        return match.group(1)
+    return None
+
+
+def import_categories(categories, download_images):
+    if not isinstance(categories, list):
+        return
+    for category_data in categories:
+        if not isinstance(category_data, dict):
+            continue
+        slug = (category_data.get("slug") or "").strip()
+        href = category_data.get("href") or ""
+        if not slug and href:
+            slug = category_slug_from_href(href) or ""
+        name = (category_data.get("name") or "").strip()
+        image_url = category_data.get("image")
+        if not slug:
+            continue
+        category, created = Category.objects.get_or_create(
+            slug=slug,
+            defaults={"name": name or slug, "is_active": True},
+        )
+        if name and category.name != name:
+            category.name = name
+            category.save(update_fields=["name"])
+        maybe_update_category_image(category, image_url, download_images)
 
 
 def ensure_category_from_breadcrumbs(breadcrumbs):
@@ -430,6 +712,18 @@ def ensure_category_from_breadcrumbs(breadcrumbs):
         parent = category
         last_category = category
     return last_category
+
+
+def maybe_update_category_image(category, image_url, download_images):
+    if not download_images or not image_url or category.image:
+        return
+    try:
+        content_bytes, filename = download_image(
+            image_url, f"category-{category.slug}", 0
+        )
+        category.image.save(filename, ContentFile(content_bytes), save=True)
+    except Exception:
+        pass
 
 
 def slug_from_href(href):
@@ -482,6 +776,30 @@ def download_image(url, slug, index):
             content = response.read()
     filename = guess_filename(url, slug, index)
     return content, filename
+
+
+def download_file(url):
+    request = urllib.request.Request(
+        url,
+        headers={"User-Agent": "Mozilla/5.0 (compatible; BigamImport/1.0)"},
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            content = response.read()
+    except Exception:
+        context = ssl._create_unverified_context()
+        with urllib.request.urlopen(request, timeout=30, context=context) as response:
+            content = response.read()
+    filename = guess_file_name(url)
+    return content, filename
+
+
+def guess_file_name(url):
+    path = urllib.parse.urlparse(url).path
+    name = Path(path).name
+    if not name:
+        return "document"
+    return name
 
 
 def guess_filename(url, slug, index):

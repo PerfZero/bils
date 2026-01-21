@@ -81,7 +81,7 @@ export default function Header({ onProfileClick }) {
                     xlinkHref="#icon-plane"
                   />
                 </svg>{" "}
-                Ставрополь
+                Москва
               </button>
               <div className="a-bar__group-logo-link">
                 <svg className="a-svg a-bar__icon-location">

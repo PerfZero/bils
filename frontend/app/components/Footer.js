@@ -276,7 +276,7 @@ export default function Footer() {
                 <svg class="a-svg a-bar__icon a-bar__icon--city a-bar__icon--city-white">
                   <use xlinkHref="#icon-old-plane"></use>
                 </svg>
-                Ставрополь
+                Москва
               </button>
               <div class="a-footer__contacts">
                 <div class="a-footer__contacts-text">

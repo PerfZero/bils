@@ -2,11 +2,16 @@
 import argparse
 import json
 import re
+import os
+import shutil
+import subprocess
 import urllib.request
 import urllib.parse
 from html.parser import HTMLParser
 from pathlib import Path
 
+
+CATEGORY_IMAGE_CACHE = {}
 
 VOID_TAGS = {
     "area",
@@ -124,6 +129,54 @@ def extract_seo_text(node):
     return match.group(1).strip()
 
 
+def extract_inner_html_by_match(html, tag, match):
+    if not match:
+        return None
+    start = match.end()
+    depth = 1
+    pattern = re.compile(rf"</?{tag}\b", re.I)
+    for tag_match in pattern.finditer(html, start):
+        snippet = html[tag_match.start() : tag_match.start() + 2]
+        if snippet == "</":
+            depth -= 1
+        else:
+            depth += 1
+        if depth == 0:
+            return html[start:tag_match.start()].strip()
+    return None
+
+
+def extract_inner_html_by_class(html, tag, class_name):
+    pattern = re.compile(
+        rf"<{tag}\b[^>]*class=[\"'][^\"']*{re.escape(class_name)}[^\"']*[\"'][^>]*>",
+        re.I,
+    )
+    match = pattern.search(html)
+    return extract_inner_html_by_match(html, tag, match)
+
+
+def extract_all_inner_html_by_class(html, tag, class_name):
+    pattern = re.compile(
+        rf"<{tag}\b[^>]*class=[\"'][^\"']*{re.escape(class_name)}[^\"']*[\"'][^>]*>",
+        re.I,
+    )
+    matches = []
+    for match in pattern.finditer(html):
+        inner_html = extract_inner_html_by_match(html, tag, match)
+        if inner_html:
+            matches.append(inner_html)
+    return matches
+
+
+def extract_inner_html_by_id(html, tag, element_id):
+    pattern = re.compile(
+        rf"<{tag}\b[^>]*id=[\"']{re.escape(element_id)}[\"'][^>]*>",
+        re.I,
+    )
+    match = pattern.search(html)
+    return extract_inner_html_by_match(html, tag, match)
+
+
 def normalize_url(url, base_url):
     if not url:
         return None
@@ -174,6 +227,141 @@ def extract_images(product_node, base_url, product_name, product_id):
     return images
 
 
+def extract_category_cards(html, base_url):
+    parser = TreeBuilder()
+    parser.feed(html)
+    lists = find_all(
+        parser.root,
+        lambda n: n.tag == "ul" and has_class(n, "a-catalog-list__list"),
+    )
+    categories = []
+    for catalog_list in lists:
+        cards = find_all(
+            catalog_list,
+            lambda n: n.tag == "a" and has_class(n, "a-catalog-card"),
+        )
+        for card in cards:
+            href = normalize_url(card.attrs.get("href"), base_url)
+            name_node = find_first(
+                card, lambda n: n.tag == "div" and has_class(n, "a-catalog-card__text")
+            )
+            image_node = find_first(card, lambda n: n.tag == "img")
+            image = None
+            if image_node:
+                image = image_node.attrs.get("data-src") or image_node.attrs.get("src")
+            name = text_content(name_node) if name_node else None
+            slug = slug_from_href(href, base_url, allow_product=False) if href else None
+            if not href or not slug:
+                continue
+            categories.append(
+                {
+                    "name": name.strip() if name else None,
+                    "href": href,
+                    "slug": slug,
+                    "image": normalize_url(image, base_url) if image else None,
+                }
+            )
+    return categories
+
+
+def extract_category_cards_from_nuxt(html, base_url):
+    if not shutil.which("node"):
+        return []
+    node_script = r"""
+const fs = require('fs');
+const vm = require('vm');
+
+const baseUrl = process.env.BASE_URL || '';
+const html = fs.readFileSync(0, 'utf8');
+const start = html.indexOf('window.__NUXT__');
+if (start === -1) {
+  console.log('[]');
+  process.exit(0);
+}
+const end = html.indexOf('</script>', start);
+const script = html.slice(start, end);
+const context = { window: {} };
+vm.createContext(context);
+try {
+  vm.runInContext(script, context, { timeout: 1000 });
+} catch (err) {
+  console.log('[]');
+  process.exit(0);
+}
+
+const nuxt = context.window.__NUXT__;
+const results = [];
+const seen = new Set();
+
+const normalize = (url) => {
+  if (!url) return null;
+  if (url.startsWith('//')) return 'https:' + url;
+  if (url.startsWith('/')) return baseUrl.replace(/\/$/, '') + url;
+  return url;
+};
+
+const visit = (node) => {
+  if (!node || typeof node !== 'object') return;
+  if (Array.isArray(node)) {
+    node.forEach(visit);
+    return;
+  }
+  const href = node.href || node.url || node.link;
+  const image = node.image || node.picture || node.img || node.photo;
+  if (typeof href === 'string' && href.includes('/catalog/') && typeof image === 'string') {
+    const normalizedHref = normalize(href);
+    const normalizedImage = normalize(image);
+    const name = node.name || node.title || node.text;
+    if (normalizedHref && normalizedImage) {
+      const key = normalizedHref + '|' + normalizedImage;
+      if (!seen.has(key)) {
+        seen.add(key);
+        results.push({ name: name || null, href: normalizedHref, image: normalizedImage });
+      }
+    }
+  }
+  Object.values(node).forEach(visit);
+};
+
+visit(nuxt);
+console.log(JSON.stringify(results));
+"""
+    try:
+        result = subprocess.run(
+            ["node", "-e", node_script],
+            input=html,
+            text=True,
+            capture_output=True,
+            timeout=10,
+            env={**os.environ, "BASE_URL": base_url},
+        )
+    except Exception:
+        return []
+    if result.returncode != 0:
+        return []
+    try:
+        payload = json.loads(result.stdout.strip() or "[]")
+    except json.JSONDecodeError:
+        return []
+    categories = []
+    for item in payload:
+        if not isinstance(item, dict):
+            continue
+        href = item.get("href")
+        slug = slug_from_href(href, base_url, allow_product=False) if href else None
+        if not slug:
+            continue
+        categories.append(
+            {
+                "name": item.get("name"),
+                "href": href,
+                "slug": slug,
+                "image": item.get("image"),
+            }
+        )
+    return categories
+
+
 def extract_attributes(product_node, product_id):
     props_container = find_first(
         product_node,
@@ -207,6 +395,149 @@ def extract_attributes(product_node, product_id):
             }
         )
     return attributes
+
+
+def extract_complectation_items(root_node):
+    complectation_sections = find_all(
+        root_node,
+        lambda n: n.tag in {"section", "div"}
+        and has_class(n, "a-product-tabs__set"),
+    )
+    if not complectation_sections:
+        complectation_sections = find_all(
+            root_node,
+            lambda n: n.tag in {"section", "div"}
+            and has_class(n, "a-page-detail__set"),
+        )
+    items = []
+    for section in complectation_sections:
+        rows = find_all(
+            section,
+            lambda n: n.tag == "tr" and has_class(n, "a-parameters__item"),
+        )
+        for idx, row in enumerate(rows, start=len(items)):
+            name_node = find_first(
+                row,
+                lambda n: n.tag == "div"
+                and has_class(n, "a-parameters__name-text"),
+            )
+            value_node = find_first(
+                row, lambda n: n.tag == "td" and has_class(n, "a-parameters__value")
+            )
+            name = text_content(name_node) if name_node else None
+            quantity = text_content(value_node) if value_node else None
+            if not name:
+                continue
+            items.append(
+                {
+                    "id": f"set-{idx}",
+                    "name": name.strip(),
+                    "quantity": quantity.strip() if quantity else "",
+                    "order": idx,
+                }
+            )
+    return items
+
+
+def extract_documents_section(parser_root):
+    documents_section = find_first(
+        parser_root,
+        lambda n: n.tag == "li"
+        and (n.attrs.get("id") == "documents" or has_class(n, "a-product-tabs__sections-item--documents")),
+    )
+    return documents_section
+
+
+def extract_documents(parser_root, base_url):
+    documents_section = extract_documents_section(parser_root)
+    if not documents_section:
+        return []
+    links = find_all(
+        documents_section,
+        lambda n: n.tag == "a" and has_class(n, "a-product-tabs__file-link"),
+    )
+    documents = []
+    for idx, link in enumerate(links):
+        href = normalize_url(link.attrs.get("href"), base_url)
+        if not href:
+            continue
+        title_node = find_first(
+            link, lambda n: n.tag == "div" and has_class(n, "a-file__name")
+        )
+        origin_node = find_first(
+            link, lambda n: n.tag == "div" and has_class(n, "a-file__origin")
+        )
+        title = text_content(title_node) if title_node else link.attrs.get("title")
+        origin = text_content(origin_node) if origin_node else None
+        documents.append(
+            {
+                "id": f"doc-{idx}",
+                "title": title.strip() if title else None,
+                "url": href,
+                "origin": origin.strip() if origin else None,
+            }
+        )
+    return documents
+
+
+def extract_documents_auto_text(parser_root):
+    documents_section = extract_documents_section(parser_root)
+    if not documents_section:
+        return None
+    text_node = find_first(
+        documents_section,
+        lambda n: n.tag == "div" and has_class(n, "a-product-tabs__autotext"),
+    )
+    if not text_node:
+        return None
+    return text_content(text_node) or None
+
+
+def extract_gallery_images(root_node, base_url, product_name):
+    gallery = find_first(
+        root_node,
+        lambda n: n.tag == "div" and has_class(n, "a-gallery-carousel__gallery"),
+    )
+    images = []
+    seen = set()
+
+    def add_image(url):
+        if not url:
+            return
+        normalized = normalize_url(url, base_url)
+        if not normalized or normalized in seen:
+            return
+        seen.add(normalized)
+        images.append(
+            {
+                "id": f"gallery-{len(images)}",
+                "url": normalized,
+                "alt": product_name or "",
+                "is_main": len(images) == 0,
+            }
+        )
+
+    if gallery:
+        for img in find_all(gallery, lambda n: n.tag == "img"):
+            url = img.attrs.get("data-src") or img.attrs.get("src")
+            if url and "no_picture" not in url:
+                add_image(url)
+
+    thumbs = find_first(
+        root_node,
+        lambda n: n.tag == "div" and has_class(n, "a-gallery-carousel__thumbs"),
+    )
+    if thumbs:
+        for card in find_all(
+            thumbs, lambda n: n.tag == "div" and has_class(n, "a-picture-card")
+        ):
+            add_image(card.attrs.get("full"))
+        for img in find_all(thumbs, lambda n: n.tag == "img"):
+            url = img.attrs.get("data-src") or img.attrs.get("src")
+            if url and "no_picture" not in url:
+                add_image(url)
+
+    return images
 
 
 def extract_code(product_node):
@@ -298,15 +629,9 @@ def parse_products(html, base_url, limit=None, page_url=None):
 
         product_id = extract_product_id(node)
         code = extract_code(node)
-        rating_node = find_first(
-            node, lambda n: n.tag == "div" and has_class(n, "a-rating__count")
-        )
-        rating = parse_number(text_content(rating_node)) if rating_node else 0
-
         images = extract_images(node, base_url, name, product_id)
         image = images[0]["url"] if images else None
 
-        attributes = extract_attributes(node, product_id)
         price_data = extract_price_block(node)
 
         products.append(
@@ -316,7 +641,6 @@ def parse_products(html, base_url, limit=None, page_url=None):
                 "name": name,
                 "href": href,
                 "reviews_href": reviews_href,
-                "rating": rating,
                 "price": price_data.get("price"),
                 "retail_price": price_data.get("retail_price"),
                 "discount_percent": price_data.get("discount_percent"),
@@ -326,7 +650,6 @@ def parse_products(html, base_url, limit=None, page_url=None):
                 ),
                 "image": image,
                 "images": images,
-                "attributes": attributes,
                 "category": category,
             }
         )
@@ -348,6 +671,36 @@ def fetch_html(url):
         return response.read().decode("utf-8", errors="ignore")
 
 
+def extract_meta_image(html, base_url):
+    patterns = [
+        r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)["\']',
+        r'<meta[^>]+name=["\']og:image["\'][^>]+content=["\']([^"\']+)["\']',
+        r'<meta[^>]+property=["\']twitter:image["\'][^>]+content=["\']([^"\']+)["\']',
+        r'<meta[^>]+name=["\']twitter:image["\'][^>]+content=["\']([^"\']+)["\']',
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, html, re.I)
+        if match:
+            return normalize_url(match.group(1), base_url)
+    return None
+
+
+def get_category_image(href, base_url):
+    if not href:
+        return None
+    cache_key = href
+    if cache_key in CATEGORY_IMAGE_CACHE:
+        return CATEGORY_IMAGE_CACHE[cache_key]
+    image = None
+    try:
+        html = fetch_html(href)
+        image = extract_meta_image(html, base_url)
+    except Exception:
+        image = None
+    CATEGORY_IMAGE_CACHE[cache_key] = image
+    return image
+
+
 def parse_product_page(html, base_url, page_url=None):
     parser = TreeBuilder()
     parser.feed(html)
@@ -357,6 +710,8 @@ def parse_product_page(html, base_url, page_url=None):
         lambda n: n.tag == "h1" and has_class(n, "a-page-detail__title"),
     )
     name = text_content(name_node) if name_node else None
+    gallery_images = extract_gallery_images(parser.root, base_url, name)
+    main_image = gallery_images[0]["url"] if gallery_images else None
 
     article = None
     code = None
@@ -390,23 +745,62 @@ def parse_product_page(html, base_url, page_url=None):
         reviews_link.attrs.get("href") if reviews_link else None, base_url
     )
 
-    rating_node = find_first(
-        parser.root, lambda n: n.tag == "div" and has_class(n, "a-rating__count")
-    )
-    rating = parse_number(text_content(rating_node)) if rating_node else 0
-
-    rating_count_node = find_first(
-        parser.root, lambda n: n.tag == "div" and has_class(n, "a-comment__count")
-    )
-    rating_count = parse_number(text_content(rating_count_node)) if rating_count_node else 0
-
     price_data = extract_detail_price(parser.root)
 
     brand = None
     attributes = []
-    features_section = find_first(
-        parser.root, lambda n: n.tag == "section" and has_class(n, "a-page-detail__features")
+    parameters_candidates = find_all(
+        parser.root,
+        lambda n: n.tag in {"section", "div"}
+        and has_class(n, "a-product-tabs__parameters"),
     )
+    features_section = None
+    if parameters_candidates:
+        max_rows = 0
+        for candidate in parameters_candidates:
+            rows = find_all(
+                candidate,
+                lambda n: n.tag == "tr" and has_class(n, "a-parameters__item"),
+            )
+            if len(rows) > max_rows:
+                max_rows = len(rows)
+                features_section = candidate
+    if not features_section:
+        feature_candidates = []
+        feature_candidates.extend(
+            find_all(
+                parser.root,
+                lambda n: n.tag == "section"
+                and has_class(n, "a-page-detail__features"),
+            )
+        )
+        feature_candidates.extend(
+            find_all(
+                parser.root,
+                lambda n: n.tag == "li"
+                and (
+                    n.attrs.get("id") == "specification"
+                    or has_class(n, "a-product-tabs__sections-item--specification")
+                ),
+            )
+        )
+        feature_candidates.extend(
+            find_all(
+                parser.root,
+                lambda n: n.tag in {"section", "div"}
+                and has_class(n, "a-product-tabs__column--features"),
+            )
+        )
+        features_section = None
+        max_rows = 0
+        for candidate in feature_candidates:
+            rows = find_all(
+                candidate,
+                lambda n: n.tag == "tr" and has_class(n, "a-parameters__item"),
+            )
+            if len(rows) > max_rows:
+                max_rows = len(rows)
+                features_section = candidate
     if features_section:
         rows = find_all(
             features_section,
@@ -448,6 +842,36 @@ def parse_product_page(html, base_url, page_url=None):
             if attr_value:
                 attributes.append({"name": attr_name, "value": attr_value})
 
+    description_tab_html = extract_inner_html_by_id(html, "li", "description")
+    if not description_tab_html:
+        description_tab_html = extract_inner_html_by_id(html, "section", "description")
+    description_html = None
+    if description_tab_html:
+        description_html = extract_inner_html_by_class(
+            description_tab_html, "div", "a-page-detail__inner"
+        )
+    if not description_html:
+        description_html = extract_inner_html_by_class(
+            html, "div", "a-page-detail__inner"
+        )
+
+    page_auto_text = extract_inner_html_by_class(
+        html, "div", "a-page-detail__autotext"
+    )
+    tabs_auto_text = extract_all_inner_html_by_class(
+        html, "div", "a-product-tabs__autotext"
+    )
+
+    complectation_items = extract_complectation_items(parser.root)
+    documents = extract_documents(parser.root, base_url)
+    documents_auto_text = extract_documents_auto_text(parser.root)
+    if not documents_auto_text:
+        documents_tab_html = extract_inner_html_by_id(html, "li", "documents")
+        if documents_tab_html:
+            documents_auto_text = extract_inner_html_by_class(
+                documents_tab_html, "div", "a-product-tabs__autotext"
+            )
+
     breadcrumbs = extract_breadcrumb_jsonld(html, base_url)
     if not breadcrumbs:
         breadcrumbs = extract_breadcrumb_dom(html, base_url)
@@ -459,16 +883,22 @@ def parse_product_page(html, base_url, page_url=None):
         "name": name,
         "article": article,
         "code": code,
-        "rating": rating,
-        "rating_count": rating_count,
         "price": price_data.get("price"),
         "retail_price": price_data.get("retail_price"),
         "discount_percent": price_data.get("discount_percent"),
+        "description_full": description_html,
+        "auto_text": page_auto_text,
+        "tabs_auto_text": tabs_auto_text,
+        "image": main_image,
+        "images": gallery_images,
         "href": page_url,
         "reviews_href": reviews_href,
         "slug": slug,
         "brand": brand,
         "attributes": attributes,
+        "complectation_items": complectation_items,
+        "documents": documents,
+        "documents_auto_text": documents_auto_text,
         "category": category,
         "breadcrumbs": breadcrumbs,
     }
@@ -497,10 +927,12 @@ def extract_category_context(html, base_url, page_url=None):
         href = f"{base_url.rstrip('/')}/catalog/{slug}/"
     if not href:
         href = page_url
+    image = get_category_image(href, base_url) if href else None
     return {
         "name": last.get("name"),
         "href": href,
         "slug": slug,
+        "image": image,
         "path": breadcrumb,
     }
 
@@ -688,6 +1120,16 @@ def main():
         action="store_true",
         help="Fetch product pages for breadcrumbs, code, article, ratings",
     )
+    parser.add_argument(
+        "--specification-only",
+        action="store_true",
+        help="Always load attributes and complectation from /specification/",
+    )
+    parser.add_argument(
+        "--autotext-only",
+        action="store_true",
+        help="Output only auto text blocks from a product page",
+    )
     args = parser.parse_args()
 
     output_path = Path(args.output)
@@ -699,8 +1141,21 @@ def main():
         html = fetch_html(args.url or args.product_url)
 
     limit = args.limit if args.limit and args.limit > 0 else None
-    if args.product_url:
-        product = parse_product_page(html, args.base_url, page_url=args.product_url)
+    if args.product_url or args.autotext_only:
+        page_url = args.product_url or args.url
+        product = parse_product_page(html, args.base_url, page_url=page_url)
+        if args.autotext_only:
+            payload = {
+                "auto_text": product.get("auto_text"),
+                "tabs_auto_text": product.get("tabs_auto_text") or [],
+                "documents_auto_text": product.get("documents_auto_text"),
+            }
+            output_path.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+            return
         output_path.write_text(
             json.dumps(product, ensure_ascii=False, indent=2),
             encoding="utf-8",
@@ -723,28 +1178,94 @@ def main():
             details = parse_product_page(
                 detail_html, args.base_url, page_url=href
             )
+            attributes_missing = not details.get("attributes")
+            complectation_missing = not details.get("complectation_items")
+            if args.specification_only or attributes_missing or complectation_missing:
+                if href.endswith("/specification/"):
+                    spec_url = href
+                elif href.endswith("/"):
+                    spec_url = f"{href}specification/"
+                else:
+                    spec_url = f"{href}/specification/"
+                try:
+                    spec_html = fetch_html(spec_url)
+                except Exception:
+                    spec_html = None
+                if spec_html:
+                    spec_details = parse_product_page(
+                        spec_html, args.base_url, page_url=spec_url
+                    )
+                    spec_attributes = spec_details.get("attributes") or []
+                    if spec_attributes:
+                        if args.specification_only or attributes_missing or len(spec_attributes) >= len(details.get("attributes") or []):
+                            details["attributes"] = spec_attributes
+                    if spec_details.get("complectation_items") and (
+                        args.specification_only or complectation_missing
+                    ):
+                        details["complectation_items"] = spec_details.get(
+                            "complectation_items"
+                        )
+            documents_missing = not details.get("documents")
+            documents_text_missing = not details.get("documents_auto_text")
+            if documents_missing or documents_text_missing:
+                if href.endswith("/documents/"):
+                    documents_url = href
+                elif href.endswith("/"):
+                    documents_url = f"{href}documents/"
+                else:
+                    documents_url = f"{href}/documents/"
+                try:
+                    documents_html = fetch_html(documents_url)
+                except Exception:
+                    documents_html = None
+                if documents_html:
+                    documents_details = parse_product_page(
+                        documents_html, args.base_url, page_url=documents_url
+                    )
+                    if documents_missing and documents_details.get("documents"):
+                        details["documents"] = documents_details.get("documents")
+                    if documents_text_missing and documents_details.get("documents_auto_text"):
+                        details["documents_auto_text"] = documents_details.get(
+                            "documents_auto_text"
+                        )
             for key in [
                 "name",
                 "article",
                 "code",
-                "rating",
-                "rating_count",
                 "price",
                 "retail_price",
                 "discount_percent",
+                "description_full",
                 "reviews_href",
                 "slug",
+                "image",
+                "images",
                 "brand",
                 "attributes",
+                "complectation_items",
+                "documents",
+                "documents_auto_text",
                 "category",
                 "breadcrumbs",
             ]:
                 value = details.get(key)
+                if key == "images" and not value:
+                    continue
+                if key == "image" and not value:
+                    continue
                 if value is not None:
                     product[key] = value
 
+    categories = extract_category_cards(html, args.base_url)
+    if not categories:
+        categories = extract_category_cards_from_nuxt(html, args.base_url)
+    if categories:
+        payload = {"products": products, "categories": categories}
+    else:
+        payload = products
+
     output_path.write_text(
-        json.dumps(products, ensure_ascii=False, indent=2),
+        json.dumps(payload, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
 

@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import type { MouseEvent as ReactMouseEvent } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type FilterOption = {
   id: string;
@@ -18,24 +19,120 @@ type FilterSection = {
   name?: string;
   dataTargetPrefix?: string;
   fullText?: string;
+  selectedValues?: string[];
+  onToggle?: (value: string, checked: boolean) => void;
 };
 
-export function BaseFilter() {
-  const sections: FilterSection[] = useMemo(() => {
-    const manufacturerOptions = [
-      { id: "_439826", label: "Abac (Абак)", title: "Abac(Абак)" },
-      { id: "_1466482", label: "Absolut", title: "Absolut" },
-    ];
-    const countryOptions = [
-      { id: "russia", label: "Россия", title: "Россия" },
-      { id: "germany", label: "Германия", title: "Германия" },
-      { id: "china", label: "Китай", title: "Китай" },
-      { id: "italy", label: "Италия", title: "Италия" },
-      { id: "usa", label: "США", title: "США" },
-      { id: "latvia", label: "Латвия", title: "Латвия" },
-      { id: "taiwan", label: "Тайвань", title: "Тайвань" },
-    ];
+type BaseFilterProps = {
+  manufacturerOptions?: FilterOption[];
+  countryOptions?: FilterOption[];
+  selectedManufacturers?: string[];
+  selectedCountries?: string[];
+  priceMinBound?: number;
+  priceMaxBound?: number;
+  priceMin?: string;
+  priceMax?: string;
+  onPriceMinChange?: (value: string) => void;
+  onPriceMaxChange?: (value: string) => void;
+  onManufacturerToggle?: (value: string, checked: boolean) => void;
+  onCountryToggle?: (value: string, checked: boolean) => void;
+  onApply?: () => void;
+  onClearAll?: () => void;
+  totalCount?: number;
+};
 
+export function BaseFilter({
+  manufacturerOptions = [],
+  countryOptions = [],
+  selectedManufacturers = [],
+  selectedCountries = [],
+  priceMinBound = 0,
+  priceMaxBound = 0,
+  priceMin = "",
+  priceMax = "",
+  onPriceMinChange,
+  onPriceMaxChange,
+  onManufacturerToggle,
+  onCountryToggle,
+  onApply,
+  onClearAll,
+  totalCount,
+}: BaseFilterProps) {
+  const railRef = useRef<HTMLDivElement | null>(null);
+  const [dragHandle, setDragHandle] = useState<"min" | "max" | null>(null);
+  const safeMinBound = Number.isFinite(priceMinBound) ? priceMinBound : 0;
+  const safeMaxBound = Number.isFinite(priceMaxBound) ? priceMaxBound : 0;
+  const resolvedMin = Number.isFinite(Number(priceMin))
+    ? Number(priceMin)
+    : safeMinBound;
+  const resolvedMax = Number.isFinite(Number(priceMax))
+    ? Number(priceMax)
+    : safeMaxBound;
+  const minValue = Math.min(resolvedMin, resolvedMax);
+  const maxValue = Math.max(resolvedMin, resolvedMax);
+  const rangeSpan = Math.max(safeMaxBound - safeMinBound, 1);
+  const minPercent = ((minValue - safeMinBound) / rangeSpan) * 100;
+  const maxPercent = ((maxValue - safeMinBound) / rangeSpan) * 100;
+
+  const updateFromPointer = (
+    clientX: number,
+    handleOverride?: "min" | "max",
+  ) => {
+    const activeHandle = handleOverride ?? dragHandle;
+    if (!railRef.current || !activeHandle) return;
+    const rect = railRef.current.getBoundingClientRect();
+    const nextPercent = Math.min(
+      1,
+      Math.max(0, (clientX - rect.left) / rect.width),
+    );
+    const rawValue = safeMinBound + nextPercent * rangeSpan;
+    if (activeHandle === "min") {
+      const next = Math.min(Math.round(rawValue), maxValue);
+      onPriceMinChange?.(String(next));
+    } else {
+      const next = Math.max(Math.round(rawValue), minValue);
+      onPriceMaxChange?.(String(next));
+    }
+  };
+
+  useEffect(() => {
+    if (!dragHandle) return;
+    const handleMove = (event: MouseEvent | TouchEvent) => {
+      if ("touches" in event) {
+        if (event.touches.length === 0) return;
+        updateFromPointer(event.touches[0].clientX);
+      } else {
+        updateFromPointer(event.clientX);
+      }
+    };
+    const handleEnd = () => {
+      setDragHandle(null);
+    };
+    window.addEventListener("mousemove", handleMove);
+    window.addEventListener("mouseup", handleEnd);
+    window.addEventListener("touchmove", handleMove);
+    window.addEventListener("touchend", handleEnd);
+    return () => {
+      window.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("mouseup", handleEnd);
+      window.removeEventListener("touchmove", handleMove);
+      window.removeEventListener("touchend", handleEnd);
+    };
+  }, [dragHandle, maxValue, minValue, rangeSpan, safeMinBound]);
+
+  const handleRailMouseDown = (event: ReactMouseEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const rail = railRef.current;
+    if (!rail) return;
+    const rect = rail.getBoundingClientRect();
+    const clickPercent = ((event.clientX - rect.left) / rect.width) * 100;
+    const distanceToMin = Math.abs(clickPercent - minPercent);
+    const distanceToMax = Math.abs(clickPercent - maxPercent);
+    const nextHandle = distanceToMin <= distanceToMax ? "min" : "max";
+    setDragHandle(nextHandle);
+    updateFromPointer(event.clientX, nextHandle);
+  };
+  const sections: FilterSection[] = useMemo(() => {
     return [
       {
         id: "price",
@@ -56,58 +153,93 @@ export function BaseFilter() {
                         style={{
                           height: "4px",
                           padding: "12px",
+                          position: "relative",
                           width: "auto",
                         }}
                       >
-                        <div className="vue-slider-rail">
+                        <div
+                          className="vue-slider-rail"
+                          ref={railRef}
+                          onMouseDown={handleRailMouseDown}
+                        >
                           <div
                             className="vue-slider-process"
                             style={{
                               height: "100%",
-                              left: "0%",
+                              left: `${minPercent}%`,
                               top: "0px",
                               transitionDuration: "0.5s",
                               transitionProperty: "width, left",
-                              width: "100%",
+                              width: `${Math.max(0, maxPercent - minPercent)}%`,
                             }}
                           />
                           <div
                             aria-orientation="horizontal"
-                            aria-valuemax="374800"
-                            aria-valuemin="8"
-                            aria-valuenow="8"
-                            aria-valuetext="8"
+                            aria-valuemax={safeMaxBound}
+                            aria-valuemin={safeMinBound}
+                            aria-valuenow={minValue}
+                            aria-valuetext={minValue}
                             className="vue-slider-dot"
                             role="slider"
                             style={{
                               height: "14px",
-                              left: "0%",
+                              left: `${minPercent}%`,
                               top: "50%",
                               transform: "translate(-50%, -50%)",
                               transition: "left 0.5s",
                               width: "14px",
                             }}
                             tabIndex={0}
+                            onMouseDown={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              setDragHandle("min");
+                            }}
+                            onTouchStart={(event) => {
+                              event.stopPropagation();
+                              if (event.touches.length) {
+                                setDragHandle("min");
+                                updateFromPointer(
+                                  event.touches[0].clientX,
+                                  "min",
+                                );
+                              }
+                            }}
                           >
                             <div className="vue-slider-dot-handle" />
                           </div>
                           <div
                             aria-orientation="horizontal"
-                            aria-valuemax="374800"
-                            aria-valuemin="8"
-                            aria-valuenow="374800"
-                            aria-valuetext="374800"
+                            aria-valuemax={safeMaxBound}
+                            aria-valuemin={safeMinBound}
+                            aria-valuenow={maxValue}
+                            aria-valuetext={maxValue}
                             className="vue-slider-dot"
                             role="slider"
                             style={{
                               height: "14px",
-                              left: "100%",
+                              left: `${maxPercent}%`,
                               top: "50%",
                               transform: "translate(-50%, -50%)",
                               transition: "left 0.5s",
                               width: "14px",
                             }}
                             tabIndex={0}
+                            onMouseDown={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              setDragHandle("max");
+                            }}
+                            onTouchStart={(event) => {
+                              event.stopPropagation();
+                              if (event.touches.length) {
+                                setDragHandle("max");
+                                updateFromPointer(
+                                  event.touches[0].clientX,
+                                  "max",
+                                );
+                              }
+                            }}
                           >
                             <div className="vue-slider-dot-handle" />
                           </div>
@@ -127,6 +259,10 @@ export function BaseFilter() {
                               placeholder=""
                               spellCheck={false}
                               type="text"
+                              value={priceMin}
+                              onChange={(event) =>
+                                onPriceMinChange?.(event.target.value)
+                              }
                             />
                           </label>
                         </div>
@@ -144,6 +280,10 @@ export function BaseFilter() {
                               placeholder=""
                               spellCheck={false}
                               type="text"
+                              value={priceMax}
+                              onChange={(event) =>
+                                onPriceMaxChange?.(event.target.value)
+                              }
                             />
                           </label>
                         </div>
@@ -167,6 +307,8 @@ export function BaseFilter() {
         name: "manufacturer",
         dataTargetPrefix: "field-manufacturer-",
         fullText: "Скрыть",
+        selectedValues: selectedManufacturers,
+        onToggle: onManufacturerToggle,
       },
       {
         id: "country_of_origin",
@@ -178,9 +320,22 @@ export function BaseFilter() {
         name: "country_of_origin",
         dataTargetPrefix: "field-country_of_origin-",
         fullText: "Показать все",
+        selectedValues: selectedCountries,
+        onToggle: onCountryToggle,
       },
     ];
-  }, []);
+  }, [
+    manufacturerOptions,
+    countryOptions,
+    selectedManufacturers,
+    selectedCountries,
+    priceMin,
+    priceMax,
+    onPriceMinChange,
+    onPriceMaxChange,
+    onManufacturerToggle,
+    onCountryToggle,
+  ]);
 
   const [openIds, setOpenIds] = useState(
     () => new Set(sections.map(({ id }) => id)),
@@ -291,9 +446,20 @@ export function BaseFilter() {
                                   <label className="a-checkbox-field__constrain">
                                     <input
                                       className="a-checkbox-field__input"
-                                      defaultValue={option.id}
+                                      value={option.id}
                                       name={section.name}
                                       type="checkbox"
+                                      checked={Boolean(
+                                        section.selectedValues?.includes(
+                                          option.id,
+                                        ),
+                                      )}
+                                      onChange={(event) => {
+                                        section.onToggle?.(
+                                          option.id,
+                                          event.target.checked,
+                                        );
+                                      }}
                                     />
                                     <span
                                       className="a-checkbox-field__fake"
@@ -341,12 +507,13 @@ export function BaseFilter() {
               <button
                 className="a-main-button a-main-button--display-block a-main-button--type-medium a-main-button--corner-round a-main-button--color-blue"
                 type="button"
+                onClick={onApply}
               >
                 <span className="a-main-button__wrap">
                   <span
                     className="seo-text a-main-button__content"
                     style={{
-                      "--seo-text": "'Показать 10000 товаров'",
+                      "--seo-text": `'Показать ${totalCount || 0} товаров'`,
                     }}
                   />
                 </span>
@@ -356,6 +523,7 @@ export function BaseFilter() {
                 className="a-link-button"
                 title="Очистить все"
                 type="button"
+                onClick={onClearAll}
               >
                 <span
                   className="seo-text a-link-button__content a-link-button__content--blue"

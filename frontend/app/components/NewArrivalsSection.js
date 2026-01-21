@@ -121,7 +121,7 @@ export default function NewArrivalsSection({ products = [] }) {
                               <div
                                 className="a-main-badge-list__badge"
                                 style={{
-                                  "--badge-title": `-${product.discount.toLocaleString("ru-RU")} ₽`,
+                                  "--badge-title": `'-${product.discount.toLocaleString("ru-RU")} ₽'`,
                                   backgroundColor: "#F35643",
                                 }}
                               ></div>

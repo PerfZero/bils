@@ -1,11 +1,239 @@
 {% extends "admin/base_site.html" %} {% block content %}
 <h1>Импорт товаров</h1>
-<form method="post" enctype="multipart/form-data">
+<form id="import-form" method="post" enctype="multipart/form-data">
     {% csrf_token %}
     <fieldset class="module aligned">{{ form.as_p }}</fieldset>
     <div class="submit-row">
-        <input type="submit" value="Импортировать" class="default" />
+        <input
+            id="import-submit"
+            type="submit"
+            value="Импортировать"
+            class="default"
+        />
         <a href=".." class="button">Назад</a>
     </div>
 </form>
+<div
+    id="import-loader"
+    class="import-loader"
+    aria-live="polite"
+    aria-busy="false"
+    data-status-url-template="{% url 'admin:store_product_import_status' job_id='00000000-0000-0000-0000-000000000000' %}"
+>
+    <div class="import-loader__card">
+        <div class="import-loader__spinner" aria-hidden="true"></div>
+        <div class="import-loader__content">
+            <div class="import-loader__text">
+                Импортируем товары, пожалуйста подождите...
+            </div>
+            <div class="import-loader__meta">
+                <div>
+                    <strong>Обработано:</strong>
+                    <span id="import-processed">0</span>/<span id="import-total"
+                        >0</span
+                    >
+                </div>
+                <div>
+                    <strong>Создано:</strong> <span id="import-created">0</span>
+                </div>
+                <div>
+                    <strong>Обновлено:</strong>
+                    <span id="import-updated">0</span>
+                </div>
+                <div>
+                    <strong>Пропущено:</strong>
+                    <span id="import-skipped">0</span>
+                </div>
+                <div>
+                    <strong>Ошибок:</strong>
+                    <span id="import-errors-count">0</span>
+                </div>
+                <div>
+                    <strong>Изображений:</strong>
+                    <span id="import-images">0</span>
+                </div>
+            </div>
+            <div id="import-status" class="import-loader__status"></div>
+            <ul id="import-errors" class="import-loader__errors"></ul>
+        </div>
+    </div>
+</div>
+<style>
+    .import-loader {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.35);
+        z-index: 9999;
+    }
+    .import-loader__card {
+        background: #fff;
+        border-radius: 8px;
+        padding: 20px 24px;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        max-width: 420px;
+    }
+    .import-loader__content {
+        display: grid;
+        gap: 8px;
+    }
+    .import-loader__spinner {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 3px solid #c8c8c8;
+        border-top-color: #3a73ff;
+        animation: import-spin 1s linear infinite;
+    }
+    .import-loader__text {
+        font-size: 14px;
+    }
+    .import-loader__meta {
+        display: grid;
+        gap: 4px;
+        font-size: 12px;
+        color: #333;
+    }
+    .import-loader__status {
+        font-size: 12px;
+        color: #555;
+    }
+    .import-loader__errors {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 12px;
+        color: #b00020;
+        max-height: 120px;
+        overflow: auto;
+    }
+    @keyframes import-spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+<script>
+    (function () {
+        var form = document.getElementById("import-form");
+        var loader = document.getElementById("import-loader");
+        var submit = document.getElementById("import-submit");
+        var statusEl = document.getElementById("import-status");
+        var processedEl = document.getElementById("import-processed");
+        var totalEl = document.getElementById("import-total");
+        var createdEl = document.getElementById("import-created");
+        var updatedEl = document.getElementById("import-updated");
+        var skippedEl = document.getElementById("import-skipped");
+        var errorsCountEl = document.getElementById("import-errors-count");
+        var imagesEl = document.getElementById("import-images");
+        var errorsListEl = document.getElementById("import-errors");
+        if (!form || !loader || !submit) return;
+        var pollTimer = null;
+
+        var updateUI = function (payload) {
+            if (processedEl) processedEl.textContent = payload.processed || 0;
+            if (totalEl) totalEl.textContent = payload.total || 0;
+            if (createdEl) createdEl.textContent = payload.created || 0;
+            if (updatedEl) updatedEl.textContent = payload.updated || 0;
+            if (skippedEl) skippedEl.textContent = payload.skipped || 0;
+            if (errorsCountEl) errorsCountEl.textContent = payload.errors || 0;
+            if (imagesEl) imagesEl.textContent = payload.images || 0;
+            if (statusEl) {
+                if (payload.status === "done") {
+                    statusEl.textContent = "Импорт завершен.";
+                } else if (payload.status === "error") {
+                    statusEl.textContent =
+                        "Ошибка импорта: " + (payload.error || "");
+                } else {
+                    statusEl.textContent = "Импорт в процессе...";
+                }
+            }
+            if (errorsListEl) {
+                errorsListEl.innerHTML = "";
+                if (payload.image_errors && payload.image_errors.length) {
+                    payload.image_errors.forEach(function (entry) {
+                        var li = document.createElement("li");
+                        li.textContent = entry;
+                        errorsListEl.appendChild(li);
+                    });
+                }
+            }
+        };
+
+        var startPolling = function (jobId) {
+            var template = loader.getAttribute("data-status-url-template");
+            if (!template) return;
+            var statusUrl = template.replace(
+                "00000000-0000-0000-0000-000000000000",
+                jobId,
+            );
+            if (pollTimer) {
+                clearInterval(pollTimer);
+            }
+            pollTimer = setInterval(function () {
+                fetch(statusUrl, { credentials: "same-origin" })
+                    .then(function (res) {
+                        return res.json();
+                    })
+                    .then(function (payload) {
+                        updateUI(payload);
+                        if (
+                            payload.status === "done" ||
+                            payload.status === "error"
+                        ) {
+                            clearInterval(pollTimer);
+                            pollTimer = null;
+                            submit.removeAttribute("disabled");
+                        }
+                    })
+                    .catch(function () {
+                        if (statusEl) {
+                            statusEl.textContent =
+                                "Не удалось получить статус импорта.";
+                        }
+                    });
+            }, 1000);
+        };
+
+        form.addEventListener("submit", function (event) {
+            event.preventDefault();
+            submit.setAttribute("disabled", "disabled");
+            loader.style.display = "flex";
+            loader.setAttribute("aria-busy", "true");
+
+            var formData = new FormData(form);
+            fetch(form.getAttribute("action") || window.location.href, {
+                method: "POST",
+                body: formData,
+                headers: { "X-Requested-With": "XMLHttpRequest" },
+                credentials: "same-origin",
+            })
+                .then(function (res) {
+                    return res.json();
+                })
+                .then(function (payload) {
+                    if (payload.job_id) {
+                        updateUI(payload);
+                        startPolling(payload.job_id);
+                    } else {
+                        if (statusEl) {
+                            statusEl.textContent =
+                                "Не удалось запустить импорт.";
+                        }
+                        submit.removeAttribute("disabled");
+                    }
+                })
+                .catch(function () {
+                    if (statusEl) {
+                        statusEl.textContent = "Ошибка при отправке формы.";
+                    }
+                    submit.removeAttribute("disabled");
+                });
+        });
+    })();
+</script>
 {% endblock %}

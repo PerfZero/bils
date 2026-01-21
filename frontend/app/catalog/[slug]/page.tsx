@@ -14,10 +14,53 @@ export default function CatalogSlugPage({ params }) {
   const [products, setProducts] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [productsLoading, setProductsLoading] = useState(true);
+  const [priceBounds, setPriceBounds] = useState({ min: 0, max: 0 });
+  const [manufacturerOptions, setManufacturerOptions] = useState<
+    { id: string; label: string; title: string }[]
+  >([]);
+  const [countryOptions, setCountryOptions] = useState<
+    { id: string; label: string; title: string }[]
+  >([]);
   const router = useRouter();
   const searchParams = useSearchParams();
   const pageParam = Number(searchParams.get("page") || "1");
   const currentPage = Number.isNaN(pageParam) || pageParam < 1 ? 1 : pageParam;
+  const parseListParam = (value) => {
+    if (!value) return [];
+    return value
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  };
+  const selectedBrands = parseListParam(searchParams.get("brand"));
+  const selectedCountries = parseListParam(searchParams.get("country"));
+  const priceMinParam = (searchParams.get("price_min") || "").trim();
+  const priceMaxParam = (searchParams.get("price_max") || "").trim();
+  const [draftBrands, setDraftBrands] = useState<string[]>([]);
+  const [draftCountries, setDraftCountries] = useState<string[]>([]);
+  const [draftPriceMin, setDraftPriceMin] = useState("");
+  const [draftPriceMax, setDraftPriceMax] = useState("");
+
+  useEffect(() => {
+    setDraftBrands(selectedBrands);
+    setDraftCountries(selectedCountries);
+    setDraftPriceMin(priceMinParam);
+    setDraftPriceMax(priceMaxParam);
+  }, [
+    selectedBrands.join(","),
+    selectedCountries.join(","),
+    priceMinParam,
+    priceMaxParam,
+  ]);
+
+  useEffect(() => {
+    if (!priceMinParam && priceBounds.min > 0) {
+      setDraftPriceMin(String(priceBounds.min));
+    }
+    if (!priceMaxParam && priceBounds.max > 0) {
+      setDraftPriceMax(String(priceBounds.max));
+    }
+  }, [priceBounds.min, priceBounds.max, priceMinParam, priceMaxParam]);
 
   useEffect(() => {
     const fetchCategory = async () => {
@@ -78,18 +121,99 @@ export default function CatalogSlugPage({ params }) {
   }, [params.slug]);
 
   useEffect(() => {
+    const fetchFilterOptions = async () => {
+      try {
+        const brandUrl = new URL(`${API_BASE_URL}/api/brands/`);
+        brandUrl.searchParams.set("category", params.slug);
+        const countryUrl = new URL(`${API_BASE_URL}/api/products/countries/`);
+        countryUrl.searchParams.set("category", params.slug);
+        if (selectedBrands.length) {
+          countryUrl.searchParams.set("brand", selectedBrands.join(","));
+        }
+
+        const [brandsResponse, countriesResponse] = await Promise.all([
+          fetch(brandUrl.toString()),
+          fetch(countryUrl.toString()),
+        ]);
+        const brandsPayload = await brandsResponse.json();
+        const brandsData = Array.isArray(brandsPayload)
+          ? brandsPayload
+          : brandsPayload.results || [];
+        const countriesData = await countriesResponse.json();
+
+        setManufacturerOptions(
+          brandsData.map((brand) => ({
+            id: brand.slug || String(brand.id),
+            label: brand.name,
+            title: brand.name,
+          })),
+        );
+        setCountryOptions(
+          (Array.isArray(countriesData) ? countriesData : [])
+            .filter(Boolean)
+            .map((country) => ({
+              id: country,
+              label: country,
+              title: country,
+            })),
+        );
+      } catch (error) {
+        console.error("Failed to fetch filter options:", error);
+        setManufacturerOptions([]);
+        setCountryOptions([]);
+      }
+    };
+
+    if (params.slug) {
+      fetchFilterOptions();
+    }
+  }, [params.slug, selectedBrands.join(",")]);
+
+  useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await fetch(
-          `${API_BASE_URL}/api/products/?category=${params.slug}&page=${currentPage}`,
-        );
+        setProductsLoading(true);
+        const productsUrl = new URL(`${API_BASE_URL}/api/products/`);
+        productsUrl.searchParams.set("category", params.slug);
+        productsUrl.searchParams.set("page", String(currentPage));
+        if (selectedBrands.length) {
+          productsUrl.searchParams.set("brand", selectedBrands.join(","));
+        }
+        if (selectedCountries.length) {
+          productsUrl.searchParams.set("country", selectedCountries.join(","));
+        }
+        if (priceMinParam) {
+          productsUrl.searchParams.set("price_min", priceMinParam);
+        }
+        if (priceMaxParam) {
+          productsUrl.searchParams.set("price_max", priceMaxParam);
+        }
+        const response = await fetch(productsUrl.toString());
         const data = await response.json();
         if (Array.isArray(data)) {
           setProducts(data);
           setTotalCount(data.length);
+          const numericPrices = data
+            .map((item) => Number(item?.price))
+            .filter((value) => Number.isFinite(value));
+          if (numericPrices.length) {
+            setPriceBounds({
+              min: Math.min(...numericPrices),
+              max: Math.max(...numericPrices),
+            });
+          }
         } else {
           setProducts(data.results || []);
           setTotalCount(data.count || 0);
+          const numericPrices = (data.results || [])
+            .map((item) => Number(item?.price))
+            .filter((value) => Number.isFinite(value));
+          if (numericPrices.length) {
+            setPriceBounds({
+              min: Math.min(...numericPrices),
+              max: Math.max(...numericPrices),
+            });
+          }
         }
       } catch (error) {
         console.error("Failed to fetch products:", error);
@@ -103,7 +227,84 @@ export default function CatalogSlugPage({ params }) {
     if (params.slug) {
       fetchProducts();
     }
-  }, [params.slug, currentPage]);
+  }, [
+    params.slug,
+    currentPage,
+    selectedBrands.join(","),
+    selectedCountries.join(","),
+    priceMinParam,
+    priceMaxParam,
+  ]);
+
+  const handleBrandToggle = (value, checked) => {
+    setDraftBrands((prev) => {
+      const next = new Set(prev);
+      if (checked) {
+        next.add(value);
+      } else {
+        next.delete(value);
+      }
+      return Array.from(next);
+    });
+  };
+
+  const handleCountryToggle = (value, checked) => {
+    setDraftCountries((prev) => {
+      const next = new Set(prev);
+      if (checked) {
+        next.add(value);
+      } else {
+        next.delete(value);
+      }
+      return Array.from(next);
+    });
+  };
+
+  const handleApplyFilters = () => {
+    const nextParams = new URLSearchParams(searchParams.toString());
+    if (draftBrands.length) {
+      nextParams.set("brand", draftBrands.join(","));
+    } else {
+      nextParams.delete("brand");
+    }
+    if (draftCountries.length) {
+      nextParams.set("country", draftCountries.join(","));
+    } else {
+      nextParams.delete("country");
+    }
+    if (draftPriceMin.trim()) {
+      nextParams.set("price_min", draftPriceMin.trim());
+    } else {
+      nextParams.delete("price_min");
+    }
+    if (draftPriceMax.trim()) {
+      nextParams.set("price_max", draftPriceMax.trim());
+    } else {
+      nextParams.delete("price_max");
+    }
+    nextParams.set("page", "1");
+    const query = nextParams.toString();
+    router.push(
+      query ? `/catalog/${params.slug}/?${query}` : `/catalog/${params.slug}/`,
+    );
+  };
+
+  const handleClearFilters = () => {
+    setDraftBrands([]);
+    setDraftCountries([]);
+    setDraftPriceMin("");
+    setDraftPriceMax("");
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.delete("brand");
+    nextParams.delete("country");
+    nextParams.delete("price_min");
+    nextParams.delete("price_max");
+    nextParams.set("page", "1");
+    const query = nextParams.toString();
+    router.push(
+      query ? `/catalog/${params.slug}/?${query}` : `/catalog/${params.slug}/`,
+    );
+  };
 
   const pageSize = 24;
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
@@ -201,7 +402,23 @@ export default function CatalogSlugPage({ params }) {
                     position: "relative",
                   }}
                 >
-                  <BaseFilter />
+                  <BaseFilter
+                    manufacturerOptions={manufacturerOptions}
+                    countryOptions={countryOptions}
+                    selectedManufacturers={draftBrands}
+                    selectedCountries={draftCountries}
+                    priceMinBound={priceBounds.min}
+                    priceMaxBound={priceBounds.max}
+                    priceMin={draftPriceMin}
+                    priceMax={draftPriceMax}
+                    onPriceMinChange={setDraftPriceMin}
+                    onPriceMaxChange={setDraftPriceMax}
+                    onManufacturerToggle={handleBrandToggle}
+                    onCountryToggle={handleCountryToggle}
+                    onApply={handleApplyFilters}
+                    onClearAll={handleClearFilters}
+                    totalCount={totalCount}
+                  />
                   <ul className="a-page-catalog__sticky resize-sensor category-list__categories">
                     <li className="category-list__category">
                       <div>

@@ -1,5 +1,18 @@
 from rest_framework import serializers
-from .models import Category, Brand, Product, ProductAttribute, ProductImage, FAQCategory, FAQQuestion
+from pathlib import Path
+from django.db.models import Avg, Count
+from .models import (
+    Category,
+    Brand,
+    Product,
+    ProductAttribute,
+    ProductImage,
+    ProductComplectation,
+    ProductDocument,
+    ProductReview,
+    FAQCategory,
+    FAQQuestion,
+)
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -85,6 +98,10 @@ class ProductSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField()
     images = serializers.SerializerMethodField()
     attributes = serializers.SerializerMethodField()
+    complectation_items = serializers.SerializerMethodField()
+    documents = serializers.SerializerMethodField()
+    reviews = serializers.SerializerMethodField()
+    review_stats = serializers.SerializerMethodField()
     href = serializers.SerializerMethodField()
     reviews_href = serializers.SerializerMethodField()
 
@@ -97,6 +114,11 @@ class ProductSerializer(serializers.ModelSerializer):
             "name",
             "slug",
             "description",
+            "description_full",
+            "auto_text",
+            "tabs_auto_text",
+            "documents_auto_text",
+            "complectation_items",
             "price",
             "retail_price",
             "discount_percent",
@@ -110,6 +132,9 @@ class ProductSerializer(serializers.ModelSerializer):
             "is_new",
             "is_active",
             "created_at",
+            "documents",
+            "reviews",
+            "review_stats",
             "category",
             "brand",
             "href",
@@ -157,6 +182,66 @@ class ProductSerializer(serializers.ModelSerializer):
             )
         return attributes
 
+    def get_complectation_items(self, obj):
+        return [
+            {
+                "id": item.id,
+                "name": item.name,
+                "quantity": item.quantity,
+                "order": item.order,
+            }
+            for item in obj.complectation_items.all()
+        ]
+
+    def get_documents(self, obj):
+        documents = []
+        for document in obj.documents.all():
+            file_name = Path(document.file.name).name if document.file else ""
+            documents.append(
+                {
+                    "id": document.id,
+                    "title": document.title or file_name,
+                    "url": document.file.url if document.file else "",
+                    "file_name": file_name,
+                    "file_size": document.file.size if document.file else None,
+                    "order": document.order,
+                }
+            )
+        return documents
+
+    def get_reviews(self, obj):
+        return [
+            {
+                "id": review.id,
+                "author_name": review.author_name,
+                "author_email": review.author_email,
+                "rating": review.rating,
+                "comment": review.comment,
+                "pros": review.pros,
+                "cons": review.cons,
+                "is_anonymous": review.is_anonymous,
+                "likes": review.likes,
+                "dislikes": review.dislikes,
+                "created_at": review.created_at,
+            }
+            for review in obj.reviews.filter(is_active=True)
+        ]
+
+    def get_review_stats(self, obj):
+        reviews_qs = obj.reviews.filter(is_active=True)
+        aggregated = reviews_qs.aggregate(
+            average=Avg("rating"),
+            count=Count("id"),
+        )
+        distribution = {str(score): 0 for score in range(1, 6)}
+        for item in reviews_qs.values("rating").annotate(count=Count("id")):
+            distribution[str(item["rating"])] = item["count"]
+        return {
+            "average": float(aggregated["average"] or 0),
+            "count": aggregated["count"] or 0,
+            "distribution": distribution,
+        }
+
     def get_href(self, obj):
         return f"/product/{obj.slug}/"
 
@@ -176,6 +261,61 @@ class FAQQuestionSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
+
+
+class ProductReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductReview
+        fields = [
+            "id",
+            "product",
+            "author_name",
+            "author_email",
+            "rating",
+            "comment",
+            "pros",
+            "cons",
+            "is_anonymous",
+            "likes",
+            "dislikes",
+            "created_at",
+        ]
+
+
+class ProductReviewCreateSerializer(serializers.ModelSerializer):
+    product_id = serializers.IntegerField(write_only=True, required=False)
+    product_slug = serializers.CharField(write_only=True, required=False)
+
+    class Meta:
+        model = ProductReview
+        fields = [
+            "id",
+            "product_id",
+            "product_slug",
+            "author_name",
+            "author_email",
+            "rating",
+            "comment",
+            "pros",
+            "cons",
+            "is_anonymous",
+        ]
+
+    def validate(self, attrs):
+        product_id = attrs.pop("product_id", None)
+        product_slug = attrs.pop("product_slug", None)
+        product = None
+        if product_id is not None:
+            product = Product.objects.filter(id=product_id).first()
+        if product is None and product_slug:
+            product = Product.objects.filter(slug=product_slug).first()
+        if product is None:
+            raise serializers.ValidationError("Не найден товар для отзыва.")
+        attrs["product"] = product
+        return attrs
+
+    def create(self, validated_data):
+        return ProductReview.objects.create(**validated_data)
 
 
 class FAQCategorySerializer(serializers.ModelSerializer):
