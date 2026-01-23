@@ -569,6 +569,32 @@ def extract_code(product_node):
     return raw or None
 
 
+def extract_seo_number(node):
+    if not node:
+        return None
+    seo_text = extract_seo_text(node)
+    if seo_text:
+        value = parse_number(seo_text)
+        if value is not None:
+            return value
+    for child in find_all(node, lambda n: has_class(n, "seo-text")):
+        seo_text = extract_seo_text(child)
+        if seo_text:
+            value = parse_number(seo_text)
+            if value is not None:
+                return value
+    return None
+
+
+def extract_price_value(node):
+    if not node:
+        return None
+    value = parse_number(text_content(node))
+    if value is not None:
+        return value
+    return extract_seo_number(node)
+
+
 def extract_price_block(product_node):
     price_container = find_first(
         product_node,
@@ -593,8 +619,12 @@ def extract_price_block(product_node):
     old_node = find_first(
         price_block, lambda n: n.tag == "div" and has_class(n, "a-price__old")
     )
-    current_price = parse_number(text_content(current_node)) if current_node else None
-    old_price = parse_number(text_content(old_node)) if old_node else None
+    current_price = extract_price_value(current_node)
+    old_price = extract_price_value(old_node)
+    if current_price is None:
+        current_price = parse_number(price_block.attrs.get("afterauthorization"))
+    if current_price is None:
+        current_price = parse_number(price_block.attrs.get("price"))
     discount_value = parse_number(price_block.attrs.get("discount"))
     min_bonus_price = parse_number(price_block.attrs.get("minbonusprice"))
     show_personal_price_difference = parse_bool(
@@ -1235,6 +1265,10 @@ def extract_detail_price(root_node):
             sidebar_price, lambda n: n.tag == "div" and has_class(n, "a-price")
         )
     if not price_block:
+        price_block = find_first(
+            root_node, lambda n: n.tag == "div" and has_class(n, "a-price")
+        )
+    if not price_block:
         return {"price": None, "retail_price": None, "discount_percent": 0}
 
     current_node = find_first(
@@ -1245,8 +1279,14 @@ def extract_detail_price(root_node):
     old_node = find_first(
         price_block, lambda n: n.tag == "div" and has_class(n, "a-price__old")
     )
-    current_price = parse_number(text_content(current_node)) if current_node else None
-    old_price = parse_number(text_content(old_node)) if old_node else None
+    current_price = extract_price_value(current_node)
+    old_price = extract_price_value(old_node)
+    if current_price is None:
+        current_price = parse_number(price_block.attrs.get("afterauthorization"))
+    if current_price is None:
+        current_price = parse_number(price_block.attrs.get("price"))
+    if old_price is None:
+        old_price = parse_number(price_block.attrs.get("retail"))
     yandex_badge = find_first(
         root_node, lambda n: n.tag == "yandex-pay-badge" and n.attrs.get("amount")
     )
