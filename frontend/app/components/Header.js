@@ -335,7 +335,7 @@ export default function Header({ onProfileClick }) {
                   />
                 </svg>{" "}
                 <span className="a-bar__logo-text">
-                  Сеть центров
+                  Сеть центров1
                   <br />
                   инструмента
                   <br />и{"\u00a0"}техники
