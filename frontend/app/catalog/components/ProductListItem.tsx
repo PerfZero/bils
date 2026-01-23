@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { API_BASE_URL } from "../../../config/api";
+import { addToCart } from "../../lib/cart";
 import FastOrderModal from "./FastOrderModal";
 
 interface ProductListItemProps {
@@ -30,6 +31,7 @@ export function ProductListItem({ product }: ProductListItemProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isFastOrderOpen, setIsFastOrderOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
 
   const images =
     product.images && product.images.length > 1
@@ -78,6 +80,18 @@ export function ProductListItem({ product }: ProductListItemProps) {
     return () => media.removeListener(handleChange);
   }, []);
 
+  const handleAddToCart = async () => {
+    if (!product?.id || isAdding) return;
+    setIsAdding(true);
+    try {
+      await addToCart(product.id, 1);
+    } catch (error) {
+      console.error("Failed to add item to cart", error);
+    } finally {
+      setIsAdding(false);
+    }
+  };
+
   return (
     <li className="a-product-list__item">
       <div className="product-card-line-tile">
@@ -118,7 +132,8 @@ export function ProductListItem({ product }: ProductListItemProps) {
                               "a-gallery-carousel__slide",
                               "swiper-slide",
                             ];
-                            if (index === 0) classes.push("swiper-slide-active");
+                            if (index === 0)
+                              classes.push("swiper-slide-active");
                             if (index === 1) classes.push("swiper-slide-next");
                             return (
                               <div
@@ -453,6 +468,8 @@ export function ProductListItem({ product }: ProductListItemProps) {
                   <button
                     className="a-main-button a-main-button--display-inline a-main-button--type-auto a-main-button--corner-round a-main-button--color-orange"
                     type="button"
+                    onClick={handleAddToCart}
+                    disabled={isAdding}
                   >
                     <span className="a-main-button__wrap">
                       <span className="a-main-button__content">В корзину</span>

@@ -37,6 +37,9 @@ from .models import (
     ProductImportLog,
     FAQCategory,
     FAQQuestion,
+    PromoCode,
+    DeliveryMethod,
+    PaymentMethod,
 )
 
 
@@ -98,6 +101,43 @@ class ProductReviewInline(admin.TabularInline):
     readonly_fields = ("created_at",)
 
 
+@admin.register(PromoCode)
+class PromoCodeAdmin(admin.ModelAdmin):
+    list_display = (
+        "code",
+        "discount_type",
+        "discount_value",
+        "min_total",
+        "is_active",
+        "starts_at",
+        "ends_at",
+    )
+    list_filter = ("discount_type", "is_active")
+    search_fields = ("code",)
+
+
+@admin.register(DeliveryMethod)
+class DeliveryMethodAdmin(admin.ModelAdmin):
+    list_display = (
+        "name",
+        "code",
+        "requires_address",
+        "requires_delivery_date",
+        "is_active",
+        "is_default",
+        "order",
+    )
+    list_filter = ("is_active", "is_default", "requires_address", "requires_delivery_date")
+    search_fields = ("name", "code")
+
+
+@admin.register(PaymentMethod)
+class PaymentMethodAdmin(admin.ModelAdmin):
+    list_display = ("name", "code", "is_active", "is_default", "order")
+    list_filter = ("is_active", "is_default")
+    search_fields = ("name", "code")
+
+
 class ProductImportForm(forms.Form):
     file = forms.FileField(label="JSON файл")
     category = forms.ModelChoiceField(
@@ -123,6 +163,7 @@ class ProductAdmin(admin.ModelAdmin):
         "category",
         "price",
         "retail_price",
+        "weight_kg",
         "is_new",
         "is_active",
         "created_at",

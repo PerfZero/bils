@@ -1,8 +1,39 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { getOrCreateCart } from "../lib/cart";
 
 export default function MobileNavBar({ onProfileClick, onCatalogOpen }) {
+  const [cartCount, setCartCount] = useState(0);
+
+  useEffect(() => {
+    let isActive = true;
+    const updateCount = async () => {
+      try {
+        const { cart } = await getOrCreateCart();
+        if (isActive) {
+          setCartCount(cart?.total_quantity || 0);
+        }
+      } catch (error) {
+        if (isActive) {
+          setCartCount(0);
+        }
+      }
+    };
+
+    updateCount();
+    const handleCartUpdate = (event) => {
+      const nextCount = event?.detail?.total_quantity || 0;
+      setCartCount(nextCount);
+    };
+    window.addEventListener("cart:updated", handleCartUpdate);
+    return () => {
+      isActive = false;
+      window.removeEventListener("cart:updated", handleCartUpdate);
+    };
+  }, []);
+
   return (
     <div className="nav-bar-mobile">
       <ul className="a-helper-list nav-bar-mobile__helper-list">
@@ -74,6 +105,9 @@ export default function MobileNavBar({ onProfileClick, onCatalogOpen }) {
                       xlinkHref="#icon-cart-stroke"
                     />
                   </svg>
+                  {cartCount > 0 && (
+                    <span className="a-helper__count">{cartCount}</span>
+                  )}
                 </span>
                 <span className="a-helper__label">Корзина</span>
               </span>

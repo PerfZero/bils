@@ -2,11 +2,20 @@ from decimal import Decimal, InvalidOperation
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework import status
 from django.db.models import Q
+from django.shortcuts import get_object_or_404
 from .models import (
     Brand,
     Category,
     Product,
+    Cart,
+    CartItem,
+    PromoCode,
+    DeliveryMethod,
+    PaymentMethod,
+    Order,
+    OrderItem,
     ProductAttribute,
     ProductReview,
     FAQCategory,
@@ -21,6 +30,14 @@ from .serializers import (
     ProductReviewCreateSerializer,
     FAQCategorySerializer,
     FAQQuestionSerializer,
+    CartSerializer,
+    CartItemSerializer,
+    CartItemCreateSerializer,
+    CartItemUpdateSerializer,
+    DeliveryMethodSerializer,
+    PaymentMethodSerializer,
+    OrderSerializer,
+    OrderCreateSerializer,
 )
 
 
@@ -228,3 +245,281 @@ class ProductReviewViewSet(viewsets.ModelViewSet):
         if self.action == "create":
             return ProductReviewCreateSerializer
         return ProductReviewSerializer
+
+
+class CartViewSet(viewsets.ViewSet):
+    def _get_cart(self, token):
+        return get_object_or_404(Cart.objects.prefetch_related("items__product"), token=token)
+
+    def create(self, request):
+        cart = Cart.objects.create()
+        serializer = CartSerializer(cart, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def retrieve(self, request, pk=None):
+        cart = self._get_cart(pk)
+        serializer = CartSerializer(cart, context={"request": request})
+        return Response(serializer.data)
+
+    @action(detail=True, methods=["post"], url_path="items")
+    def add_item(self, request, pk=None):
+        cart = self._get_cart(pk)
+        serializer = CartItemCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        product = serializer.validated_data["product"]
+        quantity = serializer.validated_data.get("quantity", 1)
+
+        item, created = CartItem.objects.get_or_create(
+            cart=cart,
+            product=product,
+            defaults={"quantity": quantity, "price": product.price},
+        )
+        if not created:
+            item.quantity += quantity
+            item.price = product.price
+            item.save(update_fields=["quantity", "price"])
+
+        cart.refresh_from_db()
+        response = CartSerializer(cart, context={"request": request})
+        return Response(response.data)
+
+
+class ShareCartViewSet(viewsets.ViewSet):
+    def list(self, request):
+        raw_products = request.query_params.get("products", "")
+        entries = []
+        for part in raw_products.split(","):
+            item = part.strip()
+            if not item:
+                continue
+            if ":" in item:
+                product_id, qty = item.split(":", 1)
+            else:
+                product_id, qty = item, "1"
+            if not product_id.isdigit():
+                continue
+            try:
+                quantity = int(qty)
+            except (TypeError, ValueError):
+                quantity = 1
+            if quantity < 1:
+                continue
+            entries.append((int(product_id), quantity))
+
+        if not entries:
+            return Response(
+                {
+                    "items": [],
+                    "total_quantity": 0,
+                    "total_price": Decimal("0.00"),
+                    "total_discount": Decimal("0.00"),
+                }
+            )
+
+        product_ids = [product_id for product_id, _ in entries]
+        products = {
+            product.id: product
+            for product in Product.objects.filter(id__in=product_ids)
+        }
+
+        items = []
+        total_quantity = 0
+        total_price = Decimal("0.00")
+        total_discount = Decimal("0.00")
+        total_weight = Decimal("0.00")
+        has_weight = False
+
+        for product_id, quantity in entries:
+            product = products.get(product_id)
+            if not product:
+                continue
+            line_total = product.price * quantity
+            retail_total = (
+                product.retail_price * quantity if product.retail_price else None
+            )
+            discount_total = (
+                retail_total - line_total
+                if retail_total and retail_total > line_total
+                else Decimal("0.00")
+            )
+            total_quantity += quantity
+            total_price += line_total
+            total_discount += discount_total
+            if product.weight_kg is not None:
+                has_weight = True
+                total_weight += product.weight_kg * quantity
+            items.append(
+                {
+                    "product_id": product.id,
+                    "product_name": product.name,
+                    "product_slug": product.slug,
+                    "product_image": product.image.url if product.image else None,
+                    "price": product.price,
+                    "retail_price": product.retail_price,
+                    "discount_percent": product.discount_percent,
+                    "quantity": quantity,
+                    "total": line_total,
+                    "total_retail": retail_total,
+                    "discount_total": discount_total,
+                    "weight_kg": product.weight_kg,
+                    "total_weight": product.weight_kg * quantity if product.weight_kg is not None else None,
+                    "href": f"/product/{product.slug}/",
+                }
+            )
+
+        return Response(
+            {
+                "items": items,
+                "total_quantity": total_quantity,
+                "total_price": total_price,
+                "total_discount": total_discount,
+                "total_weight": total_weight if has_weight else None,
+            }
+        )
+
+
+class DeliveryMethodViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = DeliveryMethod.objects.filter(is_active=True).order_by("order", "id")
+    serializer_class = DeliveryMethodSerializer
+    pagination_class = None
+
+
+class PaymentMethodViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = PaymentMethod.objects.filter(is_active=True).order_by("order", "id")
+    serializer_class = PaymentMethodSerializer
+    pagination_class = None
+
+
+class OrderViewSet(viewsets.ModelViewSet):
+    queryset = Order.objects.prefetch_related("items__product").order_by("-created_at")
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            return OrderCreateSerializer
+        return OrderSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = OrderCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        cart = serializer.validated_data["cart"]
+
+        customer_name = serializer.validated_data.get("customer_name", "").strip()
+        customer_email = serializer.validated_data.get("customer_email", "").strip()
+        customer_phone = serializer.validated_data.get("customer_phone", "").strip()
+        address_raw = serializer.validated_data.get("address", "").strip()
+        delivery_method = serializer.validated_data.get("delivery_method", "").strip()
+        payment_method = serializer.validated_data.get("payment_method", "").strip()
+        comment = serializer.validated_data.get("comment", "").strip()
+
+        if not customer_email:
+            customer_email = "no-reply@local"
+
+        city = ""
+        address_line = address_raw
+        if address_raw and "," in address_raw:
+            parts = [part.strip() for part in address_raw.split(",", 1)]
+            city = parts[0]
+            address_line = parts[1] if len(parts) > 1 else address_raw
+        if not address_line:
+            address_line = "Самовывоз"
+
+        total = 0
+        for item in cart.items.all():
+            total += item.price * item.quantity
+        promo_discount = cart.promo_code.calculate_discount(total) if cart.promo_code else 0
+        total_due = max(total - promo_discount, 0)
+
+        order = Order.objects.create(
+            customer_name=customer_name,
+            customer_email=customer_email,
+            customer_phone=customer_phone,
+            address_line=address_line,
+            city=city,
+            delivery_method_code=delivery_method,
+            payment_method_code=payment_method,
+            comment=comment,
+            total=total_due,
+        )
+
+        OrderItem.objects.bulk_create(
+            [
+                OrderItem(
+                    order=order,
+                    product=item.product,
+                    quantity=item.quantity,
+                    price=item.price,
+                )
+                for item in cart.items.all()
+            ]
+        )
+
+        cart.items.all().delete()
+        cart.promo_code = None
+        cart.save(update_fields=["promo_code"])
+
+        response = OrderSerializer(order, context={"request": request})
+        return Response(response.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["patch", "put"], url_path="items/(?P<item_id>[^/.]+)")
+    def update_item(self, request, pk=None, item_id=None):
+        cart = self._get_cart(pk)
+        item = get_object_or_404(CartItem, cart=cart, id=item_id)
+        serializer = CartItemUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        item.quantity = serializer.validated_data["quantity"]
+        item.price = item.product.price
+        item.save(update_fields=["quantity", "price"])
+
+        cart.refresh_from_db()
+        response = CartSerializer(cart, context={"request": request})
+        return Response(response.data)
+
+    @action(detail=True, methods=["delete"], url_path="items/(?P<item_id>[^/.]+)/remove")
+    def remove_item(self, request, pk=None, item_id=None):
+        cart = self._get_cart(pk)
+        item = get_object_or_404(CartItem, cart=cart, id=item_id)
+        item.delete()
+        cart.refresh_from_db()
+        response = CartSerializer(cart, context={"request": request})
+        return Response(response.data)
+
+    @action(detail=True, methods=["post", "delete"], url_path="promo")
+    def promo(self, request, pk=None):
+        cart = self._get_cart(pk)
+        if request.method == "DELETE":
+            cart.promo_code = None
+            cart.save(update_fields=["promo_code"])
+            cart.refresh_from_db()
+            response = CartSerializer(cart, context={"request": request})
+            return Response(response.data)
+
+        code = (request.data.get("code") or "").strip()
+        if not code:
+            cart.promo_code = None
+            cart.save(update_fields=["promo_code"])
+            cart.refresh_from_db()
+            response = CartSerializer(cart, context={"request": request})
+            return Response(response.data)
+
+        promo = PromoCode.objects.filter(code__iexact=code).first()
+        if promo is None:
+            return Response(
+                {"detail": "Промокод не найден."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        subtotal = sum(
+            item.price * item.quantity
+            for item in cart.items.select_related("product")
+        )
+        if not promo.is_valid_for_total(subtotal):
+            return Response(
+                {"detail": "Промокод недоступен."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        cart.promo_code = promo
+        cart.save(update_fields=["promo_code"])
+        cart.refresh_from_db()
+        response = CartSerializer(cart, context={"request": request})
+        return Response(response.data)

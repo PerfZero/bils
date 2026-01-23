@@ -6,11 +6,13 @@ import { Navigation, Thumbs, Pagination } from "swiper/modules";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import ProductTabs from "../../components/ProductTabs";
 import { API_BASE_URL } from "../../../config/api";
+import { addToCart } from "../../lib/cart";
 
 export default function CatalogSlugPage({ params }) {
   const [breadcrumbs, setBreadcrumbs] = useState([]);
   const [product, setProduct] = useState(null);
   const [similarProducts, setSimilarProducts] = useState([]);
+  const [addingItemId, setAddingItemId] = useState(null);
 
   useEffect(() => {
     const fetchProductData = async () => {
@@ -122,6 +124,18 @@ export default function CatalogSlugPage({ params }) {
   const ratingCount = Number(
     product?.review_stats?.count ?? product?.rating_count ?? 0,
   );
+
+  const handleAddToCart = async (productId) => {
+    if (!productId || addingItemId === productId) return;
+    setAddingItemId(productId);
+    try {
+      await addToCart(productId, 1);
+    } catch (error) {
+      console.error("Failed to add item to cart", error);
+    } finally {
+      setAddingItemId(null);
+    }
+  };
   const ratingText = ratingValue ? ratingValue.toFixed(1) : "0";
   const reviewHref = product?.reviews_href || "#";
   const article = product?.article || "";
@@ -714,6 +728,8 @@ export default function CatalogSlugPage({ params }) {
                       <button
                         className="a-main-button a-main-button--display-block a-main-button--type-medium a-main-button--corner-round a-main-button--color-orange"
                         type="button"
+                        onClick={() => handleAddToCart(product?.id)}
+                        disabled={addingItemId === product?.id}
                       >
                         <span className="a-main-button__wrap">
                           <span className="a-main-button__content">
@@ -951,6 +967,8 @@ export default function CatalogSlugPage({ params }) {
                           <button
                             className="a-main-button a-product-card__add a-main-button--display-inline a-main-button--type-auto a-main-button--corner-round a-main-button--color-orange"
                             type="button"
+                            onClick={() => handleAddToCart(item?.id)}
+                            disabled={addingItemId === item?.id}
                           >
                             <span className="a-main-button__wrap">
                               <span className="a-main-button__content">
@@ -962,6 +980,8 @@ export default function CatalogSlugPage({ params }) {
                             <button
                               className="a-main-button a-main-button--display-inline a-main-button--type-auto a-main-button--corner-round a-main-button--color-orange"
                               type="button"
+                              onClick={() => handleAddToCart(item?.id)}
+                              disabled={addingItemId === item?.id}
                             >
                               <span className="a-main-button__constrain">
                                 <svg className="a-svg a-main-button__icon a-main-button__icon--center a-svg--medium a-main-button__icon--icon-cart-stroke a-main-button__icon--color">

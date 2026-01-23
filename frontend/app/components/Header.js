@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { API_BASE_URL } from "../../config/api";
+import { getOrCreateCart } from "../lib/cart";
 
 const chunkItems = (items, size) => {
   if (!items?.length) {
@@ -27,6 +28,7 @@ export default function Header({ onProfileClick }) {
   const [activeChildIndex, setActiveChildIndex] = useState(0);
   const [catalogItems, setCatalogItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [cartCount, setCartCount] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -37,6 +39,33 @@ export default function Header({ onProfileClick }) {
     window.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    let isActive = true;
+    const updateCount = async () => {
+      try {
+        const { cart } = await getOrCreateCart();
+        if (isActive) {
+          setCartCount(cart?.total_quantity || 0);
+        }
+      } catch (error) {
+        if (isActive) {
+          setCartCount(0);
+        }
+      }
+    };
+
+    updateCount();
+    const handleCartUpdate = (event) => {
+      const nextCount = event?.detail?.total_quantity || 0;
+      setCartCount(nextCount);
+    };
+    window.addEventListener("cart:updated", handleCartUpdate);
+    return () => {
+      isActive = false;
+      window.removeEventListener("cart:updated", handleCartUpdate);
+    };
   }, []);
 
   useEffect(() => {
@@ -335,7 +364,7 @@ export default function Header({ onProfileClick }) {
                   />
                 </svg>{" "}
                 <span className="a-bar__logo-text">
-                  Сеть центров1
+                  Сеть центров
                   <br />
                   инструмента
                   <br />и{"\u00a0"}техники
@@ -526,6 +555,9 @@ export default function Header({ onProfileClick }) {
                             xlinkHref="#icon-cart-stroke"
                           />
                         </svg>
+                        {cartCount > 0 && (
+                          <span className="a-helper__count">{cartCount}</span>
+                        )}
                       </span>
                       <span className="a-helper__label">Корзина</span>
                     </span>

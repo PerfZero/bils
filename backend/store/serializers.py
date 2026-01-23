@@ -5,6 +5,13 @@ from .models import (
     Category,
     Brand,
     Product,
+    Cart,
+    CartItem,
+    PromoCode,
+    DeliveryMethod,
+    PaymentMethod,
+    Order,
+    OrderItem,
     ProductAttribute,
     ProductImage,
     ProductComplectation,
@@ -131,6 +138,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "rating_count",
             "is_new",
             "is_active",
+            "weight_kg",
             "created_at",
             "documents",
             "reviews",
@@ -330,3 +338,289 @@ class FAQCategorySerializer(serializers.ModelSerializer):
             "order",
             "questions",
         ]
+
+
+class CartItemSerializer(serializers.ModelSerializer):
+    product_name = serializers.SerializerMethodField()
+    product_slug = serializers.SerializerMethodField()
+    product_image = serializers.SerializerMethodField()
+    retail_price = serializers.SerializerMethodField()
+    discount_percent = serializers.SerializerMethodField()
+    total = serializers.SerializerMethodField()
+    total_retail = serializers.SerializerMethodField()
+    discount_total = serializers.SerializerMethodField()
+    weight_kg = serializers.SerializerMethodField()
+    total_weight = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CartItem
+        fields = [
+            "id",
+            "product_id",
+            "product_name",
+            "product_slug",
+            "product_image",
+            "quantity",
+            "price",
+            "retail_price",
+            "discount_percent",
+            "total",
+            "total_retail",
+            "discount_total",
+            "weight_kg",
+            "total_weight",
+        ]
+
+    def get_product_name(self, obj):
+        return obj.product.name
+
+    def get_product_slug(self, obj):
+        return obj.product.slug
+
+    def get_product_image(self, obj):
+        if obj.product.image:
+            return obj.product.image.url
+        return None
+
+    def get_retail_price(self, obj):
+        return obj.product.retail_price
+
+    def get_discount_percent(self, obj):
+        return obj.product.discount_percent
+
+    def get_total(self, obj):
+        return obj.price * obj.quantity
+
+    def get_total_retail(self, obj):
+        retail_price = obj.product.retail_price
+        if retail_price is None:
+            return None
+        return retail_price * obj.quantity
+
+    def get_discount_total(self, obj):
+        retail_price = obj.product.retail_price
+        if retail_price is None:
+            return None
+        total_retail = retail_price * obj.quantity
+        total = obj.price * obj.quantity
+        return total_retail - total if total_retail > total else 0
+
+    def get_weight_kg(self, obj):
+        return obj.product.weight_kg
+
+    def get_total_weight(self, obj):
+        if obj.product.weight_kg is None:
+            return None
+        return obj.product.weight_kg * obj.quantity
+
+
+class CartSerializer(serializers.ModelSerializer):
+    items = CartItemSerializer(many=True, read_only=True)
+    promo_code = serializers.SerializerMethodField()
+    total_quantity = serializers.SerializerMethodField()
+    total_price = serializers.SerializerMethodField()
+    total_retail = serializers.SerializerMethodField()
+    total_discount = serializers.SerializerMethodField()
+    promo_discount = serializers.SerializerMethodField()
+    total_due = serializers.SerializerMethodField()
+    total_weight = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Cart
+        fields = [
+            "token",
+            "created_at",
+            "items",
+            "promo_code",
+            "total_quantity",
+            "total_price",
+            "total_retail",
+            "total_discount",
+            "promo_discount",
+            "total_due",
+            "total_weight",
+        ]
+
+    def _items(self, obj):
+        return obj.items.select_related("product")
+
+    def _subtotal(self, obj):
+        return sum(item.price * item.quantity for item in self._items(obj))
+
+    def get_promo_code(self, obj):
+        return obj.promo_code.code if obj.promo_code else None
+
+    def get_total_quantity(self, obj):
+        return sum(item.quantity for item in self._items(obj))
+
+    def get_total_price(self, obj):
+        return self._subtotal(obj)
+
+    def get_total_retail(self, obj):
+        total = 0
+        has_retail = False
+        for item in self._items(obj):
+            if item.product.retail_price is None:
+                continue
+            has_retail = True
+            total += item.product.retail_price * item.quantity
+        return total if has_retail else None
+
+    def get_total_discount(self, obj):
+        total_discount = 0
+        has_retail = False
+        for item in self._items(obj):
+            retail_price = item.product.retail_price
+            if retail_price is None:
+                continue
+            has_retail = True
+            total_discount += max(
+                (retail_price * item.quantity) - (item.price * item.quantity), 0
+            )
+        return total_discount if has_retail else None
+
+    def get_promo_discount(self, obj):
+        if not obj.promo_code:
+            return 0
+        subtotal = self._subtotal(obj)
+        return obj.promo_code.calculate_discount(subtotal)
+
+    def get_total_due(self, obj):
+        subtotal = self._subtotal(obj)
+        promo_discount = self.get_promo_discount(obj) or 0
+        return max(subtotal - promo_discount, 0)
+
+    def get_total_weight(self, obj):
+        total = 0
+        has_weight = False
+        for item in self._items(obj):
+            if item.product.weight_kg is None:
+                continue
+            has_weight = True
+            total += item.product.weight_kg * item.quantity
+        return total if has_weight else None
+
+
+class DeliveryMethodSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DeliveryMethod
+        fields = [
+            "id",
+            "code",
+            "name",
+            "description",
+            "icon",
+            "requires_address",
+            "requires_delivery_date",
+            "is_default",
+        ]
+
+
+class PaymentMethodSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PaymentMethod
+        fields = [
+            "id",
+            "code",
+            "name",
+            "description",
+            "icon",
+            "is_default",
+        ]
+
+
+class OrderItemSerializer(serializers.ModelSerializer):
+    product_name = serializers.SerializerMethodField()
+    product_slug = serializers.SerializerMethodField()
+    product_image = serializers.SerializerMethodField()
+
+    class Meta:
+        model = OrderItem
+        fields = [
+            "id",
+            "product_id",
+            "product_name",
+            "product_slug",
+            "product_image",
+            "quantity",
+            "price",
+        ]
+
+    def get_product_name(self, obj):
+        return obj.product.name
+
+    def get_product_slug(self, obj):
+        return obj.product.slug
+
+    def get_product_image(self, obj):
+        if obj.product.image:
+            return obj.product.image.url
+        return None
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    items = OrderItemSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Order
+        fields = [
+            "id",
+            "status",
+            "customer_name",
+            "customer_email",
+            "customer_phone",
+            "address_line",
+            "city",
+            "postal_code",
+            "delivery_method_code",
+            "payment_method_code",
+            "comment",
+            "total",
+            "created_at",
+            "items",
+        ]
+
+
+class OrderCreateSerializer(serializers.Serializer):
+    cart_token = serializers.UUIDField()
+    customer_name = serializers.CharField(max_length=120)
+    customer_email = serializers.EmailField(required=False, allow_blank=True)
+    customer_phone = serializers.CharField(required=False, allow_blank=True, max_length=40)
+    address = serializers.CharField(required=False, allow_blank=True)
+    delivery_method = serializers.CharField(required=False, allow_blank=True)
+    payment_method = serializers.CharField(required=False, allow_blank=True)
+    comment = serializers.CharField(required=False, allow_blank=True)
+
+    def validate(self, attrs):
+        cart = Cart.objects.filter(token=attrs["cart_token"]).prefetch_related(
+            "items__product"
+        ).first()
+        if cart is None:
+            raise serializers.ValidationError("Корзина не найдена.")
+        if not cart.items.exists():
+            raise serializers.ValidationError("Корзина пуста.")
+        attrs["cart"] = cart
+        return attrs
+
+
+class CartItemCreateSerializer(serializers.Serializer):
+    product_id = serializers.IntegerField(required=False)
+    product_slug = serializers.CharField(required=False)
+    quantity = serializers.IntegerField(min_value=1, default=1)
+
+    def validate(self, attrs):
+        product_id = attrs.get("product_id")
+        product_slug = attrs.get("product_slug")
+        product = None
+        if product_id is not None:
+            product = Product.objects.filter(id=product_id).first()
+        if product is None and product_slug:
+            product = Product.objects.filter(slug=product_slug).first()
+        if product is None:
+            raise serializers.ValidationError("Не найден товар для корзины.")
+        attrs["product"] = product
+        return attrs
+
+
+class CartItemUpdateSerializer(serializers.Serializer):
+    quantity = serializers.IntegerField(min_value=1)

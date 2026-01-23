@@ -1,7 +1,9 @@
 import uuid
+from decimal import Decimal, ROUND_HALF_UP
 from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.conf import settings
+from django.utils import timezone
 from mptt.models import MPTTModel, TreeForeignKey
 
 
@@ -23,9 +25,9 @@ class Category(MPTTModel):
     is_active = models.BooleanField("Активна", default=True)
 
     # MPTT fields
-    lft = models.PositiveIntegerField(editable=False)
-    rght = models.PositiveIntegerField(editable=False)
-    tree_id = models.PositiveIntegerField(editable=False)
+    lft = models.PositiveIntegerField(editable=False, null=True)
+    rght = models.PositiveIntegerField(editable=False, null=True)
+    tree_id = models.PositiveIntegerField(editable=False, null=True)
     level = models.PositiveIntegerField(editable=False, null=True)
 
     class MPTTMeta:
@@ -104,6 +106,9 @@ class Product(models.Model):
     rating_count = models.PositiveIntegerField("Количество оценок", default=0)
     is_new = models.BooleanField("Новинка", default=False)
     is_active = models.BooleanField("Активен", default=True)
+    weight_kg = models.DecimalField(
+        "Вес, кг", max_digits=8, decimal_places=2, null=True, blank=True
+    )
     created_at = models.DateTimeField("Создан", auto_now_add=True)
 
     class Meta:
@@ -323,6 +328,14 @@ class ProductAttribute(models.Model):
 
 class Cart(models.Model):
     token = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    promo_code = models.ForeignKey(
+        "PromoCode",
+        related_name="carts",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Промокод",
+    )
     created_at = models.DateTimeField("Создана", auto_now_add=True)
 
     class Meta:
@@ -331,6 +344,99 @@ class Cart(models.Model):
 
     def __str__(self):
         return str(self.token)
+
+
+class PromoCode(models.Model):
+    TYPE_PERCENT = "percent"
+    TYPE_FIXED = "fixed"
+
+    TYPE_CHOICES = [
+        (TYPE_PERCENT, "Процент"),
+        (TYPE_FIXED, "Фиксированная сумма"),
+    ]
+
+    code = models.CharField("Код", max_length=40, unique=True, db_index=True)
+    discount_type = models.CharField(
+        "Тип скидки", max_length=20, choices=TYPE_CHOICES, default=TYPE_PERCENT
+    )
+    discount_value = models.DecimalField(
+        "Значение скидки", max_digits=10, decimal_places=2
+    )
+    min_total = models.DecimalField(
+        "Минимальная сумма", max_digits=10, decimal_places=2, default=0
+    )
+    is_active = models.BooleanField("Активен", default=True)
+    starts_at = models.DateTimeField("Начало", null=True, blank=True)
+    ends_at = models.DateTimeField("Окончание", null=True, blank=True)
+    created_at = models.DateTimeField("Создан", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Промокод"
+        verbose_name_plural = "Промокоды"
+        ordering = ["-created_at", "code"]
+
+    def __str__(self):
+        return self.code
+
+    def is_valid_for_total(self, total):
+        now = timezone.now()
+        if not self.is_active:
+            return False
+        if self.starts_at and self.starts_at > now:
+            return False
+        if self.ends_at and self.ends_at < now:
+            return False
+        if total < self.min_total:
+            return False
+        return True
+
+    def calculate_discount(self, total):
+        if not self.is_valid_for_total(total):
+            return 0
+        if self.discount_type == self.TYPE_FIXED:
+            amount = min(self.discount_value, total)
+            return amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        percent = max(self.discount_value, 0)
+        amount = (total * percent) / 100
+        return amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+
+class DeliveryMethod(models.Model):
+    code = models.CharField("Код", max_length=40, unique=True, db_index=True)
+    name = models.CharField("Название", max_length=120)
+    description = models.CharField("Описание", max_length=200, blank=True)
+    icon = models.CharField("Иконка (symbol id)", max_length=80, blank=True)
+    requires_address = models.BooleanField("Требует адрес", default=False)
+    requires_delivery_date = models.BooleanField("Требует дату доставки", default=False)
+    is_active = models.BooleanField("Активен", default=True)
+    is_default = models.BooleanField("По умолчанию", default=False)
+    order = models.PositiveIntegerField("Порядок", default=0)
+
+    class Meta:
+        verbose_name = "Способ получения"
+        verbose_name_plural = "Способы получения"
+        ordering = ["order", "id"]
+
+    def __str__(self):
+        return self.name
+
+
+class PaymentMethod(models.Model):
+    code = models.CharField("Код", max_length=40, unique=True, db_index=True)
+    name = models.CharField("Название", max_length=120)
+    description = models.CharField("Описание", max_length=200, blank=True)
+    icon = models.CharField("Иконка (url)", max_length=200, blank=True)
+    is_active = models.BooleanField("Активен", default=True)
+    is_default = models.BooleanField("По умолчанию", default=False)
+    order = models.PositiveIntegerField("Порядок", default=0)
+
+    class Meta:
+        verbose_name = "Способ оплаты"
+        verbose_name_plural = "Способы оплаты"
+        ordering = ["order", "id"]
+
+    def __str__(self):
+        return self.name
 
 
 class CartItem(models.Model):
@@ -373,6 +479,13 @@ class Order(models.Model):
     address_line = models.CharField("Адрес", max_length=200)
     city = models.CharField("Город", max_length=80)
     postal_code = models.CharField("Индекс", max_length=20, blank=True)
+    delivery_method_code = models.CharField(
+        "Способ получения", max_length=40, blank=True
+    )
+    payment_method_code = models.CharField(
+        "Способ оплаты", max_length=40, blank=True
+    )
+    comment = models.TextField("Комментарий", blank=True)
     total = models.DecimalField("Сумма", max_digits=10, decimal_places=2, default=0)
     created_at = models.DateTimeField("Создан", auto_now_add=True)
 
