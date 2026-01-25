@@ -44,7 +44,10 @@ class CategorySerializer(serializers.ModelSerializer):
         ]
 
     def get_children(self, obj):
-        children = obj.get_children().filter(is_active=True).order_by('order', 'name')
+        children = obj.get_children().filter(is_active=True).order_by("order", "name")
+        allowed_ids = self.context.get("allowed_category_ids")
+        if allowed_ids is not None:
+            children = children.filter(id__in=allowed_ids)
         return CategorySerializer(children, many=True, context=self.context).data
 
     def get_href(self, obj):

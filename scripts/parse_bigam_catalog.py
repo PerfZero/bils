@@ -1598,6 +1598,10 @@ def main():
         )
         if args.verbose:
             print(f"Found {len(page_products)} products on page {page_number}", flush=True)
+        if not page_products:
+            if args.verbose:
+                print(f"No products on page {page_number}; stopping.", flush=True)
+            break
         if args.details:
             workers = max(1, int(args.workers or 1))
             if args.verbose:

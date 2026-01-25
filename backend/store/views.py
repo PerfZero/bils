@@ -3,7 +3,7 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
-from django.db.models import Q
+from django.db.models import Q, Exists, OuterRef
 from django.shortcuts import get_object_or_404
 from .models import (
     Brand,
@@ -45,14 +45,46 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Category.objects.filter(is_active=True).order_by("order", "name")
     serializer_class = CategorySerializer
 
+    def _hide_empty(self):
+        raw = self.request.query_params.get("hide_empty")
+        if raw is None:
+            return True
+        return str(raw).lower() in ("1", "true", "yes")
+
+    def _get_non_empty_category_ids(self):
+        if hasattr(self, "_non_empty_category_ids"):
+            return self._non_empty_category_ids
+        active_products = Product.objects.filter(
+            is_active=True,
+            category__tree_id=OuterRef("tree_id"),
+            category__lft__gte=OuterRef("lft"),
+            category__rght__lte=OuterRef("rght"),
+        )
+        category_ids = (
+            Category.objects.filter(is_active=True)
+            .annotate(has_products=Exists(active_products))
+            .filter(has_products=True)
+            .values_list("id", flat=True)
+        )
+        self._non_empty_category_ids = list(category_ids)
+        return self._non_empty_category_ids
+
     def get_queryset(self):
         queryset = super().get_queryset()
         if self.action == "list":
             queryset = queryset.filter(level=0)
+        if self._hide_empty():
+            queryset = queryset.filter(id__in=self._get_non_empty_category_ids())
         is_popular = self.request.query_params.get("is_popular")
         if is_popular is not None:
             queryset = queryset.filter(is_popular=is_popular.lower() in ("1", "true", "yes"))
         return queryset
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        if self._hide_empty():
+            context["allowed_category_ids"] = self._get_non_empty_category_ids()
+        return context
 
     @action(detail=True, methods=["get"])
     def path(self, request, pk=None):
@@ -194,6 +226,9 @@ class BrandViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        hide_empty = self.request.query_params.get("hide_empty")
+        if hide_empty is None or str(hide_empty).lower() in ("1", "true", "yes"):
+            queryset = queryset.filter(products__is_active=True).distinct()
         letter = self.request.query_params.get("letter")
         category_slug = self.request.query_params.get("category")
         if letter:
