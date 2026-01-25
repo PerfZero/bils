@@ -22660,11 +22660,14 @@ h5.a-title-indent {
 }
 
 .a-brand-carousel__button {
-    top: 50%;
+    top: 40%;
     transform: translateY(-50%);
     margin: 0;
     padding: 0;
+    position: absolute;
     width: 48px;
+    z-index: 99888;
+    cursor: pointer;
     height: 48px;
     border: none;
     background: none;
@@ -45898,6 +45901,7 @@ a:hover {
 
 .a-page-main__title {
     width: 100%;
+    pointer-events: none;
 }
 
 .a-page-main__banner .a-picture-card {
@@ -46179,7 +46183,7 @@ a:hover {
     }
 
     .a-page-main__brands .a-page-main__title {
-        margin-bottom: 20px;
+        margin-bottom: 20px !important;
     }
 
     .a-page-main__brands .a-page-main__title:last-child {
@@ -46406,7 +46410,7 @@ a:hover {
     .a-page-main__reviews .a-page-main__title,
     .a-page-main__shops .a-page-main__title {
         position: relative;
-        margin-bottom: 16px;
+        margin-bottom: 16px !important;
         z-index: 1;
     }
 

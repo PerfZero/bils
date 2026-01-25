@@ -1,9 +1,13 @@
 "use client";
 
+import { useRef } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
 
 export default function BrandsSection({ brands = [] }) {
+  const prevRef = useRef(null);
+  const nextRef = useRef(null);
+
   return (
     <section className="a-page-main__brands">
       <div className="a-page-main__container">
@@ -14,10 +18,15 @@ export default function BrandsSection({ brands = [] }) {
             spaceBetween={24}
             slidesPerView={7}
             navigation={{
-              prevEl: ".a-brand-carousel__button--prev",
-              nextEl: ".a-brand-carousel__button--next",
+              prevEl: prevRef.current,
+              nextEl: nextRef.current,
             }}
-            className="a-brand-carousel__container"
+            onBeforeInit={(swiper) => {
+              swiper.params.navigation.prevEl = prevRef.current;
+              swiper.params.navigation.nextEl = nextRef.current;
+            }}
+            className="a-brand-carousel__container swiper-container"
+            wrapperClass="a-brand-carousel__wrapper"
           >
             {brands.map((brand) => (
               <SwiperSlide
@@ -42,7 +51,8 @@ export default function BrandsSection({ brands = [] }) {
 
           <button
             type="button"
-            className="a-brand-carousel__button a-brand-carousel__button--prev swiper-button-prev"
+            className="a-brand-carousel__button a-brand-carousel__button--prev"
+            ref={prevRef}
           >
             <svg className="a-svg">
               <use xlinkHref="#icon-chevron-left"></use>
@@ -50,7 +60,8 @@ export default function BrandsSection({ brands = [] }) {
           </button>
           <button
             type="button"
-            className="a-brand-carousel__button a-brand-carousel__button--next swiper-button-next"
+            className="a-brand-carousel__button a-brand-carousel__button--next"
+            ref={nextRef}
           >
             <svg className="a-svg">
               <use xlinkHref="#icon-chevron-right"></use>

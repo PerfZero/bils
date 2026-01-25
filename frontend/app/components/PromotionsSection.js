@@ -125,7 +125,7 @@ export default function PromotionsSection() {
               swiper.params.navigation.nextEl = nextRef.current;
               swiper.params.pagination.el = paginationRef.current;
             }}
-            className="a-card-carousel__container"
+            className="a-card-carousel__container swiper-container"
             wrapperClass="a-card-carousel__wrapper"
           >
             {promotions.map((promo) => (
@@ -157,7 +157,7 @@ export default function PromotionsSection() {
           <div className="a-card-carousel__navigation">
             <button
               type="button"
-              className="a-card-carousel__button a-card-carousel__button--prev swiper-button-prev"
+              className="a-card-carousel__button a-card-carousel__button--prev"
               ref={prevRef}
             >
               <svg className="a-svg">
@@ -165,12 +165,12 @@ export default function PromotionsSection() {
               </svg>
             </button>
             <div
-              className="a-card-carousel__pagination swiper-pagination swiper-pagination-custom"
+              className="a-card-carousel__pagination"
               ref={paginationRef}
             ></div>
             <button
               type="button"
-              className="a-card-carousel__button a-card-carousel__button--next swiper-button-next"
+              className="a-card-carousel__button a-card-carousel__button--next"
               ref={nextRef}
             >
               <svg className="a-svg">

@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination } from "swiper/modules";
 
@@ -40,6 +41,10 @@ const renderStars = (rating) => {
 };
 
 export default function NewArrivalsSection({ products = [] }) {
+  const prevRef = useRef(null);
+  const nextRef = useRef(null);
+  const paginationRef = useRef(null);
+
   return (
     <section className="a-page-main__novelty">
       <div className="a-page-main__container">
@@ -49,12 +54,8 @@ export default function NewArrivalsSection({ products = [] }) {
             modules={[Navigation, Pagination]}
             spaceBetween={24}
             slidesPerView="auto"
-            navigation={{
-              prevEl: ".a-card-carousel__button--prev",
-              nextEl: ".a-card-carousel__button--next",
-            }}
             pagination={{
-              el: ".a-card-carousel__pagination",
+              el: paginationRef.current,
               type: "custom",
               renderCustom: (swiper, current, total) => {
                 return `
@@ -65,7 +66,14 @@ export default function NewArrivalsSection({ products = [] }) {
                 `;
               },
             }}
-            className="a-card-carousel__container"
+            navigation
+            onBeforeInit={(swiper) => {
+              swiper.params.navigation.prevEl = prevRef.current;
+              swiper.params.navigation.nextEl = nextRef.current;
+              swiper.params.pagination.el = paginationRef.current;
+            }}
+            className="a-card-carousel__container swiper-container"
+            wrapperClass="a-card-carousel__wrapper"
           >
             {products.map((product) => (
               <SwiperSlide key={product.id} className="a-card-carousel__slide">
@@ -224,18 +232,23 @@ export default function NewArrivalsSection({ products = [] }) {
           <div className="a-card-carousel__navigation">
             <button
               type="button"
-              className="a-card-carousel__button a-card-carousel__button--prev swiper-button-prev"
+              className="a-card-carousel__button a-card-carousel__button--prev"
+              ref={prevRef}
             >
               <svg className="a-svg">
                 <use xlinkHref="#icon-chevron-left"></use>
               </svg>
             </button>
 
-            <div className="a-card-carousel__pagination swiper-pagination swiper-pagination-custom"></div>
+            <div
+              className="a-card-carousel__pagination"
+              ref={paginationRef}
+            ></div>
 
             <button
               type="button"
-              className="a-card-carousel__button a-card-carousel__button--next swiper-button-next"
+              className="a-card-carousel__button a-card-carousel__button--next"
+              ref={nextRef}
             >
               <svg className="a-svg">
                 <use xlinkHref="#icon-chevron-right"></use>
