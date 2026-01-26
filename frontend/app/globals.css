@@ -3436,6 +3436,7 @@ h5.a-title-indent {
     display: flex;
     flex-wrap: wrap;
     list-style: none;
+    padding-top: 24px;
     grid-gap: 24px;
     gap: 24px;
 }

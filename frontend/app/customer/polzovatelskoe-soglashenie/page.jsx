@@ -29,61 +29,6 @@ export default function CatalogSlugPage({ params }) {
               <div className="page-static-menu__list">
                 <div className="page-static-menu__item">
                   <a
-                    className="page-static-menu__link nuxt-link-active"
-                    href="/customer/"
-                  >
-                    Как заказать
-                  </a>
-                </div>
-                <div className="page-static-menu__item">
-                  <a className="page-static-menu__link" href="/promo/">
-                    Акции
-                  </a>
-                </div>
-                <div className="page-static-menu__item">
-                  <a className="page-static-menu__link" href="/corporate/">
-                    Корпоративным клиентам
-                  </a>
-                </div>
-                <div className="page-static-menu__item">
-                  <a
-                    className="page-static-menu__link"
-                    href="/customer/delivery/"
-                  >
-                    Доставка
-                  </a>
-                </div>
-                <div className="page-static-menu__item">
-                  <a
-                    className="page-static-menu__link"
-                    href="/customer/mobile-application/"
-                  >
-                    Мобильное приложение
-                  </a>
-                </div>
-                <div className="page-static-menu__item">
-                  <a className="page-static-menu__link" href="/customer/pay/">
-                    Оплата
-                  </a>
-                </div>
-                <div className="page-static-menu__item">
-                  <a
-                    className="page-static-menu__link"
-                    href="/customer/returns/"
-                  >
-                    Правила приемки и возврата
-                  </a>
-                </div>
-                <div className="page-static-menu__item">
-                  <a
-                    className="page-static-menu__link"
-                    href="/customer/garantii/"
-                  >
-                    Гарантии
-                  </a>
-                </div>
-                <div className="page-static-menu__item">
-                  <a
                     aria-current="page"
                     className="page-static-menu__link nuxt-link-exact-active nuxt-link-active page-static-menu__link--active"
                     href="/customer/polzovatelskoe-soglashenie/"
@@ -97,35 +42,6 @@ export default function CatalogSlugPage({ params }) {
                     href="/customer/politika-konfidentsialnosti/"
                   >
                     Политика конфидециальности
-                  </a>
-                </div>
-                <div className="page-static-menu__item">
-                  <a
-                    className="page-static-menu__link"
-                    href="/customer/bonusnaya-programma/"
-                  >
-                    Бонусная программа
-                  </a>
-                </div>
-                <div className="page-static-menu__item">
-                  <a
-                    className="page-static-menu__link"
-                    href="/customer/gift-cards/"
-                  >
-                    Подарочные карты
-                  </a>
-                </div>
-                <div className="page-static-menu__item">
-                  <a
-                    className="page-static-menu__link"
-                    href="/customer/promokody/"
-                  >
-                    Промокоды
-                  </a>
-                </div>
-                <div className="page-static-menu__item">
-                  <a className="page-static-menu__link" href="/customer/faq/">
-                    FAQ
                   </a>
                 </div>
               </div>
@@ -146,7 +62,7 @@ export default function CatalogSlugPage({ params }) {
                 «BREMAX-Инвест» (далее – «BREMAX»), осуществляющий продажу
                 Товара через Интернет-магазин на Сайте, расположенном в сети
                 Интернет по адресу 
-                <a href="/about/">https://www.bigam.ru/about</a>.
+                <a href="/about/">https://bremax.ru/about</a>.
               </p>
               <p>
                 Покупатель – любое физическое или юридическое лицо, способное
@@ -162,7 +78,7 @@ export default function CatalogSlugPage({ params }) {
               </p>
               <p>
                 Сайт – ресурс, расположенный в сети Интернет по адресу 
-                <a href="/">https://www.bigam.ru</a>.
+                <a href="/">https://bremax.ru</a>.
               </p>
               <p>
                 Заказ – запрос Покупателя, оформленный по определенным правилам
@@ -234,18 +150,18 @@ export default function CatalogSlugPage({ params }) {
                 обязуется незамедлительно уведомить об этом Продавца.
               </p>
               <p>
-                5.      На Сайте <a href="/">www.bigam.ru</a> могут быть
-                размещены ссылки, позволяющие перейти на другие Сайты. Продавец
-                не несет никакой ответственности за сведения, публикуемые на
-                этих сайтах, а также за любые последствия, связанные с
-                использованием Покупателем этих ресурсов. На сайте{" "}
-                <a href="/">www.bigam.ru</a> не размещаются преднамеренно ссылки
-                на сомнительные интернет-ресурсы, которые могут привести к
-                повреждению или заражению вирусами компьютера Покупателя.
+                5.      На Сайте <a href="/">bremax.ru</a> могут быть размещены
+                ссылки, позволяющие перейти на другие Сайты. Продавец не несет
+                никакой ответственности за сведения, публикуемые на этих сайтах,
+                а также за любые последствия, связанные с использованием
+                Покупателем этих ресурсов. На сайте <a href="/">bremax.ru</a> не
+                размещаются преднамеренно ссылки на сомнительные
+                интернет-ресурсы, которые могут привести к повреждению или
+                заражению вирусами компьютера Покупателя.
               </p>
               <p>
                 6.      Сайт 
-                <a href="/">www.bigam.ru</a>
+                <a href="/">bremax.ru</a>
                  не содержит материалов, запрещенных к просмотру детям и
                 подросткам младше 14 лет.
               </p>
@@ -386,9 +302,9 @@ export default function CatalogSlugPage({ params }) {
                 10. В случае возникновения вопросов и претензий Покупатель
                 должен обратиться к менеджеру Продавца по телефону, указанному в
                 разделе «Контакты» на Сайте 
-                <a href="/shops/">https://www.bigam.ru/shops/</a>. Все
-                возникающие споры между Покупателем и Продавцом будут решаться
-                путем переговоров, при невозможности решить спор данным способом
+                <a href="/shops/">https://bremax.ru/shops/</a>. Все возникающие
+                споры между Покупателем и Продавцом будут решаться путем
+                переговоров, при невозможности решить спор данным способом
                 претензия от Покупателя будет передана на рассмотрение в
                 судебную инстанцию в соответствии с действующим
                 законодательством РФ. 
@@ -414,12 +330,12 @@ export default function CatalogSlugPage({ params }) {
               <ul type="disc">
                 <li>
                   самостоятельно выбрать Товар на Сайте 
-                  <a href="/">https://www.bigam.ru</a>;
+                  <a href="/">https://bremax.ru</a>;
                 </li>
                 <li>
                   самостоятельно заказать Товар кнопкой «Купить в 1 клик» на
                   Сайте 
-                  <a href="/">https://www.bigam.ru</a>;
+                  <a href="/">https://bremax.ru</a>;
                 </li>
                 <li>
                   связаться по телефонам, указанным на Сайте, с менеджером,
@@ -430,7 +346,7 @@ export default function CatalogSlugPage({ params }) {
               <p>
                 2.      При самостоятельном оформлении Заказа Покупатель
                 выбирает Товар на сайте 
-                <a href="/">https://www.bigam.ru</a>
+                <a href="/">https://bremax.ru</a>
                  и помещает его в Корзину. Помещение Товара в Корзину не
                 является Заказом, Покупатель до начала оформления Заказа может
                 самостоятельно удалять и добавлять Товары в Корзине.
@@ -478,13 +394,12 @@ export default function CatalogSlugPage({ params }) {
                 <li>
                   способ доставки (выбрать из предложенных менеджером или на
                   Сайте{" "}
-                  <a href="/customer/delivery/">www.bigam.ru/about/delivery/</a>
-                  ;
+                  <a href="/customer/delivery/">bremax.ru/about/delivery/</a>;
                 </li>
                 <li>
                   способ оплаты (выбрать из предложенных менеджером или на Сайте{" "}
                   <a href="/customer/delivery/how-to-order/">
-                    https://www.bigam.ru/about/delivery/how-to-order/
+                    https://bremax.ru/about/delivery/how-to-order/
                   </a>
                   ;
                 </li>
@@ -635,14 +550,14 @@ export default function CatalogSlugPage({ params }) {
                 12. Тарифы на доставку Заказов представлены на странице
                 «Доставка» на Сайте{" "}
                 <a href="/customer/delivery/">
-                  https://www.bigam.ru/about/delivery
+                  https://bremax.ru/about/delivery
                 </a>
                 .
               </p>
               <p>
                 13. Заказ также можно получить в одном из пунктов самовывоза
                 Продавца, представленных в разделе «Адреса магазинов» на Сайте{" "}
-                <a href="/shops/">https://www.bigam.ru/shops/</a>.
+                <a href="/shops/">https://bremax.ru/shops/</a>.
               </p>
               <p>
                 14. При возникновении непредвиденных ситуаций, не позволяющих
@@ -685,7 +600,7 @@ export default function CatalogSlugPage({ params }) {
                 Продавца Товаром, он может обратиться в отдел по работе с
                 клиентами Интернет-магазина «BREMAX» по телефонам, указанным на
                 Сайте в разделе «Адреса магазинов» - «Контакты» 
-                <a href="/shops/">https://www.bigam.ru/shops/</a>.
+                <a href="/shops/">https://bremax.ru/shops/</a>.
               </p>
               <p>
                 6.      При приеме Товара от Покупателя курьер службы доставки
@@ -759,7 +674,7 @@ export default function CatalogSlugPage({ params }) {
                 Покупатель. Он также может воспользоваться услугами сервисного
                 центра компании «BREMAX», адрес и контактная информация которого
                 указана на Сайте в разделе «Сервис-Центр» 
-                <a href="/service/">https://www.bigam.ru/service/</a>.
+                <a href="/service/">https://bremax.ru/service/</a>.
               </p>
               <p>
                 6.      В гарантийном обслуживании может быть отказано, если:
@@ -852,7 +767,7 @@ export default function CatalogSlugPage({ params }) {
                 причинённых нарушением в полном объеме.
               </p>
               <p>
-                6.      На Сайте <a href="/">www.bigam.ru</a> Покупатель может
+                6.      На Сайте <a href="/">bremax.ru</a> Покупатель может
                 оставлять отзывы к Товарам. В этом случае он должен помнить, что
                 информация личного характера, которую он сообщает в отзыве,
                 будет видна другим пользователям. Поэтому Интернет-магазин

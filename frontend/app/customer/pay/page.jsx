@@ -143,7 +143,7 @@ export default function CatalogSlugPage({ params }) {
               <div className="static-pages-content">
                 <div className="static-pages-content__item">
                   <p>
-                    В нашем интернет-магазине <a href="/">www.bigam.ru</a> и
+                    В нашем интернет-магазине <a href="/">bremax.ru</a> и
                     розничных магазинах «BREMAX» вы можете оплатить любым
                     удобным для вас способом. Мы работаем как с физическими
                     лицами, так и с юридическими лицами. Для клиентов
@@ -212,8 +212,8 @@ export default function CatalogSlugPage({ params }) {
                         </p>
                         <p>
                           При оплате товара банковской картой на сайте{" "}
-                          <a href="/">www.bigam.ru</a> с вас не взимаются
-                          никакие комиссии, данная услуга бесплатна.
+                          <a href="/">bremax.ru</a> с вас не взимаются никакие
+                          комиссии, данная услуга бесплатна.
                         </p>
                         <p>
                           К оплате принимаются банковские карты платежной
@@ -303,7 +303,7 @@ export default function CatalogSlugPage({ params }) {
                         </p>
                         <p></p>
                         <p>
-                          В интернет-магазине <a href="/">www.bigam.ru</a>
+                          В интернет-магазине <a href="/">bremax.ru</a>
                            для клиентов проводятся ежемесячные 
                           <a href="/promo/">акции</a> и скидки по промокодам. Вы
                           можете подписаться на рассылку и получать уведомление
@@ -343,7 +343,7 @@ export default function CatalogSlugPage({ params }) {
                         </p>
                         <b>Важно!</b> Дисконтные карты действуют только при
                         покупке в розничных магазинах «BREMAX». В
-                        интернет-магазине <a href="/">www.bigam.ru</a>
+                        интернет-магазине <a href="/">bremax.ru</a>
                          данная услуга не предоставляется.
                         <p></p>
                       </div>

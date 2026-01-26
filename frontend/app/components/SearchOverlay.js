@@ -289,7 +289,7 @@ export default function SearchOverlay({ isOpen, onClose }) {
                 </div>
                 <ul className="digi-ac-brand-wrapper">
                   <li>
-                    <a href="https://www.bigam.ru/brands/szsm/">
+                    <a href="https://bremax.ru/brands/szsm/">
                       <button className="digi-ac-block__button digi-ac-brand">
                         <img
                           alt="СЗСМ"
@@ -301,7 +301,7 @@ export default function SearchOverlay({ isOpen, onClose }) {
                     </a>
                   </li>
                   <li>
-                    <a href="https://www.bigam.ru/brands/penzaelektrod/">
+                    <a href="https://bremax.ru/brands/penzaelektrod/">
                       <button className="digi-ac-block__button digi-ac-brand">
                         <img
                           alt="Пензаэлектрод"
@@ -313,7 +313,7 @@ export default function SearchOverlay({ isOpen, onClose }) {
                     </a>
                   </li>
                   <li>
-                    <a href="https://www.bigam.ru/brands/mez/">
+                    <a href="https://bremax.ru/brands/mez/">
                       <button className="digi-ac-block__button digi-ac-brand">
                         <img
                           alt="МЭЗ"
@@ -325,7 +325,7 @@ export default function SearchOverlay({ isOpen, onClose }) {
                     </a>
                   </li>
                   <li>
-                    <a href="https://www.bigam.ru/brands/esab/">
+                    <a href="https://bremax.ru/brands/esab/">
                       <button className="digi-ac-block__button digi-ac-brand">
                         <img
                           alt="Esab"
