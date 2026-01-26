@@ -11,7 +11,11 @@ import CompanyDescription from "./components/CompanyDescription";
 import RecommendedProducts from "./components/RecommendedProducts";
 import PopularCategoriesSlider from "./components/PopularCategoriesSlider";
 
-const apiUrl = process.env.API_URL || "http://localhost:8000";
+const apiUrl =
+  process.env.INTERNAL_API_URL ||
+  process.env.API_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:8000";
 const publicApiUrl = process.env.NEXT_PUBLIC_API_URL || apiUrl;
 
 async function getProducts() {
