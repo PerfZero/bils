@@ -1,0 +1,1474 @@
+{
+  "products": [
+    {
+      "id": "1896788",
+      "code": "0100-0870-9800-6008",
+      "name": "Гриль газовый Koch Maestro 4000 5-0-056",
+      "href": "https://www.bigam.ru/product/koch-maestro-4000-gril-gazovyi-5-0-056-1896788/",
+      "reviews_href": "https://www.bigam.ru/product/koch-maestro-4000-gril-gazovyi-5-0-056-1896788/reviews/",
+      "price": 56990,
+      "retail_price": 56990,
+      "discount_percent": 0,
+      "min_bonus_price": 42579,
+      "show_personal_price_difference": true,
+      "image": "https://cdn.bigam.ru/iblock/f72/f72f12dc8712f78d8af502681155b9ea/1896788.jpg",
+      "images": [
+        {
+          "id": "gallery-0",
+          "url": "https://cdn.bigam.ru/iblock/f72/f72f12dc8712f78d8af502681155b9ea/1896788.jpg",
+          "alt": "Гриль газовый Koch Maestro 4000 5-0-056",
+          "is_main": true
+        },
+        {
+          "id": "gallery-1",
+          "url": "https://cdn.bigam.ru/iblock/9a3/9a358257085743e093d04922a18f235f/1896788_2.jpg",
+          "alt": "Гриль газовый Koch Maestro 4000 5-0-056",
+          "is_main": false
+        },
+        {
+          "id": "gallery-2",
+          "url": "https://cdn.bigam.ru/resize_cache/635356/2f40e03476aab56d4c0b00443b99d752/iblock/f72/f72f12dc8712f78d8af502681155b9ea/1896788.jpg",
+          "alt": "Гриль газовый Koch Maestro 4000 5-0-056",
+          "is_main": false
+        },
+        {
+          "id": "gallery-3",
+          "url": "https://cdn.bigam.ru/resize_cache/635357/2f40e03476aab56d4c0b00443b99d752/iblock/9a3/9a358257085743e093d04922a18f235f/1896788_2.jpg",
+          "alt": "Гриль газовый Koch Maestro 4000 5-0-056",
+          "is_main": false
+        }
+      ],
+      "category": {
+        "name": "Газовые грили",
+        "href": "https://www.bigam.ru/catalog/gazovye-grili-10454/",
+        "slug": "gazovye-grili-10454"
+      },
+      "article": "О00000141837",
+      "description_full": "Гриль газовый Koch Maestro 4000 5-0-056 – газовый гриль с широким функционалом, который удовлетворит запросы не только любителей барбекю, но и опытных грильменов. В котле установлено 4 независимые горелки, позволяющих готовить блюда прямым и косвенным методом. Суммарная мощность 12 кВт обеспечивает стабильную работу в любое время года. А жарочная поверхность 70 на 42 см дает возможность жарить до 15 стейков одновременно. Maestro 4000 выбор тех, кто хочет готовить вкусно, много и получать удовольствие от процесса.<br>\r\n<h3>Преимущества</h3>\r\n<ul>\r\n\t<li>Удобный контроль температуры</li>\r\n\t<li>\r\n\tАвтоматический розжиг</li>\r\n\t<li>\r\n\tДвухслойная крышка</li>\r\n\t<li>\r\n\tРешетка из трех съемных секций</li>\r\n\t<li>\r\n\tКрючки на боковых столиках</li>\r\n\t<li>\r\n\tРучка и панель управления из нержавеющей стали</li>\r\n\t<li>\r\n\tСтальной корпус, защищенный порошковым покрытием</li>\r\n\t<li>\r\n\tКолеса с фиксатором</li>\r\n\t<li>\r\n\tВместительный шкаф для хранения баллона и аксессуаров</li>\r\n\t<li>\r\n\tСовместимость с электрическим вертелом</li>\r\n</ul>",
+      "slug": "koch-maestro-4000-gril-gazovyi-5-0-056-1896788",
+      "brand": {
+        "name": "Koch",
+        "href": "https://www.bigam.ru/brands/koch/",
+        "logo": "https://cdn.bigam.ru/resize_cache/634959/fe338926a11abe405409411d29fe1b0b/iblock/f76/f76a8d3920bc2c2df116723a1c9f0e62/koch.jpg"
+      },
+      "attributes": [
+        {
+          "name": "Материал",
+          "value": "сталь"
+        },
+        {
+          "name": "Габариты, мм",
+          "value": "570х1140х1330"
+        },
+        {
+          "name": "Вес, кг",
+          "value": "35"
+        },
+        {
+          "name": "Тип",
+          "value": "газовый гриль"
+        },
+        {
+          "name": "Покрытие стенок",
+          "value": "жаропрочное"
+        },
+        {
+          "name": "Антипригарное покрытие",
+          "value": "Да"
+        },
+        {
+          "name": "Тип топлива",
+          "value": "газ"
+        },
+        {
+          "name": "Цвет",
+          "value": "черный, красный, серебристый"
+        },
+        {
+          "name": "Пристолье",
+          "value": "2"
+        },
+        {
+          "name": "Термометр",
+          "value": "Да"
+        },
+        {
+          "name": "Система сбора пепла",
+          "value": "Нет"
+        },
+        {
+          "name": "Копчение",
+          "value": "Да"
+        },
+        {
+          "name": "Колесики",
+          "value": "Да"
+        },
+        {
+          "name": "Размер решетки, мм",
+          "value": "700х420"
+        },
+        {
+          "name": "Форма решетки",
+          "value": "прямоугольная"
+        },
+        {
+          "name": "Материал решетки",
+          "value": "чугун"
+        },
+        {
+          "name": "Ширина решетки, мм",
+          "value": "420"
+        },
+        {
+          "name": "Длина решетки, мм",
+          "value": "700"
+        },
+        {
+          "name": "Мощность, кВт",
+          "value": "12"
+        },
+        {
+          "name": "Тип розжига",
+          "value": "авторозжиг"
+        },
+        {
+          "name": "Страна производства",
+          "value": "Китай"
+        },
+        {
+          "name": "Родина бренда",
+          "value": "Россия"
+        }
+      ],
+      "complectation_items": [
+        {
+          "id": "set-0",
+          "name": "Гриль газовый",
+          "quantity": "1 шт.",
+          "order": 0
+        },
+        {
+          "id": "set-1",
+          "name": "Инструкция",
+          "quantity": "1 шт.",
+          "order": 1
+        },
+        {
+          "id": "set-2",
+          "name": "Упаковка",
+          "quantity": "1 шт.",
+          "order": 2
+        }
+      ],
+      "documents": [],
+      "breadcrumbs": [
+        {
+          "name": "Главная",
+          "href": "https://www.bigam.ru/",
+          "slug": null
+        },
+        {
+          "name": "Каталог",
+          "href": "https://www.bigam.ru/catalog/",
+          "slug": null
+        },
+        {
+          "name": "Товары для туризма и отдыха",
+          "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/",
+          "slug": "tovary-pervoj-neobkhodimosti-7199"
+        },
+        {
+          "name": "Всё для шашлыка, гриля и барбекю",
+          "href": "https://www.bigam.ru/catalog/vs-dlya-shashlyka-i-barbekyu-7222/",
+          "slug": "vs-dlya-shashlyka-i-barbekyu-7222"
+        },
+        {
+          "name": "Грили для дачи",
+          "href": "https://www.bigam.ru/catalog/grili-dlya-dachi-10452/",
+          "slug": "grili-dlya-dachi-10452"
+        },
+        {
+          "name": "Газовые грили",
+          "href": "https://www.bigam.ru/catalog/gazovye-grili-10454/",
+          "slug": "gazovye-grili-10454"
+        },
+        {
+          "name": "Гриль газовый Koch Maestro 4000 5-0-056",
+          "href": null,
+          "slug": null
+        }
+      ]
+    },
+    {
+      "id": "1896789",
+      "code": "0706-8010-0009-0809",
+      "name": "Гриль газовый Koch Maestro 5000 5-0-057",
+      "href": "https://www.bigam.ru/product/koch-maestro-5000-gril-gazovyi-5-0-057-1896789/",
+      "reviews_href": "https://www.bigam.ru/product/koch-maestro-5000-gril-gazovyi-5-0-057-1896789/reviews/",
+      "price": 66990,
+      "retail_price": 66990,
+      "discount_percent": 0,
+      "min_bonus_price": 50051,
+      "show_personal_price_difference": true,
+      "image": "https://cdn.bigam.ru/iblock/582/58210e5df381645bb2ad5e2b74423152/1896789.jpg",
+      "images": [
+        {
+          "id": "gallery-0",
+          "url": "https://cdn.bigam.ru/iblock/582/58210e5df381645bb2ad5e2b74423152/1896789.jpg",
+          "alt": "Гриль газовый Koch Maestro 5000 5-0-057",
+          "is_main": true
+        },
+        {
+          "id": "gallery-1",
+          "url": "https://cdn.bigam.ru/iblock/421/421f8490ec7627146b6369876e4f6227/1896789_2.jpg",
+          "alt": "Гриль газовый Koch Maestro 5000 5-0-057",
+          "is_main": false
+        },
+        {
+          "id": "gallery-2",
+          "url": "https://cdn.bigam.ru/iblock/14d/14d231615bd9b73c9d0a45b353003918/1896789_3.jpg",
+          "alt": "Гриль газовый Koch Maestro 5000 5-0-057",
+          "is_main": false
+        },
+        {
+          "id": "gallery-3",
+          "url": "https://cdn.bigam.ru/iblock/4c4/4c46b4902e5e7f7cb12e80f769565e44/1896789_4.jpg",
+          "alt": "Гриль газовый Koch Maestro 5000 5-0-057",
+          "is_main": false
+        },
+        {
+          "id": "gallery-4",
+          "url": "https://cdn.bigam.ru/resize_cache/635366/2f40e03476aab56d4c0b00443b99d752/iblock/582/58210e5df381645bb2ad5e2b74423152/1896789.jpg",
+          "alt": "Гриль газовый Koch Maestro 5000 5-0-057",
+          "is_main": false
+        }
+      ],
+      "category": {
+        "name": "Газовые грили",
+        "href": "https://www.bigam.ru/catalog/gazovye-grili-10454/",
+        "slug": "gazovye-grili-10454"
+      },
+      "article": "О00000141838",
+      "description_full": "Гриль газовый Koch Maestro 5000 5-0-057 – газовый гриль с 5-ю горелками, на котором вы с легкостью сможете готовить сразу несколько блюд, используя разные температурные зоны. На чугунной решетке свободно помещается 15 стейков Гриль отлично подходит для запекания дичи на решетке или вертеле. Maestro 5000 порадует вас стабильной работой в любую погоду, быстрым набором температуры и равномерным нагревом решетки. Гриль прост и удобен в эксплуатации. То, что нужно для тех, кто планирует готовить часто, много и с удовольствием.<br>\r\n<h3>Преимущества</h3>\r\n<ul>\r\n\t<li>Большая рабочая поверхность</li>\r\n\t<li>\r\n\tСистема автоматического поджига горелок</li>\r\n\t<li>\r\n\tТермобезопасная крышка</li>\r\n\t<li>\r\n\tВозможность установки вертела</li>\r\n\t<li>\r\n\tБоковые столики с крючками для аксессуаров</li>\r\n\t<li>\r\n\tРучки из нержавеющей стали</li>\r\n\t<li>\r\n\tКорпус покрытый матовой порошковой эмалью</li>\r\n\t<li>\r\n\tФиксатор на колесах</li>\r\n\t<li>\r\n\tШкаф для баллона</li>\r\n</ul>",
+      "slug": "koch-maestro-5000-gril-gazovyi-5-0-057-1896789",
+      "brand": {
+        "name": "Koch",
+        "href": "https://www.bigam.ru/brands/koch/",
+        "logo": "https://cdn.bigam.ru/resize_cache/634959/fe338926a11abe405409411d29fe1b0b/iblock/f76/f76a8d3920bc2c2df116723a1c9f0e62/koch.jpg"
+      },
+      "attributes": [
+        {
+          "name": "Материал",
+          "value": "нержавеющая сталь"
+        },
+        {
+          "name": "Габариты, мм",
+          "value": "1440х1140х570"
+        },
+        {
+          "name": "Вес, кг",
+          "value": "38"
+        },
+        {
+          "name": "Тип",
+          "value": "газовый гриль"
+        },
+        {
+          "name": "Покрытие стенок",
+          "value": "жаропрочное"
+        },
+        {
+          "name": "Антипригарное покрытие",
+          "value": "Да"
+        },
+        {
+          "name": "Тип топлива",
+          "value": "газ"
+        },
+        {
+          "name": "Цвет",
+          "value": "черный, красный, серебристый"
+        },
+        {
+          "name": "Пристолье",
+          "value": "2"
+        },
+        {
+          "name": "Термометр",
+          "value": "Да"
+        },
+        {
+          "name": "Система сбора пепла",
+          "value": "Нет"
+        },
+        {
+          "name": "Копчение",
+          "value": "Да"
+        },
+        {
+          "name": "Колесики",
+          "value": "Да"
+        },
+        {
+          "name": "Форма решетки",
+          "value": "прямоугольная"
+        },
+        {
+          "name": "Материал решетки",
+          "value": "сталь"
+        },
+        {
+          "name": "Мощность, кВт",
+          "value": "15"
+        },
+        {
+          "name": "Тип розжига",
+          "value": "авторозжиг"
+        },
+        {
+          "name": "Страна производства",
+          "value": "Китай"
+        },
+        {
+          "name": "Родина бренда",
+          "value": "Россия"
+        }
+      ],
+      "complectation_items": [
+        {
+          "id": "set-0",
+          "name": "Гриль газовый",
+          "quantity": "1 шт.",
+          "order": 0
+        },
+        {
+          "id": "set-1",
+          "name": "Инструкция",
+          "quantity": "1 шт.",
+          "order": 1
+        },
+        {
+          "id": "set-2",
+          "name": "Упаковка",
+          "quantity": "1 шт.",
+          "order": 2
+        }
+      ],
+      "documents": [],
+      "breadcrumbs": [
+        {
+          "name": "Главная",
+          "href": "https://www.bigam.ru/",
+          "slug": null
+        },
+        {
+          "name": "Каталог",
+          "href": "https://www.bigam.ru/catalog/",
+          "slug": null
+        },
+        {
+          "name": "Товары для туризма и отдыха",
+          "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/",
+          "slug": "tovary-pervoj-neobkhodimosti-7199"
+        },
+        {
+          "name": "Всё для шашлыка, гриля и барбекю",
+          "href": "https://www.bigam.ru/catalog/vs-dlya-shashlyka-i-barbekyu-7222/",
+          "slug": "vs-dlya-shashlyka-i-barbekyu-7222"
+        },
+        {
+          "name": "Грили для дачи",
+          "href": "https://www.bigam.ru/catalog/grili-dlya-dachi-10452/",
+          "slug": "grili-dlya-dachi-10452"
+        },
+        {
+          "name": "Газовые грили",
+          "href": "https://www.bigam.ru/catalog/gazovye-grili-10454/",
+          "slug": "gazovye-grili-10454"
+        },
+        {
+          "name": "Гриль газовый Koch Maestro 5000 5-0-057",
+          "href": null,
+          "slug": null
+        }
+      ]
+    },
+    {
+      "id": "1896809",
+      "code": "0806-0010-0009-0809",
+      "name": "Гриль газовый Bellagio Maniero 4000 5-0-040",
+      "href": "https://www.bigam.ru/product/bellagio-maniero-4000-gril-gazovyi-5-0-040-1896809/",
+      "reviews_href": "https://www.bigam.ru/product/bellagio-maniero-4000-gril-gazovyi-5-0-040-1896809/reviews/",
+      "price": 95990,
+      "retail_price": 95990,
+      "discount_percent": 0,
+      "min_bonus_price": 71717,
+      "show_personal_price_difference": true,
+      "image": "https://cdn.bigam.ru/iblock/d61/d6141847b5889b18d99db4f1165c26f0/1896809.jpg",
+      "images": [
+        {
+          "id": "gallery-0",
+          "url": "https://cdn.bigam.ru/iblock/d61/d6141847b5889b18d99db4f1165c26f0/1896809.jpg",
+          "alt": "Гриль газовый Bellagio Maniero 4000 5-0-040",
+          "is_main": true
+        },
+        {
+          "id": "gallery-1",
+          "url": "https://cdn.bigam.ru/iblock/423/423780233af46c0f9d5f511acebc5937/1896809_2.jpg",
+          "alt": "Гриль газовый Bellagio Maniero 4000 5-0-040",
+          "is_main": false
+        },
+        {
+          "id": "gallery-2",
+          "url": "https://cdn.bigam.ru/iblock/3d6/3d631d4ce05b63ea18fc1f75ce23811c/1896809_3.jpg",
+          "alt": "Гриль газовый Bellagio Maniero 4000 5-0-040",
+          "is_main": false
+        },
+        {
+          "id": "gallery-3",
+          "url": "https://cdn.bigam.ru/iblock/63d/63d2e83a5277d0d95d9ebf4fe26fca4c/1896809_4.jpg",
+          "alt": "Гриль газовый Bellagio Maniero 4000 5-0-040",
+          "is_main": false
+        },
+        {
+          "id": "gallery-4",
+          "url": "https://cdn.bigam.ru/iblock/606/6064d445948646bad3c1b3326c70f726/1896809_5.jpg",
+          "alt": "Гриль газовый Bellagio Maniero 4000 5-0-040",
+          "is_main": false
+        }
+      ],
+      "category": {
+        "name": "Газовые грили",
+        "href": "https://www.bigam.ru/catalog/gazovye-grili-10454/",
+        "slug": "gazovye-grili-10454"
+      },
+      "article": "О00000141832",
+      "description_full": "Гриль газовый Bellagio Maniero 4000 5-0-040 – газовый гриль премиального качества, сочетающий в себе компактность и максимальную функциональность. Гриль оснащен 3-мя основными горелками, 1 боковой и 1 задней конфоркой. Maniero 4000 высоко ценят профессиональные грильмены, для которых барбекю – это образ жизни, а также любители загородного отдыха. Ведь грили BELLAGIO отличаются надежностью, простотой сборки и эксплуатации.<br>\r\n<h3>Преимущества</h3>\r\n<ul>\r\n\t<li>Автоматическая система поджига горелок</li>\r\n\t<li>\r\n\tПодсветка ручек управления</li>\r\n\t<li>\r\n\tТермобезопасная крышка со встроенным стеклом</li>\r\n\t<li>\r\n\tБоковая конфорка мощностью 4,5 кВт</li>\r\n\t<li>\r\n\tЗадняя конфорка мощностью 4,0 кВт</li>\r\n\t<li>\r\n\tКорпус из нержавеющей стали и стали с порошковым покрытием</li>\r\n\t<li>\r\n\tКрепления для установки вертела</li>\r\n\t<li>\r\n\tКрючки для инструментов</li>\r\n\t<li>\r\n\t4 колеса со стопором</li>\r\n\t<li>\r\n\tШкаф для баллона с дверцами</li>\r\n</ul>\r\n <br>",
+      "slug": "bellagio-maniero-4000-gril-gazovyi-5-0-040-1896809",
+      "brand": {
+        "name": "BELLAGIO",
+        "href": "https://www.bigam.ru/brands/bellagio/",
+        "logo": "https://cdn.bigam.ru/resize_cache/635072/fe338926a11abe405409411d29fe1b0b/iblock/c45/c4569aedcede0f96d74f661a5f92d43f/BELLAGIO.jpg"
+      },
+      "attributes": [
+        {
+          "name": "Материал",
+          "value": "нержавеющая сталь"
+        },
+        {
+          "name": "Габариты, мм",
+          "value": "1370x615x1187"
+        },
+        {
+          "name": "Вес, кг",
+          "value": "60"
+        },
+        {
+          "name": "Тип",
+          "value": "газовый гриль"
+        },
+        {
+          "name": "Покрытие поддона",
+          "value": "жаростойкое"
+        },
+        {
+          "name": "Покрытие стенок",
+          "value": "жаропрочное"
+        },
+        {
+          "name": "Антипригарное покрытие",
+          "value": "Да"
+        },
+        {
+          "name": "Тип топлива",
+          "value": "газ"
+        },
+        {
+          "name": "Цвет",
+          "value": "черный, серебристый"
+        },
+        {
+          "name": "Пристолье",
+          "value": "2"
+        },
+        {
+          "name": "Термометр",
+          "value": "Да"
+        },
+        {
+          "name": "Система сбора пепла",
+          "value": "Да"
+        },
+        {
+          "name": "Копчение",
+          "value": "Нет"
+        },
+        {
+          "name": "Колесики",
+          "value": "Да"
+        },
+        {
+          "name": "Размер решетки, мм",
+          "value": "600х430"
+        },
+        {
+          "name": "Форма решетки",
+          "value": "прямоугольная"
+        },
+        {
+          "name": "Материал решетки",
+          "value": "чугун"
+        },
+        {
+          "name": "Ширина решетки, мм",
+          "value": "430"
+        },
+        {
+          "name": "Длина решетки, мм",
+          "value": "600"
+        },
+        {
+          "name": "Тип розжига",
+          "value": "авторозжиг"
+        },
+        {
+          "name": "Страна производства",
+          "value": "Китай"
+        },
+        {
+          "name": "Родина бренда",
+          "value": "Россия"
+        }
+      ],
+      "complectation_items": [
+        {
+          "id": "set-0",
+          "name": "Гриль газовый",
+          "quantity": "1 шт.",
+          "order": 0
+        },
+        {
+          "id": "set-1",
+          "name": "Инструкция",
+          "quantity": "1 шт.",
+          "order": 1
+        },
+        {
+          "id": "set-2",
+          "name": "Упаковка",
+          "quantity": "1 шт.",
+          "order": 2
+        }
+      ],
+      "documents": [
+        {
+          "id": "doc-0",
+          "title": "Инструкция Bellagio Maniero 4000 5-0-040",
+          "url": "https://cdn.bigam.ru/iblock/a07/a07034d30e290326c3485db0bf336053/Instrukciya-Bellagio-Maniero-4000-5_0_040.pdf",
+          "origin": "Инструкция Bellagio Maniero 4000 5-0-040.pdf 1.26 МБ"
+        }
+      ],
+      "documents_auto_text": "На странице представлена инструкция по эксплуатации и другие материалы производителя о товаре гриль газовый Bellagio Maniero 4000 5-0-040, необходимые пользователю. Из руководства пользователя BELLAGIO (Белладжио) можно узнать устройство изделия, срок службы и комплект поставки. Гриль газовый Bellagio Maniero 4000 5-0-040 и все товары серии требуют соблюдения правил использования, обслуживания, ухода и хранения.",
+      "breadcrumbs": [
+        {
+          "name": "Главная",
+          "href": "https://www.bigam.ru/",
+          "slug": null
+        },
+        {
+          "name": "Каталог",
+          "href": "https://www.bigam.ru/catalog/",
+          "slug": null
+        },
+        {
+          "name": "Товары для туризма и отдыха",
+          "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/",
+          "slug": "tovary-pervoj-neobkhodimosti-7199"
+        },
+        {
+          "name": "Всё для шашлыка, гриля и барбекю",
+          "href": "https://www.bigam.ru/catalog/vs-dlya-shashlyka-i-barbekyu-7222/",
+          "slug": "vs-dlya-shashlyka-i-barbekyu-7222"
+        },
+        {
+          "name": "Грили для дачи",
+          "href": "https://www.bigam.ru/catalog/grili-dlya-dachi-10452/",
+          "slug": "grili-dlya-dachi-10452"
+        },
+        {
+          "name": "Газовые грили",
+          "href": "https://www.bigam.ru/catalog/gazovye-grili-10454/",
+          "slug": "gazovye-grili-10454"
+        },
+        {
+          "name": "Гриль газовый Bellagio Maniero 4000 5-0-040",
+          "href": null,
+          "slug": null
+        }
+      ]
+    },
+    {
+      "id": "1896810",
+      "code": "0806-1010-0009-0800",
+      "name": "Гриль газовый Bellagio Maniero 6000 5-0-058",
+      "href": "https://www.bigam.ru/product/bellagio-maniero-6000-gril-gazovyi-5-0-058-1896810/",
+      "reviews_href": "https://www.bigam.ru/product/bellagio-maniero-6000-gril-gazovyi-5-0-058-1896810/reviews/",
+      "price": 36390,
+      "retail_price": 36390,
+      "discount_percent": 0,
+      "min_bonus_price": null,
+      "show_personal_price_difference": null,
+      "image": "https://cdn.bigam.ru/iblock/cb5/cb58315777e4b1ebf727e0c01daf1d1b/1896810.jpg",
+      "images": [
+        {
+          "id": "gallery-0",
+          "url": "https://cdn.bigam.ru/iblock/cb5/cb58315777e4b1ebf727e0c01daf1d1b/1896810.jpg",
+          "alt": "Гриль газовый Bellagio Maniero 6000 5-0-058",
+          "is_main": true
+        },
+        {
+          "id": "gallery-1",
+          "url": "https://cdn.bigam.ru/iblock/7b4/7b4bc404c2c4fd2c94db604089ea4f3f/1896810_2.jpg",
+          "alt": "Гриль газовый Bellagio Maniero 6000 5-0-058",
+          "is_main": false
+        },
+        {
+          "id": "gallery-2",
+          "url": "https://cdn.bigam.ru/iblock/c40/c40be613a2b43f20d93e738907bc0ca4/1896810_3.jpg",
+          "alt": "Гриль газовый Bellagio Maniero 6000 5-0-058",
+          "is_main": false
+        },
+        {
+          "id": "gallery-3",
+          "url": "https://cdn.bigam.ru/iblock/a67/a6782a618462c531c5d40f05e57d8eaf/1896810_4.jpg",
+          "alt": "Гриль газовый Bellagio Maniero 6000 5-0-058",
+          "is_main": false
+        },
+        {
+          "id": "gallery-4",
+          "url": "https://cdn.bigam.ru/iblock/096/096da716e45d2d7a007b5d1dfe3db0b6/1896810_5.jpg",
+          "alt": "Гриль газовый Bellagio Maniero 6000 5-0-058",
+          "is_main": false
+        }
+      ],
+      "category": {
+        "name": "Газовые грили",
+        "href": "https://www.bigam.ru/catalog/gazovye-grili-10454/",
+        "slug": "gazovye-grili-10454"
+      },
+      "article": "О00000141833",
+      "description_full": "Гриль газовый Bellagio Maniero 6000 5-0-058 – газовый гриль с 4 основными горелками, 1 задней конфоркой и 1 инфракрасной горелкой, встроенной в боковой столик конфоркой. Данная модель отличается просторной жарочной поверхностью, равномерным нагревом и профессиональным набором функций. В Maniero 6000 установлена инфракрасная горелка. Она позволяет сохранять продукты максимально сочными и придает им золотистую корочку. Гриль отлично подойдет для барбекю в кругу семьи и друзей.<br>\r\n<h3>Преимущества</h3>\r\n<ul>\r\n\t<li>Авторозжиг и подсветка ручек управления</li>\r\n\t<li>\r\n\tБоковая инфракрасная горелка мощностью 4,5 кВт</li>\r\n\t<li>\r\n\tЗадняя конфорка мощностью 4,0 кВт</li>\r\n\t<li>\r\n\tКорпус из нержавеющей стали и стали с порошковым покрытием</li>\r\n\t<li>\r\n\tКрепления для установки вертела</li>\r\n\t<li>\r\n\tКрючки для инструментов</li>\r\n\t<li>\r\n\t4 колеса со стопором</li>\r\n\t<li>\r\n\tШкаф для баллона с дверцами</li>\r\n</ul>",
+      "slug": "bellagio-maniero-6000-gril-gazovyi-5-0-058-1896810",
+      "brand": {
+        "name": "BELLAGIO",
+        "href": "https://www.bigam.ru/brands/bellagio/",
+        "logo": "https://cdn.bigam.ru/resize_cache/635072/fe338926a11abe405409411d29fe1b0b/iblock/c45/c4569aedcede0f96d74f661a5f92d43f/BELLAGIO.jpg"
+      },
+      "attributes": [
+        {
+          "name": "Материал",
+          "value": "нержавеющая сталь"
+        },
+        {
+          "name": "Габариты, мм",
+          "value": "1530х615х1187"
+        },
+        {
+          "name": "Вес, кг",
+          "value": "68"
+        },
+        {
+          "name": "Тип",
+          "value": "газовый гриль"
+        },
+        {
+          "name": "Покрытие поддона",
+          "value": "жаростойкое"
+        },
+        {
+          "name": "Покрытие стенок",
+          "value": "жаропрочное"
+        },
+        {
+          "name": "Антипригарное покрытие",
+          "value": "Да"
+        },
+        {
+          "name": "Тип топлива",
+          "value": "газ"
+        },
+        {
+          "name": "Цвет",
+          "value": "черный, серебристый"
+        },
+        {
+          "name": "Пристолье",
+          "value": "2"
+        },
+        {
+          "name": "Термометр",
+          "value": "Да"
+        },
+        {
+          "name": "Система сбора пепла",
+          "value": "Да"
+        },
+        {
+          "name": "Копчение",
+          "value": "Нет"
+        },
+        {
+          "name": "Колесики",
+          "value": "Да"
+        },
+        {
+          "name": "Размер решетки, мм",
+          "value": "760х430"
+        },
+        {
+          "name": "Форма решетки",
+          "value": "прямоугольная"
+        },
+        {
+          "name": "Материал решетки",
+          "value": "чугун"
+        },
+        {
+          "name": "Ширина решетки, мм",
+          "value": "760"
+        },
+        {
+          "name": "Длина решетки, мм",
+          "value": "430"
+        },
+        {
+          "name": "Тип розжига",
+          "value": "авторозжиг"
+        },
+        {
+          "name": "Страна производства",
+          "value": "Китай"
+        },
+        {
+          "name": "Родина бренда",
+          "value": "Россия"
+        }
+      ],
+      "complectation_items": [
+        {
+          "id": "set-0",
+          "name": "Гриль газовый",
+          "quantity": "1 шт.",
+          "order": 0
+        },
+        {
+          "id": "set-1",
+          "name": "Инструкция",
+          "quantity": "1 шт.",
+          "order": 1
+        },
+        {
+          "id": "set-2",
+          "name": "Упаковка",
+          "quantity": "1 шт.",
+          "order": 2
+        }
+      ],
+      "documents": [
+        {
+          "id": "doc-0",
+          "title": "Инструкция Bellagio Maniero 6000 5-0-058",
+          "url": "https://cdn.bigam.ru/iblock/e21/e21a2f2d2718877e8c320c7b582a0163/Instrukciya-Bellagio-Maniero-6000-5_0_058.pdf",
+          "origin": "Инструкция Bellagio Maniero 6000 5-0-058.pdf 1.33 МБ"
+        }
+      ],
+      "documents_auto_text": "На странице представлена инструкция по эксплуатации и другие материалы производителя о товаре гриль газовый Bellagio Maniero 6000 5-0-058, необходимые пользователю. Из руководства пользователя BELLAGIO (Белладжио) можно узнать устройство изделия, срок службы и комплект поставки. Гриль газовый Bellagio Maniero 6000 5-0-058 и все товары серии требуют соблюдения правил использования, обслуживания, ухода и хранения.",
+      "breadcrumbs": [
+        {
+          "name": "Главная",
+          "href": "https://www.bigam.ru/",
+          "slug": null
+        },
+        {
+          "name": "Каталог",
+          "href": "https://www.bigam.ru/catalog/",
+          "slug": null
+        },
+        {
+          "name": "Товары для туризма и отдыха",
+          "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/",
+          "slug": "tovary-pervoj-neobkhodimosti-7199"
+        },
+        {
+          "name": "Всё для шашлыка, гриля и барбекю",
+          "href": "https://www.bigam.ru/catalog/vs-dlya-shashlyka-i-barbekyu-7222/",
+          "slug": "vs-dlya-shashlyka-i-barbekyu-7222"
+        },
+        {
+          "name": "Грили для дачи",
+          "href": "https://www.bigam.ru/catalog/grili-dlya-dachi-10452/",
+          "slug": "grili-dlya-dachi-10452"
+        },
+        {
+          "name": "Газовые грили",
+          "href": "https://www.bigam.ru/catalog/gazovye-grili-10454/",
+          "slug": "gazovye-grili-10454"
+        },
+        {
+          "name": "Гриль газовый Bellagio Maniero 6000 5-0-058",
+          "href": null,
+          "slug": null
+        }
+      ]
+    },
+    {
+      "id": "1896811",
+      "code": "9806-0800-0011-0001",
+      "name": "Гриль газовый Bellagio Villa 300 5-0-053",
+      "href": "https://www.bigam.ru/product/bellagio-villa-300-gril-gazovyi-5-0-053-1896811/",
+      "reviews_href": "https://www.bigam.ru/product/bellagio-villa-300-gril-gazovyi-5-0-053-1896811/reviews/",
+      "price": 36390,
+      "retail_price": 36390,
+      "discount_percent": 0,
+      "min_bonus_price": null,
+      "show_personal_price_difference": null,
+      "image": "https://cdn.bigam.ru/iblock/a90/a90caf85f8340e33238175d36772e051/1896811.jpg",
+      "images": [
+        {
+          "id": "gallery-0",
+          "url": "https://cdn.bigam.ru/iblock/a90/a90caf85f8340e33238175d36772e051/1896811.jpg",
+          "alt": "Гриль газовый Bellagio Villa 300 5-0-053",
+          "is_main": true
+        },
+        {
+          "id": "gallery-1",
+          "url": "https://cdn.bigam.ru/iblock/312/312888e7b082ad284d02b95979167405/1896811_2.jpg",
+          "alt": "Гриль газовый Bellagio Villa 300 5-0-053",
+          "is_main": false
+        },
+        {
+          "id": "gallery-2",
+          "url": "https://cdn.bigam.ru/iblock/536/536f65f931c2496fdc08bd338c3ddf38/1896811_3.jpg",
+          "alt": "Гриль газовый Bellagio Villa 300 5-0-053",
+          "is_main": false
+        },
+        {
+          "id": "gallery-3",
+          "url": "https://cdn.bigam.ru/iblock/5ab/5ab6fa1b4a0645ec170d96799d37f722/1896811_4.jpg",
+          "alt": "Гриль газовый Bellagio Villa 300 5-0-053",
+          "is_main": false
+        },
+        {
+          "id": "gallery-4",
+          "url": "https://cdn.bigam.ru/resize_cache/635319/2f40e03476aab56d4c0b00443b99d752/iblock/a90/a90caf85f8340e33238175d36772e051/1896811.jpg",
+          "alt": "Гриль газовый Bellagio Villa 300 5-0-053",
+          "is_main": false
+        }
+      ],
+      "category": {
+        "name": "Газовые грили",
+        "href": "https://www.bigam.ru/catalog/gazovye-grili-10454/",
+        "slug": "gazovye-grili-10454"
+      },
+      "article": "О00000141834",
+      "description_full": "Гриль газовый Bellagio Villa 300 5-0-053 – газовый гриль, который сочетает в себе надежные материалы, передовые технологии, эргономичный дизайн и компактные габариты. И все это по доступной цене и с гарантией от производителя.<br>\r\n Чтобы приготовить сочный стейк или нежные ребрышки на VILLA 300 Silver, вам не нужно быть поваром. 3 мощные горелки с рассекателями пламени, боковая конфорка, удобное управление и контроль температуры позволят быстро освоить самые разнообразные блюда. А если вы уже разбираетесь в барбекю, то набора функций VILLA 300 Silver вам хватит, чтобы вырасти до уровня профи.<br>\r\n<h3>Преимущества</h3>\r\n<ul>\r\n\t<li>Встроенный термометр</li>\r\n\t<li>\r\n\tДвухслойная крышка с ручкой из нержавеющей стали</li>\r\n\t<li>\r\n\tДополнительная конфорка</li>\r\n\t<li>\r\n\tКрепление для установки вертела</li>\r\n\t<li>\r\n\tПолка для подогрева продуктов</li>\r\n\t<li>\r\n\tКорпус из высокопрочной стали</li>\r\n\t<li>\r\n\t4 колеса с фиксатором</li>\r\n\t<li>\r\n\tШкаф с дверками</li>\r\n</ul>",
+      "slug": "bellagio-villa-300-gril-gazovyi-5-0-053-1896811",
+      "brand": {
+        "name": "BELLAGIO",
+        "href": "https://www.bigam.ru/brands/bellagio/",
+        "logo": "https://cdn.bigam.ru/resize_cache/635072/fe338926a11abe405409411d29fe1b0b/iblock/c45/c4569aedcede0f96d74f661a5f92d43f/BELLAGIO.jpg"
+      },
+      "attributes": [
+        {
+          "name": "Материал",
+          "value": "нержавеющая сталь"
+        },
+        {
+          "name": "Габариты, мм",
+          "value": "1220х570х1120"
+        },
+        {
+          "name": "Вес, кг",
+          "value": "31"
+        },
+        {
+          "name": "Тип",
+          "value": "газовый гриль"
+        },
+        {
+          "name": "Покрытие поддона",
+          "value": "жаростойкое"
+        },
+        {
+          "name": "Покрытие стенок",
+          "value": "жаропрочное"
+        },
+        {
+          "name": "Антипригарное покрытие",
+          "value": "Да"
+        },
+        {
+          "name": "Тип топлива",
+          "value": "газ"
+        },
+        {
+          "name": "Цвет",
+          "value": "черный, серебристый"
+        },
+        {
+          "name": "Пристолье",
+          "value": "2"
+        },
+        {
+          "name": "Термометр",
+          "value": "Да"
+        },
+        {
+          "name": "Система сбора пепла",
+          "value": "Да"
+        },
+        {
+          "name": "Копчение",
+          "value": "Нет"
+        },
+        {
+          "name": "Колесики",
+          "value": "Да"
+        },
+        {
+          "name": "Размер решетки, мм",
+          "value": "600х420"
+        },
+        {
+          "name": "Форма решетки",
+          "value": "прямоугольная"
+        },
+        {
+          "name": "Материал решетки",
+          "value": "чугун"
+        },
+        {
+          "name": "Ширина решетки, мм",
+          "value": "420"
+        },
+        {
+          "name": "Длина решетки, мм",
+          "value": "600"
+        },
+        {
+          "name": "Тип розжига",
+          "value": "авторозжиг"
+        },
+        {
+          "name": "Страна производства",
+          "value": "Китай"
+        },
+        {
+          "name": "Родина бренда",
+          "value": "Россия"
+        }
+      ],
+      "complectation_items": [
+        {
+          "id": "set-0",
+          "name": "Газовый гриль",
+          "quantity": "1 шт.",
+          "order": 0
+        },
+        {
+          "id": "set-1",
+          "name": "Инструкция",
+          "quantity": "1 шт.",
+          "order": 1
+        },
+        {
+          "id": "set-2",
+          "name": "Упаковка",
+          "quantity": "1 шт.",
+          "order": 2
+        }
+      ],
+      "documents": [],
+      "breadcrumbs": [
+        {
+          "name": "Главная",
+          "href": "https://www.bigam.ru/",
+          "slug": null
+        },
+        {
+          "name": "Каталог",
+          "href": "https://www.bigam.ru/catalog/",
+          "slug": null
+        },
+        {
+          "name": "Товары для туризма и отдыха",
+          "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/",
+          "slug": "tovary-pervoj-neobkhodimosti-7199"
+        },
+        {
+          "name": "Всё для шашлыка, гриля и барбекю",
+          "href": "https://www.bigam.ru/catalog/vs-dlya-shashlyka-i-barbekyu-7222/",
+          "slug": "vs-dlya-shashlyka-i-barbekyu-7222"
+        },
+        {
+          "name": "Грили для дачи",
+          "href": "https://www.bigam.ru/catalog/grili-dlya-dachi-10452/",
+          "slug": "grili-dlya-dachi-10452"
+        },
+        {
+          "name": "Газовые грили",
+          "href": "https://www.bigam.ru/catalog/gazovye-grili-10454/",
+          "slug": "gazovye-grili-10454"
+        },
+        {
+          "name": "Гриль газовый Bellagio Villa 300 5-0-053",
+          "href": null,
+          "slug": null
+        }
+      ]
+    }
+  ],
+  "categories": [
+    {
+      "slug": "tovary-pervoj-neobkhodimosti-7199",
+      "name": "Товары для туризма и отдыха",
+      "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/a08/5o69zlrkh50ch4vpbc0qj0xd9fcbyatm/156_156_0/turizm.jpg",
+      "parent": {
+        "name": "Каталог",
+        "slug": null,
+        "href": "https://www.bigam.ru/catalog/"
+      }
+    },
+    {
+      "slug": "vs-dlya-shashlyka-i-barbekyu-7222",
+      "name": "Всё для шашлыка, гриля и барбекю",
+      "href": "https://www.bigam.ru/catalog/vs-dlya-shashlyka-i-barbekyu-7222/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/626/8wtl46zugn8s2i42o4lcoxx09qtylzuz/156_156_0/vs_dlya_shashlyka_i_barbekyu.jpg",
+      "parent": {
+        "name": "Товары для туризма и отдыха",
+        "slug": "tovary-pervoj-neobkhodimosti-7199",
+        "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/"
+      }
+    },
+    {
+      "slug": "sredstva-protiv-nasekomykh-7212",
+      "name": "Средства против насекомых и грызунов",
+      "href": "https://www.bigam.ru/catalog/sredstva-protiv-nasekomykh-7212/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/37b/pke5vnmz7tgkk7fj04guj1i1v05ecudt/156_156_0/sredstva_protiv_nasekomykh.jpg",
+      "parent": {
+        "name": "Товары для туризма и отдыха",
+        "slug": "tovary-pervoj-neobkhodimosti-7199",
+        "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/"
+      }
+    },
+    {
+      "slug": "sani-9536",
+      "name": "Сани-волокуши",
+      "href": "https://www.bigam.ru/catalog/sani-9536/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/68b/pze9u5gty50lqou1agx8hu8l80u4rziz/156_156_0/sani.jpg",
+      "parent": {
+        "name": "Товары для туризма и отдыха",
+        "slug": "tovary-pervoj-neobkhodimosti-7199",
+        "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/"
+      }
+    },
+    {
+      "slug": "turisticheskie-gorelki-9720",
+      "name": "Туристические горелки",
+      "href": "https://www.bigam.ru/catalog/turisticheskie-gorelki-9720/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/eef/500sekrsl8859emyl7hk64ep61zr93f2/156_156_0/turisticheskie_gorelki.jpg",
+      "parent": {
+        "name": "Товары для туризма и отдыха",
+        "slug": "tovary-pervoj-neobkhodimosti-7199",
+        "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/"
+      }
+    },
+    {
+      "slug": "gazovye-ballony-dlya-gorelok-9721",
+      "name": "Газовые баллоны для горелок",
+      "href": "https://www.bigam.ru/catalog/gazovye-ballony-dlya-gorelok-9721/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/cb2/59vltxwsanmgjxlmswkn3awgsvf7jrsk/156_156_0/gazovye_ballony_dlya_gorelok.jpg",
+      "parent": {
+        "name": "Товары для туризма и отдыха",
+        "slug": "tovary-pervoj-neobkhodimosti-7199",
+        "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/"
+      }
+    },
+    {
+      "slug": "turisticheskii-inventar-9724",
+      "name": "Туристический инвентарь",
+      "href": "https://www.bigam.ru/catalog/turisticheskii-inventar-9724/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/5c1/s9z0b3mwv1kvg3bn6nyz750a2prrgfz7/156_156_0/turisticheskii_inventar.jpg",
+      "parent": {
+        "name": "Товары для туризма и отдыха",
+        "slug": "tovary-pervoj-neobkhodimosti-7199",
+        "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/"
+      }
+    },
+    {
+      "slug": "metalloiskateli-10405",
+      "name": "Металлоискатели",
+      "href": "https://www.bigam.ru/catalog/metalloiskateli-10405/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/248/k31ndwyq6yzk96926l9mr43k0qy2bx4q/156_156_0/metalloiskateli.jpg",
+      "parent": {
+        "name": "Товары для туризма и отдыха",
+        "slug": "tovary-pervoj-neobkhodimosti-7199",
+        "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/"
+      }
+    },
+    {
+      "slug": "kovriki-turisticheskie-10442",
+      "name": "Коврики туристические",
+      "href": "https://www.bigam.ru/catalog/kovriki-turisticheskie-10442/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/29d/ijrqs07c6oozwhehebj3etmndpnbwahr/156_156_0/kovriki_turisticheskie.jpg",
+      "parent": {
+        "name": "Товары для туризма и отдыха",
+        "slug": "tovary-pervoj-neobkhodimosti-7199",
+        "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/"
+      }
+    },
+    {
+      "slug": "turisticheskaya-mebel-10471",
+      "name": "Туристическая мебель",
+      "href": "https://www.bigam.ru/catalog/turisticheskaya-mebel-10471/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/d26/awuyw3j528tvyxgxaqna6sbfs752vi1c/156_156_0/turisticheskaya_mebel.jpg",
+      "parent": {
+        "name": "Товары для туризма и отдыха",
+        "slug": "tovary-pervoj-neobkhodimosti-7199",
+        "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/"
+      }
+    },
+    {
+      "slug": "turisticheskaya-posuda-10472",
+      "name": "Туристическая посуда",
+      "href": "https://www.bigam.ru/catalog/turisticheskaya-posuda-10472/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/d55/emqr3y55ob9atz363tfvl5yogrtzrx7j/156_156_0/turisticheskaya_posuda.jpg",
+      "parent": {
+        "name": "Товары для туризма и отдыха",
+        "slug": "tovary-pervoj-neobkhodimosti-7199",
+        "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/"
+      }
+    },
+    {
+      "slug": "sumki-turisticheskie-10473",
+      "name": "Сумки туристические",
+      "href": "https://www.bigam.ru/catalog/sumki-turisticheskie-10473/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/6b3/kmz93iges0v9m3f1pejfujxd9x1wpy0v/156_156_0/sumki_turisticheskie.jpg",
+      "parent": {
+        "name": "Товары для туризма и отдыха",
+        "slug": "tovary-pervoj-neobkhodimosti-7199",
+        "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/"
+      }
+    },
+    {
+      "slug": "batuty-10486",
+      "name": "Батуты",
+      "href": "https://www.bigam.ru/catalog/batuty-10486/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/a18/bhe7bac8sc782k1qc07okfuj6nu8t1u9/156_156_0/batuty.jpg",
+      "parent": {
+        "name": "Товары для туризма и отдыха",
+        "slug": "tovary-pervoj-neobkhodimosti-7199",
+        "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/"
+      }
+    },
+    {
+      "slug": "turisticheskie-ryukzaki-10490",
+      "name": "Туристические рюкзаки",
+      "href": "https://www.bigam.ru/catalog/turisticheskie-ryukzaki-10490/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/865/8gscrbjsuhthljeiuy30mknajs7txnub/156_156_0/turisticheskie_ryukzaki.jpg",
+      "parent": {
+        "name": "Товары для туризма и отдыха",
+        "slug": "tovary-pervoj-neobkhodimosti-7199",
+        "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/"
+      }
+    },
+    {
+      "slug": "turisticheskie-palatki-10851",
+      "name": "Туристические палатки",
+      "href": "https://www.bigam.ru/catalog/turisticheskie-palatki-10851/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/75c/uza9f1x0q35v26xzeu0fsp2kgoc7kpng/156_156_0/turisticheskie-palatki.jpg",
+      "parent": {
+        "name": "Товары для туризма и отдыха",
+        "slug": "tovary-pervoj-neobkhodimosti-7199",
+        "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/"
+      }
+    },
+    {
+      "slug": "spalniki-10937",
+      "name": "Спальники",
+      "href": "https://www.bigam.ru/catalog/spalniki-10937/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/dde/ti5r02vql8a48tvjvm3vtei30wc9r9dw/156_156_0/spalniki.jpg",
+      "parent": {
+        "name": "Товары для туризма и отдыха",
+        "slug": "tovary-pervoj-neobkhodimosti-7199",
+        "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/"
+      }
+    },
+    {
+      "slug": "topory-5844",
+      "name": "Топоры",
+      "href": "https://www.bigam.ru/catalog/topory-5844/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/d24/n8mktod0czol84tzowyak3ii0kzzy7dd/156_156_0/topory.jpg",
+      "parent": {
+        "name": "Товары для туризма и отдыха",
+        "slug": "tovary-pervoj-neobkhodimosti-7199",
+        "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/"
+      }
+    },
+    {
+      "slug": "nozhovki-5834",
+      "name": "Ножовки",
+      "href": "https://www.bigam.ru/catalog/nozhovki-5834/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/be0/51fn4k6mcglcfolpzsvygvb9j4b3qs7s/156_156_0/nozhovki.jpg",
+      "parent": {
+        "name": "Товары для туризма и отдыха",
+        "slug": "tovary-pervoj-neobkhodimosti-7199",
+        "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/"
+      }
+    },
+    {
+      "slug": "nozhi-5828",
+      "name": "Ножи",
+      "href": "https://www.bigam.ru/catalog/nozhi-5828/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/c75/5x96x1an5f3t3xtt30nbvci0f1x85a1b/156_156_0/nozhi.jpg",
+      "parent": {
+        "name": "Товары для туризма и отдыха",
+        "slug": "tovary-pervoj-neobkhodimosti-7199",
+        "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/"
+      }
+    },
+    {
+      "slug": "benzopily-5810",
+      "name": "Бензопилы",
+      "href": "https://www.bigam.ru/catalog/benzopily-5810/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/d2e/rxwba2ahz9f1tf2b58b22saqh2trlgje/156_156_0/benzopily_5810.jpg",
+      "parent": {
+        "name": "Товары для туризма и отдыха",
+        "slug": "tovary-pervoj-neobkhodimosti-7199",
+        "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/"
+      }
+    },
+    {
+      "slug": "lazernye-dalnomery-5866",
+      "name": "Лазерные дальномеры",
+      "href": "https://www.bigam.ru/catalog/lazernye-dalnomery-5866/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/9ea/tm5aq48feoetr334e9wtngr4c128obap/156_156_0/lazernye_dalnomery_5866.jpg",
+      "parent": {
+        "name": "Товары для туризма и отдыха",
+        "slug": "tovary-pervoj-neobkhodimosti-7199",
+        "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/"
+      }
+    },
+    {
+      "slug": "motobury-5892",
+      "name": "Мотобуры",
+      "href": "https://www.bigam.ru/catalog/motobury-5892/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/58d/9pc96xg2zigri936x1qrx1eis1itj7a1/156_156_0/motobury.jpg",
+      "parent": {
+        "name": "Товары для туризма и отдыха",
+        "slug": "tovary-pervoj-neobkhodimosti-7199",
+        "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/"
+      }
+    },
+    {
+      "slug": "lopaty-5914",
+      "name": "Лопаты",
+      "href": "https://www.bigam.ru/catalog/lopaty-5914/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/7c3/vw4ets53kznah9ejnyhf32puc0vcdtva/156_156_0/lopaty.jpg",
+      "parent": {
+        "name": "Товары для туризма и отдыха",
+        "slug": "tovary-pervoj-neobkhodimosti-7199",
+        "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/"
+      }
+    },
+    {
+      "slug": "vedra-5912",
+      "name": "Ведра хозяйственные",
+      "href": "https://www.bigam.ru/catalog/vedra-5912/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/83d/5kj6e5r55w7def3hfhaxx46svh0s8d6s/156_156_0/vedra.jpg",
+      "parent": {
+        "name": "Товары для туризма и отдыха",
+        "slug": "tovary-pervoj-neobkhodimosti-7199",
+        "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/"
+      }
+    },
+    {
+      "slug": "biotualety-2805",
+      "name": "Биотуалеты",
+      "href": "https://www.bigam.ru/catalog/biotualety-2805/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/5f1/t85b5q3kfyq4cn4u2vflp3556pph50mm/156_156_0/biotualety.jpg",
+      "parent": {
+        "name": "Товары для туризма и отдыха",
+        "slug": "tovary-pervoj-neobkhodimosti-7199",
+        "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/"
+      }
+    },
+    {
+      "slug": "infrakrasnye-obogrevateli-5959",
+      "name": "Инфракрасные обогреватели",
+      "href": "https://www.bigam.ru/catalog/infrakrasnye-obogrevateli-5959/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/f67/5m3salzl6go83qj3t76xnu8fw5717zrr/156_156_0/infrakrasnye_obogrevateli.jpg",
+      "parent": {
+        "name": "Товары для туризма и отдыха",
+        "slug": "tovary-pervoj-neobkhodimosti-7199",
+        "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/"
+      }
+    },
+    {
+      "slug": "multituly-6875",
+      "name": "Мультитулы",
+      "href": "https://www.bigam.ru/catalog/multituly-6875/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/57f/lzdwccllt6a44ghlu9mtx1v5ij3cjwzo/156_156_0/multituly.jpg",
+      "parent": {
+        "name": "Товары для туризма и отдыха",
+        "slug": "tovary-pervoj-neobkhodimosti-7199",
+        "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/"
+      }
+    },
+    {
+      "slug": "ruchnye-lebedki-6063",
+      "name": "Лебедки",
+      "href": "https://www.bigam.ru/catalog/ruchnye-lebedki-6063/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/d05/o950m2om0nten2yev603g60p7zkpltr0/156_156_0/ruchnye_lebedki.jpg",
+      "parent": {
+        "name": "Товары для туризма и отдыха",
+        "slug": "tovary-pervoj-neobkhodimosti-7199",
+        "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/"
+      }
+    },
+    {
+      "slug": "stropy-6062",
+      "name": "Стропы",
+      "href": "https://www.bigam.ru/catalog/stropy-6062/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/a6e/as8v7p21r6g70t0eh1ryrr4yvwx9j07f/156_156_0/stropy.jpg",
+      "parent": {
+        "name": "Товары для туризма и отдыха",
+        "slug": "tovary-pervoj-neobkhodimosti-7199",
+        "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/"
+      }
+    },
+    {
+      "slug": "fonari-5978",
+      "name": "Фонари и фонарики",
+      "href": "https://www.bigam.ru/catalog/fonari-5978/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/f22/d2db4nrlgort70bhzo9ptgus0y9rvt24/156_156_0/fonari.jpg",
+      "parent": {
+        "name": "Товары для туризма и отдыха",
+        "slug": "tovary-pervoj-neobkhodimosti-7199",
+        "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/"
+      }
+    },
+    {
+      "slug": "elementy-pitaniya-5977",
+      "name": "Элементы питания",
+      "href": "https://www.bigam.ru/catalog/elementy-pitaniya-5977/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/a3c/9jj8tt6rjwarz0k8e4sg2n074dmkfczs/156_156_0/elementy_pitaniya.jpg",
+      "parent": {
+        "name": "Товары для туризма и отдыха",
+        "slug": "tovary-pervoj-neobkhodimosti-7199",
+        "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/"
+      }
+    },
+    {
+      "slug": "perchatki-6364",
+      "name": "Перчатки",
+      "href": "https://www.bigam.ru/catalog/perchatki-6364/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/638/a7lellj7bo6kxefodg013jpr5jr9tgpe/156_156_0/perchatki.jpg",
+      "parent": {
+        "name": "Товары для туризма и отдыха",
+        "slug": "tovary-pervoj-neobkhodimosti-7199",
+        "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/"
+      }
+    },
+    {
+      "slug": "ochki-6545",
+      "name": "Очки",
+      "href": "https://www.bigam.ru/catalog/ochki-6545/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/8b6/zv718nray4zw0o3nm7qlxx1i7mz7h9aw/156_156_0/ochki.jpg",
+      "parent": {
+        "name": "Товары для туризма и отдыха",
+        "slug": "tovary-pervoj-neobkhodimosti-7199",
+        "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/"
+      }
+    },
+    {
+      "slug": "verevki-i-kanaty-6550",
+      "name": "Верёвки, канаты и шнуры",
+      "href": "https://www.bigam.ru/catalog/verevki-i-kanaty-6550/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/ad3/zqshbdos2z50ji526ntf6320z45e3u4x/156_156_0/verevki_i_kanaty.jpg",
+      "parent": {
+        "name": "Товары для туризма и отдыха",
+        "slug": "tovary-pervoj-neobkhodimosti-7199",
+        "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/"
+      }
+    },
+    {
+      "slug": "baki-i-emkosti-dlya-vody-7956",
+      "name": "Баки и емкости для воды",
+      "href": "https://www.bigam.ru/catalog/baki-i-emkosti-dlya-vody-7956/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/53a/nucpf1mtn9sqc4j09on5bvq5ob0sgbcr/156_156_0/baki_i_emkosti_dlya_vody.jpg",
+      "parent": {
+        "name": "Товары для туризма и отдыха",
+        "slug": "tovary-pervoj-neobkhodimosti-7199",
+        "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/"
+      }
+    },
+    {
+      "slug": "lenty-6562",
+      "name": "Монтажные ленты",
+      "href": "https://www.bigam.ru/catalog/lenty-6562/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/b2c/aladvfl0a10znst2rdu0mb5rhax99gk5/156_156_0/montazhnye_lenty.jpg",
+      "parent": {
+        "name": "Товары для туризма и отдыха",
+        "slug": "tovary-pervoj-neobkhodimosti-7199",
+        "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/"
+      }
+    },
+    {
+      "slug": "sumki-dlya-instrumenta-9334",
+      "name": "Сумки",
+      "href": "https://www.bigam.ru/catalog/sumki-dlya-instrumenta-9334/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/dac/kzfluo6o1ikpuomj61h5i3zmzdp71n01/156_156_0/sumki_dlya_instrumenta.jpg",
+      "parent": {
+        "name": "Товары для туризма и отдыха",
+        "slug": "tovary-pervoj-neobkhodimosti-7199",
+        "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/"
+      }
+    },
+    {
+      "slug": "infrakrasnye-gazovye-obogrevateli-9810",
+      "name": "Газовые",
+      "href": "https://www.bigam.ru/catalog/infrakrasnye-gazovye-obogrevateli-9810/",
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/cc2/x3tyvy1elofiscqz07a0wdgmak9o221z/156_156_0/infrakrasnye_gazovye_obogrevateli_9810.jpg",
+      "parent": {
+        "name": "Товары для туризма и отдыха",
+        "slug": "tovary-pervoj-neobkhodimosti-7199",
+        "href": "https://www.bigam.ru/catalog/tovary-pervoj-neobkhodimosti-7199/"
+      }
+    },
+    {
+      "slug": "grili-dlya-dachi-10452",
+      "name": "Грили для дачи",
+      "href": "https://www.bigam.ru/catalog/grili-dlya-dachi-10452/",
+      "parent": {
+        "name": "Всё для шашлыка, гриля и барбекю",
+        "slug": "vs-dlya-shashlyka-i-barbekyu-7222",
+        "href": "https://www.bigam.ru/catalog/vs-dlya-shashlyka-i-barbekyu-7222/"
+      },
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/8bf/dm4nhy5phhyw8fyo1553l7nkn02khojz/400_364_0/1662121.jpg"
+    },
+    {
+      "slug": "gazovye-grili-10454",
+      "name": "Газовые грили",
+      "href": "https://www.bigam.ru/catalog/gazovye-grili-10454/",
+      "parent": {
+        "name": "Грили для дачи",
+        "slug": "grili-dlya-dachi-10452",
+        "href": "https://www.bigam.ru/catalog/grili-dlya-dachi-10452/"
+      },
+      "image": "https://cdn.bigam.ru/resize_cache/iblock/0c5/ig94xq7pkr6v1n0l78x7hgfvwta8zv6g/400_364_0/1662127.jpg"
+    }
+  ]
+}

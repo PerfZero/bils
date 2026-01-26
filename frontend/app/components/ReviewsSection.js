@@ -246,7 +246,7 @@ export default function ReviewsSection() {
                           <p className="a-review-card__description">
                             Очень хороший магазин, советую всем, хороший товар,
                             быстрая доставка и отличные курьеры,большое спасибо
-                            бигам!!!
+                            BREMAX!!!
                           </p>
                         </div>
                       </div>

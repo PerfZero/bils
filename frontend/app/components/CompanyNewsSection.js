@@ -69,14 +69,14 @@ export default function CompanyNewsSection() {
       id: 1,
       date: "13.01.2026",
       title:
-        "Бигам расширяет свой ассортимент, представив обширную линейку алюминиевых и стальных лестниц и стремянок от Торговой марки SNIRREX.",
+        "BREMAX расширяет свой ассортимент, представив обширную линейку алюминиевых и стальных лестниц и стремянок от Торговой марки SNIRREX.",
       href: "/about/novosti/bigam-rasshiryaet-svoi-assortiment-predstaviv-obshirnuyu-lineiku-alyuminievyh-i-stalnyh-lestnic-i-st/",
     },
     {
       id: 2,
       date: "13.01.2026",
       title:
-        "Готовьтесь к зиме с выгодой! «Скидка выходного дня -20%» в «Бигам»!",
+        "Готовьтесь к зиме с выгодой! «Скидка выходного дня -20%» в «BREMAX»!",
       href: "/about/novosti/gotovtes-k-zime-s-vygodoi-skidka-vyhodnogo-dnya-20-v-bigam-/",
     },
   ];

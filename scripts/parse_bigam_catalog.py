@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import http.cookiejar
 import json
 import re
 import os
@@ -17,6 +18,8 @@ CATEGORY_IMAGE_CACHE = {}
 VERBOSE = False
 RATE_LIMIT = 0.0
 LAST_REQUEST_AT = 0.0
+REQUEST_OPENER = urllib.request.build_opener()
+USE_PLAYWRIGHT = False
 RATE_LOCK = threading.Lock()
 
 VOID_TAGS = {
@@ -834,6 +837,33 @@ def with_page_param(url, page_number):
     return urllib.parse.urlunparse(parts._replace(query=new_query))
 
 
+def fetch_html_playwright(url, timeout_ms=30000):
+    try:
+        from playwright.sync_api import sync_playwright
+    except Exception as exc:
+        raise RuntimeError(
+            "Playwright is not installed. Run: pip install playwright && playwright install"
+        ) from exc
+
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(headless=True)
+        page = browser.new_page(
+            extra_http_headers={
+                "User-Agent": (
+                    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/120.0.0.0 Safari/537.36"
+                ),
+                "Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
+                "Referer": "https://www.bigam.ru/",
+            }
+        )
+        page.goto(url, wait_until="networkidle", timeout=timeout_ms)
+        html = page.content()
+        browser.close()
+        return html
+
+
 def fetch_html(url, retries=3, backoff=2.0):
     global LAST_REQUEST_AT
     if RATE_LIMIT and RATE_LIMIT > 0:
@@ -845,18 +875,33 @@ def fetch_html(url, retries=3, backoff=2.0):
                     print(f"  Rate limit sleep {wait_for:.2f}s: {url}", flush=True)
                 time.sleep(wait_for)
             LAST_REQUEST_AT = time.time()
+    # Use a realistic browser header set to reduce 403s from anti-bot filters.
     request = urllib.request.Request(
         url,
         headers={
-            "User-Agent": "Mozilla/5.0 (compatible; BigamParser/1.0)",
-            "Accept": "text/html,application/xhtml+xml",
+            "User-Agent": (
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            ),
+            "Accept": (
+                "text/html,application/xhtml+xml,application/xml;q=0.9,"
+                "image/avif,image/webp,image/apng,*/*;q=0.8"
+            ),
+            "Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
+            "Referer": "https://www.bigam.ru/",
+            "Connection": "keep-alive",
         },
     )
     for attempt in range(retries + 1):
         try:
-            with urllib.request.urlopen(request, timeout=30) as response:
+            with REQUEST_OPENER.open(request, timeout=30) as response:
                 return response.read().decode("utf-8", errors="ignore")
         except urllib.error.HTTPError as exc:
+            if exc.code == 403 and USE_PLAYWRIGHT:
+                if VERBOSE:
+                    print(f"  403 fallback to Playwright: {url}", flush=True)
+                return fetch_html_playwright(url)
             if exc.code == 429 and attempt < retries:
                 delay = backoff * (attempt + 1)
                 if VERBOSE:
@@ -1370,6 +1415,15 @@ def main():
         help="Global request rate limit (requests per second)",
     )
     parser.add_argument(
+        "--cookies",
+        help="Path to cookies file in Netscape/Mozilla format",
+    )
+    parser.add_argument(
+        "--use-playwright",
+        action="store_true",
+        help="Fallback to Playwright on 403 responses",
+    )
+    parser.add_argument(
         "--verbose",
         action="store_true",
         help="Print detailed progress while parsing",
@@ -1394,6 +1448,15 @@ def main():
     VERBOSE = bool(args.verbose)
     global RATE_LIMIT
     RATE_LIMIT = float(args.rate_limit or 0.0)
+    global USE_PLAYWRIGHT
+    USE_PLAYWRIGHT = bool(args.use_playwright)
+    global REQUEST_OPENER
+    if args.cookies:
+        jar = http.cookiejar.MozillaCookieJar()
+        jar.load(args.cookies, ignore_discard=True, ignore_expires=True)
+        REQUEST_OPENER = urllib.request.build_opener(
+            urllib.request.HTTPCookieProcessor(jar)
+        )
 
     output_path = Path(args.output)
 

@@ -63,7 +63,7 @@ function TooltipCommercial() {
           <div className="tooltip-commercial__block">
             <div className="tooltip-commercial__title">Реклама</div>
             <div className="tooltip-commercial__advertiser">
-              Рекламодатель: ООО "БИГАМ-Инвест" г. Ярославль
+              Рекламодатель: ООО "BREMAX-Инвест" г. Ярославль
             </div>
             <div className="tooltip-commercial__advertiser">
               ОГРН 1127604010555

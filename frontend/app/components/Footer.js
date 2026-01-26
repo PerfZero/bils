@@ -86,8 +86,8 @@ export default function Footer() {
                         </button>
                         <div class="a-footer__contacts">
                           <div class="a-footer__contacts-text">
-                            Московская область, г. Москва, Варшавское шоссе,
-                            д. 65 к. 2
+                            Московская область, г. Москва, Варшавское шоссе, д.
+                            65 к. 2
                             <br />
                             пн.-пт.: 10.00-20.00, сб.-вс.: - выходной.
                           </div>
@@ -96,8 +96,11 @@ export default function Footer() {
                               8 (495) 287-07-27
                             </a>
                           </div>
-                          <a href="mailto:help@bigam.ru" class="a-footer__link">
-                            help@bigam.ru
+                          <a
+                            href="mailto:support@bremax.ru"
+                            class="a-footer__link"
+                          >
+                            support@bremax.ru
                           </a>
                         </div>
                         <button
@@ -114,9 +117,7 @@ export default function Footer() {
                     </li>
                     <li
                       class={`a-footer__section a-footer__section--list${
-                        openSections.buyers
-                          ? " a-footer__section--active"
-                          : ""
+                        openSections.buyers ? " a-footer__section--active" : ""
                       }`}
                     >
                       <button
@@ -209,7 +210,10 @@ export default function Footer() {
                             </a>
                           </li>
                           <li class="a-footer__section">
-                            <a href="/customer/garantii/" class="a-footer__link">
+                            <a
+                              href="/customer/garantii/"
+                              class="a-footer__link"
+                            >
                               Гарантии
                             </a>
                           </li>
@@ -218,9 +222,7 @@ export default function Footer() {
                     </li>
                     <li
                       class={`a-footer__section a-footer__section--list${
-                        openSections.bigam
-                          ? " a-footer__section--active"
-                          : ""
+                        openSections.bigam ? " a-footer__section--active" : ""
                       }`}
                     >
                       <button
@@ -229,7 +231,7 @@ export default function Footer() {
                         onClick={() => toggleSection("bigam")}
                         aria-expanded={openSections.bigam}
                       >
-                        Бигам
+                        BREMAX
                       </button>
                       <div class="a-footer__wrap">
                         <ul class="a-footer__sections">
@@ -566,7 +568,10 @@ export default function Footer() {
                             </a>
                           </li>
                           <li class="a-footer__section">
-                            <a href="/customer/garantii/" class="a-footer__link">
+                            <a
+                              href="/customer/garantii/"
+                              class="a-footer__link"
+                            >
                               Гарантии
                             </a>
                           </li>
@@ -575,7 +580,7 @@ export default function Footer() {
                     </li>
                     <li class="a-footer__section a-footer__section--list">
                       <button type="button" class="a-footer__title">
-                        Бигам
+                        BREMAX
                       </button>
                       <div class="a-footer__wrap">
                         <ul class="a-footer__sections">
@@ -659,78 +664,6 @@ export default function Footer() {
                     </li>
                   </ul>
                 </div>
-                <div class="a-footer__section a-footer__section--mobile-stores">
-                  <div class="a-footer__mobile-stores">
-                    <div class="a-footer__title a-footer__title--mobile-store"></div>
-                    <div class="a-footer__mobile-download">
-                      <div class="a-footer__qr-block">
-                        <div
-                          value="https://www.bigam.ru/app"
-                          level="L"
-                          background="#fff"
-                          foreground="#000"
-                        >
-                          <canvas
-                            height="236"
-                            width="236"
-                            style={{ width: "118px", height: "118px" }}
-                          ></canvas>
-                        </div>
-                      </div>
-                      <p class="a-footer__mobile-description"></p>
-                      <div class="a-footer__links">
-                        <a
-                          href="https://play.google.com/store/apps/details?id=com.interhub.bigam"
-                          target="_blank"
-                          title="Google play"
-                          rel="nofollow"
-                          class="a-footer__link a-footer__link--google-play"
-                        >
-                          <img
-                            src="/_nuxt/img/google-play-desktop.c8607dc.svg"
-                            alt=""
-                          />
-                        </a>
-                        <a
-                          href="https://apps.apple.com/ru/app/%D0%B1%D0%B8%D0%B3%D0%B0%D0%BC-%D0%B1%D0%BE%D0%BD%D1%83%D1%81%D0%BD%D0%B0%D1%8F-%D0%BA%D0%B0%D1%80%D1%82%D0%B0/id1539989003"
-                          target="_blank"
-                          title="App Store"
-                          rel="nofollow"
-                          class="a-footer__link a-footer__link--app-store"
-                        >
-                          <img
-                            src="/_nuxt/img/app-store-desktop.d1464f1.svg"
-                            alt=""
-                          />
-                        </a>
-                        <a
-                          href="https://apps.rustore.ru/app/com.interhub.bigam"
-                          target="_blank"
-                          title="RuStore"
-                          rel="nofollow"
-                          class="a-footer__link a-footer__link--ru-store"
-                        >
-                          <img
-                            src="/_nuxt/img/ru-store-desktop.e7d2bcd.svg"
-                            alt=""
-                          />
-                        </a>
-                        <a
-                          href="https://appgallery.huawei.com/#/app/C107597843"
-                          target="_blank"
-                          title="AppGallery"
-                          rel="nofollow"
-                          class="a-footer__link a-footer__link--app-gallery"
-                        >
-                          <img
-                            src="/_nuxt/img/app-gallery-desktop.70533e9.svg"
-                            alt=""
-                          />
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
               <div class="a-footer__sections a-footer__sections--space-between">
                 <div class="a-footer__section a-footer__section--desktop a-footer__section--contacts">
@@ -745,15 +678,16 @@ export default function Footer() {
                   </button>
                   <div class="a-footer__contacts">
                     <div class="a-footer__contacts-text">
-                      Московская область, г. Москва, Варшавское шоссе, д. 65 к. 2
+                      Московская область, г. Москва, Варшавское шоссе, д. 65 к.
+                      2
                       <br />
                       пн.-пт.: 10.00-20.00, сб.-вс.: - выходной.
                     </div>
                     <a href="tel:+74952870727" class="a-footer__link">
                       8 (495) 287-07-27
                     </a>
-                    <a href="mailto:help@bigam.ru" class="a-footer__link">
-                      help@bigam.ru
+                    <a href="mailto:support@bremax.ru" class="a-footer__link">
+                      support@bremax.ru
                     </a>
                   </div>
                   <button
@@ -859,7 +793,7 @@ export default function Footer() {
           )}
           <div class="a-footer__bottom">
             <p class="a-footer__copyrights">
-              ©&nbsp;2009-2026, ООО «БИГАМ-Инвест». Все права защищены.
+              ©&nbsp;2009-2026, ООО «BREMAX-Инвест». Все права защищены.
             </p>
           </div>
         </div>

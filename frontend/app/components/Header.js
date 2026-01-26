@@ -238,137 +238,16 @@ export default function Header({ onProfileClick }) {
         <div className="a-overlay" onClick={() => setIsCatalogOpen(false)} />
       )}
       <div className="a-header__stub" />
-      <div className="a-header__top">
-        <div className="a-header__container a-bar">
-          <ul className="a-bar__list">
-            <li className="a-bar__item a-bar__item--left">
-              <button
-                type="button"
-                className="a-bar__link a-bar__link--city a-link"
-              >
-                <svg className="a-svg a-bar__icon a-bar__icon--city">
-                  <use
-                    xmlnsXlink="http://www.w3.org/1999/xlink"
-                    xlinkHref="#icon-plane"
-                  />
-                </svg>{" "}
-                Москва
-              </button>
-              <div className="a-bar__group-logo-link">
-                <svg className="a-svg a-bar__icon-location">
-                  <use
-                    xmlnsXlink="http://www.w3.org/1999/xlink"
-                    xlinkHref="#icon-location"
-                  />
-                </svg>{" "}
-                <a
-                  href="/shops/"
-                  className="a-bar__link a-link a-link--solid-line"
-                >
-                  Магазины
-                </a>
-              </div>
-            </li>
-            <li className="a-bar__item a-bar__item--center">
-              <span className="a-bar__spoiler">
-                <svg className="a-svg a-bar__icon--briefcase">
-                  <use
-                    xmlnsXlink="http://www.w3.org/1999/xlink"
-                    xlinkHref="#icon-section-briefcase-stroke"
-                  />
-                </svg>{" "}
-                <a
-                  href="/corporate/"
-                  className="a-link-button a-bar__spoiler a-bar__spoiler--underline"
-                >
-                  <span className="a-link-button__content a-link-button__content--black">
-                    Юридическим лицам
-                  </span>
-                </a>
-              </span>{" "}
-              <a
-                href="/service/"
-                className="a-link-button a-bar__spoiler a-bar__spoiler--underline"
-              >
-                <span className="a-link-button__content a-link-button__content--black">
-                  Сервисный центр
-                </span>
-              </a>{" "}
-              <span className="a-bar__spoiler">
-                Оплата и{"\u00a0"}получение
-                <svg className="a-svg a-bar__icon-chevron-down">
-                  <use
-                    xmlnsXlink="http://www.w3.org/1999/xlink"
-                    xlinkHref="#icon-chevron-down"
-                  />
-                </svg>
-                <div
-                  content="корпоративным клиентам"
-                  className="floating-block floating-block--left"
-                >
-                  <div className="floating-block__content">
-                    <ul className="a-bar__floating-list">
-                      <a
-                        href="/customer/delivery/"
-                        className="a-link-button a-bar__floating-item"
-                      >
-                        <span className="a-link-button__content a-link-button__content--black">
-                          Условия доставки
-                        </span>
-                      </a>
-                      <button
-                        aria-label="Статус заказа"
-                        title="Статус заказа"
-                        type="button"
-                        className="a-link-button a-bar__floating-item"
-                      >
-                        <span className="a-link-button__content a-link-button__content--black">
-                          Статус заказа
-                        </span>
-                      </button>
-                      <button
-                        aria-label="Оплатить заказ"
-                        title="Оплатить заказ"
-                        type="button"
-                        className="a-link-button a-bar__floating-item"
-                      >
-                        <span className="a-link-button__content a-link-button__content--black">
-                          Оплатить заказ
-                        </span>
-                      </button>
-                    </ul>
-                  </div>
-                </div>
-              </span>
-            </li>
-            <li className="a-bar__item">
-              <a
-                href="tel:+74951525679"
-                className="a-bar__link a-bar__link--bold a-bar__link--phone a-link a-link--no-line"
-              >
-                8 (495) 152-56-79
-              </a>
-            </li>
-          </ul>
-        </div>
-      </div>
+
       <div className="a-header__middle">
         <div className="a-header__constrain a-header__constrain--main-bar">
           <div className="a-header__container a-bar">
             <div className="a-bar__logo">
               <Link href="/" className="a-bar__logo-link">
-                <svg className="a-svg a-bar__logo-icon">
-                  <use
-                    xmlnsXlink="http://www.w3.org/1999/xlink"
-                    xlinkHref="#icon-logo-30"
-                  />
-                </svg>{" "}
-                <span className="a-bar__logo-text">
-                  Сеть центров
-                  <br />
-                  инструмента
-                  <br />и{"\u00a0"}техники
-                </span>
+                <img width="100" height="20" src="/logo.png" alt="Logo" />
+                <a href="tel:+7899749878997498" className="phone-link">
+                  +7 899 749-87-89
+                </a>
               </Link>
             </div>
             <div className="a-bar__buttons">
@@ -416,7 +295,7 @@ export default function Header({ onProfileClick }) {
                             autoComplete="off"
                             type="text"
                             name="q"
-                            placeholder="Найти в Бигам ..."
+                            placeholder="Найти в BREMAX ..."
                             className="a-input-field__input digi-instant-search jc-ignore"
                           />
                         </label>
@@ -441,7 +320,7 @@ export default function Header({ onProfileClick }) {
               </form>
             </div>
             <ul className="a-helper-list a-bar__helper-list">
-              <li className="a-helper-list__item a-helper-list__item--profile">
+              {/* <li className="a-helper-list__item a-helper-list__item--profile">
                 <button
                   type="button"
                   title="Профиль"
@@ -483,7 +362,7 @@ export default function Header({ onProfileClick }) {
                     </div>
                   </div>
                 </div>
-              </li>
+              </li>*/}
               <li className="a-helper-list__item a-helper-list__item--comparison">
                 <a
                   href="/personal/compare/"

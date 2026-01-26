@@ -75,7 +75,7 @@ function TooltipCommercial({ isMobile, onOpen }) {
               Реклама
             </div>
             <div data-v-bf32e510="" className="tooltip-commercial__advertiser">
-              Рекламодатель: ООО "БИГАМ-Инвест" г. Ярославль
+              Рекламодатель: ООО "BREMAX-Инвест" г. Ярославль
             </div>
             <div data-v-bf32e510="" className="tooltip-commercial__advertiser">
               ОГРН 1127604010555
@@ -165,7 +165,7 @@ function TooltipCommercialModal({ isOpen, onClose }) {
                 <div className="tooltip-commercial-modal">
                   <div className="tooltip-commercial-modal__title">Реклама</div>
                   <div className="tooltip-commercial-modal__advertiser">
-                    Рекламодатель: ООО "БИГАМ-Инвест" г. Ярославль
+                    Рекламодатель: ООО "BREMAX-Инвест" г. Ярославль
                   </div>
                   <div className="tooltip-commercial-modal__advertiser">
                     ОГРН 1127604010555

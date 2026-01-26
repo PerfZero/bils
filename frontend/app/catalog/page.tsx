@@ -3591,7 +3591,7 @@ export default function CatalogSlugPage({ params }) {
           <div className="a-spoiler a-title-indent a-spoiler--open">
             <div className="a-spoiler__content">
               <div className="a-page-catalog__inner">
-                Интернет-магазин «Бигам» предлагает купить в Москве широкий
+                Интернет-магазин «BREMAX» предлагает купить в Москве широкий
                 ассортимент товара по самым низким ценам. В каталоге более 40000
                 наименований строительной и садовой техники, кондиционеров,
                 инструмента для ремонта, приборов для водоснабжения, отопления

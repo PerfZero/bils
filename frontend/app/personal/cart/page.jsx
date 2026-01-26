@@ -253,7 +253,7 @@ export default function CartPage() {
           <div className="a-page-personal__wrap">
             <div className="a-page-cart a-page-personal__content a-page-cart--empty a-page-personal__content--cart">
               <div className="v-portal" style={{ display: "none" }} />
-              <div className="choose-user a-page-cart__content">
+              {/* <div className="choose-user a-page-cart__content">
                 <div className="choose-user__auth">
                   <div className="choose-user__auth-text">
                     <span className="choose-user__text--bold">
@@ -274,7 +274,7 @@ export default function CartPage() {
                     </span>
                   </button>
                 </div>
-              </div>
+              </div>*/}
               <section className="a-page-cart__content a-page-cart__content--empty">
                 <h2>Добавьте в корзину нужные товары</h2>
                 <p>
