@@ -30,7 +30,8 @@ export default function Header({ onProfileClick }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [activeChildIndex, setActiveChildIndex] = useState(0);
   const [catalogItems, setCatalogItems] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [hasLoadedCategories, setHasLoadedCategories] = useState(false);
   const [cartCount, setCartCount] = useState(0);
   const [favoritesCount, setFavoritesCount] = useState(0);
   const [compareCount, setCompareCount] = useState(0);
@@ -159,6 +160,7 @@ export default function Header({ onProfileClick }) {
 
   useEffect(() => {
     const fetchCategories = async () => {
+      setLoading(true);
       try {
         const response = await fetch(`${API_BASE_URL}/api/categories/`);
         const payload = await response.json();
@@ -180,17 +182,19 @@ export default function Header({ onProfileClick }) {
         }));
 
         setCatalogItems(transformedData);
+        setHasLoadedCategories(true);
       } catch (error) {
         console.error("Failed to fetch categories:", error);
-        // Fallback to empty array if API fails
         setCatalogItems([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchCategories();
-  }, []);
+    if (isCatalogOpen && !hasLoadedCategories) {
+      fetchCategories();
+    }
+  }, [isCatalogOpen, hasLoadedCategories]);
 
   const activeItem = catalogItems[activeIndex];
   const activeChild = activeItem?.children?.[activeChildIndex];

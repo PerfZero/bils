@@ -89,6 +89,30 @@ class BreadcrumbCategorySerializer(serializers.ModelSerializer):
         return f"/catalog/{obj.slug}/"
 
 
+class CategoryPathSerializer(serializers.ModelSerializer):
+    children = serializers.SerializerMethodField()
+    href = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Category
+        fields = ["id", "name", "slug", "href", "description", "children"]
+
+    def get_children(self, obj):
+        children = obj.get_children().filter(is_active=True).order_by("order", "name")
+        return [
+            {
+                "id": child.id,
+                "name": child.name,
+                "slug": child.slug,
+                "href": f"/catalog/{child.slug}/",
+            }
+            for child in children
+        ]
+
+    def get_href(self, obj):
+        return f"/catalog/{obj.slug}/"
+
+
 class BrandSerializer(serializers.ModelSerializer):
     logo = serializers.SerializerMethodField()
     href = serializers.SerializerMethodField()

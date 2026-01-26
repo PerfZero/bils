@@ -35,6 +35,7 @@ from .serializers import (
     BrandSerializer,
     BreadcrumbCategorySerializer,
     CategorySerializer,
+    CategoryPathSerializer,
     ProductListSerializer,
     ProductSerializer,
     ProductReviewSerializer,
@@ -110,6 +111,24 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
         category = self.get_object()
         path = category.get_ancestors(include_self=True).filter(is_active=True)
         serializer = BreadcrumbCategorySerializer(path, many=True, context={"request": request})
+        return Response(serializer.data)
+
+    @action(detail=False, methods=["get"], url_path="path-by-slug")
+    def path_by_slug(self, request):
+        slug = request.query_params.get("slug")
+        if not slug:
+            return Response({"detail": "slug is required"}, status=status.HTTP_400_BAD_REQUEST)
+        category = get_object_or_404(Category, slug=slug, is_active=True)
+        path = category.get_ancestors(include_self=True).filter(is_active=True)
+        serializer = CategoryPathSerializer(path, many=True, context={"request": request})
+        return Response(serializer.data)
+
+    @action(detail=False, methods=["get"], url_path="roots")
+    def roots(self, request):
+        queryset = Category.objects.filter(is_active=True, level=0).order_by("order", "name")
+        if self._hide_empty():
+            queryset = queryset.filter(id__in=self._get_non_empty_category_ids())
+        serializer = CategoryPathSerializer(queryset, many=True, context={"request": request})
         return Response(serializer.data)
 
 

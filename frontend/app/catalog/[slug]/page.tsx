@@ -86,13 +86,15 @@ export default function CatalogSlugPage({ params }) {
   useEffect(() => {
     const fetchCategory = async () => {
       try {
-        const rootResponse = await fetch(`${API_BASE_URL}/api/categories/`);
-        const rootPayload = await rootResponse.json();
-        const rootData = Array.isArray(rootPayload)
-          ? rootPayload
-          : rootPayload.results || [];
-
         if (isAllCatalog) {
+          const rootsResponse = await fetch(
+            `${API_BASE_URL}/api/categories/roots/`,
+          );
+          const rootsPayload = await rootsResponse.json();
+          const rootsData = Array.isArray(rootsPayload)
+            ? rootsPayload
+            : rootsPayload.results || [];
+
           setCategory({
             name: "Каталог",
             slug: "catalog",
@@ -103,7 +105,7 @@ export default function CatalogSlugPage({ params }) {
                 name: "Каталог",
                 slug: "catalog",
                 href: "/catalog",
-                children: rootData,
+                children: rootsData,
                 description: "",
               },
             ],
@@ -111,25 +113,11 @@ export default function CatalogSlugPage({ params }) {
           return;
         }
 
-        const findCategoryPath = (nodes, targetSlug, path = []) => {
-          for (const node of nodes || []) {
-            const nextPath = [...path, node];
-            if (node.slug === targetSlug) {
-              return nextPath;
-            }
-            const found = findCategoryPath(
-              node.children || [],
-              targetSlug,
-              nextPath,
-            );
-            if (found) {
-              return found;
-            }
-          }
-          return null;
-        };
-
-        const categoryPath = findCategoryPath(rootData, params.slug) || [];
+        const pathResponse = await fetch(
+          `${API_BASE_URL}/api/categories/path-by-slug/?slug=${params.slug}`,
+        );
+        const pathPayload = await pathResponse.json();
+        const categoryPath = Array.isArray(pathPayload) ? pathPayload : [];
         const foundCategory =
           categoryPath.length > 0
             ? categoryPath[categoryPath.length - 1]

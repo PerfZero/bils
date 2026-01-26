@@ -37,6 +37,7 @@ export function ProductListItem({ product }: ProductListItemProps) {
   const [isFavoriteActive, setIsFavoriteActive] = useState(false);
   const [favoriteBusy, setFavoriteBusy] = useState(false);
   const [isCompareActive, setIsCompareActive] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
 
   const images =
     product.images && product.images.length > 1
@@ -184,6 +185,10 @@ export function ProductListItem({ product }: ProductListItemProps) {
                             : [{ id: "fallback", url: fallbackImage }]
                           ).map((image: any, index: number) => {
                             const normalized = normalizeImageUrl(image.url);
+                            const shouldLoad =
+                              hasInteracted ||
+                              index === 0 ||
+                              index === activeIndex;
                             const classes = [
                               "a-gallery-carousel__slide",
                               "swiper-slide",
@@ -200,9 +205,13 @@ export function ProductListItem({ product }: ProductListItemProps) {
                                 <div className="a-gallery-carousel__card">
                                   <div className="a-picture-card" title="">
                                     <img
-                                      src={normalized}
+                                      src={
+                                        shouldLoad ? normalized : fallbackImage
+                                      }
                                       alt={image.alt || product.name || ""}
                                       className={`a-picture-card__picture a-lazy-load${index < 2 ? " a-is-loaded" : ""}`}
+                                      loading="lazy"
+                                      decoding="async"
                                     />
                                     <span />
                                   </div>
@@ -217,6 +226,7 @@ export function ProductListItem({ product }: ProductListItemProps) {
                           type="button"
                           className={`a-gallery-carousel__button a-gallery-carousel__button--prev swiper-button-prev${activeIndex === 0 ? " swiper-button-disabled" : ""}`}
                           disabled={activeIndex === 0}
+                          onMouseEnter={() => setHasInteracted(true)}
                         >
                           <svg className="a-svg">
                             <use
@@ -228,6 +238,7 @@ export function ProductListItem({ product }: ProductListItemProps) {
                         <button
                           type="button"
                           className="a-gallery-carousel__button a-gallery-carousel__button--next swiper-button-next"
+                          onMouseEnter={() => setHasInteracted(true)}
                         >
                           <svg className="a-svg">
                             <use
@@ -368,6 +379,7 @@ export function ProductListItem({ product }: ProductListItemProps) {
                     setActiveIndex(0);
                   }
                 }}
+                onMouseEnter={() => setHasInteracted(true)}
               >
                 {limitedImages.length > 0 ? (
                   limitedImages.map((image: any, index: number) => (
@@ -380,7 +392,13 @@ export function ProductListItem({ product }: ProductListItemProps) {
                       <img
                         alt={image.alt || product.name || ""}
                         className="a-picture-card__picture a-lazy-load a-is-loaded"
-                        src={normalizeImageUrl(image.url)}
+                        src={
+                          hasInteracted || index === 0 || index === activeIndex
+                            ? normalizeImageUrl(image.url)
+                            : fallbackImage
+                        }
+                        loading="lazy"
+                        decoding="async"
                       />
                       <span />
                     </div>
@@ -391,6 +409,8 @@ export function ProductListItem({ product }: ProductListItemProps) {
                       alt={product.name || ""}
                       className="a-picture-card__picture a-lazy-load"
                       src={fallbackImage}
+                      loading="lazy"
+                      decoding="async"
                     />
                     <span />
                   </div>
