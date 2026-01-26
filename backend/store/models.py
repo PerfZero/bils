@@ -479,6 +479,20 @@ class PaymentMethod(models.Model):
         return self.name
 
 
+class SiteSetting(models.Model):
+    site_name = models.CharField("Название сайта", max_length=120, blank=True)
+    logo = models.ImageField("Логотип", upload_to="site/", blank=True)
+    phone = models.CharField("Телефон", max_length=32, blank=True)
+    phone_display = models.CharField("Телефон (отображение)", max_length=64, blank=True)
+
+    class Meta:
+        verbose_name = "Настройки сайта"
+        verbose_name_plural = "Настройки сайта"
+
+    def __str__(self):
+        return self.site_name or "Настройки сайта"
+
+
 class CartItem(models.Model):
     cart = models.ForeignKey(
         Cart, related_name="items", on_delete=models.CASCADE, verbose_name="Корзина"

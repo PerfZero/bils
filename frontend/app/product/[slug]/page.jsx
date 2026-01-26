@@ -8,6 +8,7 @@ import ProductTabs from "../../components/ProductTabs";
 import { API_BASE_URL } from "../../../config/api";
 import { addToCart } from "../../lib/cart";
 import { isFavorite, loadFavorites, toggleFavorite } from "../../lib/favorites";
+import { isCompared, toggleCompare } from "../../lib/compare";
 
 export default function CatalogSlugPage({ params }) {
   const [breadcrumbs, setBreadcrumbs] = useState([]);
@@ -17,6 +18,8 @@ export default function CatalogSlugPage({ params }) {
   const [isFavoriteActive, setIsFavoriteActive] = useState(false);
   const [favoriteBusy, setFavoriteBusy] = useState(false);
   const [, setFavoritesVersion] = useState(0);
+  const [isCompareActive, setIsCompareActive] = useState(false);
+  const [, setCompareVersion] = useState(0);
 
   useEffect(() => {
     const fetchProductData = async () => {
@@ -107,6 +110,26 @@ export default function CatalogSlugPage({ params }) {
   }, [product?.id]);
 
   useEffect(() => {
+    if (!product?.id) return;
+    let isActive = true;
+    const syncCompare = () => {
+      if (!isActive) return;
+      setIsCompareActive(isCompared(product.id));
+    };
+    syncCompare();
+    if (typeof window === "undefined") return () => {};
+    const handler = () => {
+      syncCompare();
+      setCompareVersion((version) => version + 1);
+    };
+    window.addEventListener("compare:updated", handler);
+    return () => {
+      isActive = false;
+      window.removeEventListener("compare:updated", handler);
+    };
+  }, [product?.id]);
+
+  useEffect(() => {
     const categorySlug = product?.category?.slug;
     const currentSlug = product?.slug;
     if (!categorySlug) {
@@ -179,6 +202,12 @@ export default function CatalogSlugPage({ params }) {
 
   const handleToggleFavorite = async () => {
     return handleToggleFavoriteById(product?.id);
+  };
+
+  const handleToggleCompare = () => {
+    if (!product?.id) return;
+    toggleCompare(product.id);
+    setIsCompareActive(isCompared(product.id));
   };
   const ratingText = ratingValue ? ratingValue.toFixed(1) : "0";
   const reviewHref = product?.reviews_href || "#";
@@ -643,7 +672,11 @@ export default function CatalogSlugPage({ params }) {
           </div>
           <div className="a-page-detail__sidebar">
             <div className="a-page-detail__helpers">
-              <div className="a-main-compare a-main-compare--type-horizontal">
+              <div
+                className={`a-main-compare a-main-compare--type-horizontal${
+                  isCompareActive ? " a-main-compare--active" : ""
+                }`}
+              >
                 <div
                   className="tooltip-main a-main-compare__tooltip tooltip-main--position-left"
                   color="white"
@@ -656,8 +689,9 @@ export default function CatalogSlugPage({ params }) {
                 </div>
                 <button
                   className="a-main-compare__helper"
-                  title="В сравнение"
+                  title={isCompareActive ? "Удалить" : "В сравнение"}
                   type="button"
+                  onClick={handleToggleCompare}
                 >
                   <span className="a-main-compare__icon">
                     <svg className="a-svg">
@@ -673,7 +707,13 @@ export default function CatalogSlugPage({ params }) {
                       />
                     </svg>
                   </span>
-                  <span className="a-main-compare__title a-main-compare__title--to-compare" />
+                  <span
+                    className={`a-main-compare__title ${
+                      isCompareActive
+                        ? "a-main-compare__title--in-compare"
+                        : "a-main-compare__title--to-compare"
+                    }`}
+                  />
                 </button>
               </div>
               <div
@@ -897,6 +937,7 @@ export default function CatalogSlugPage({ params }) {
                   item?.review_stats?.average ?? item?.rating ?? 0,
                 );
                 const similarFavorite = isFavorite(item?.id);
+                const similarCompare = isCompared(item?.id);
 
                 return (
                   <SwiperSlide
@@ -947,7 +988,11 @@ export default function CatalogSlugPage({ params }) {
                           </div>
                         </div>
                         <div className="a-product-card__helpers">
-                          <div className="a-main-compare a-main-compare--type-vertical-vertical">
+                          <div
+                            className={`a-main-compare a-main-compare--type-vertical-vertical${
+                              similarCompare ? " a-main-compare--active" : ""
+                            }`}
+                          >
                             <div
                               className="tooltip-main a-main-compare__tooltip tooltip-main--position-left"
                               color="white"
@@ -963,8 +1008,9 @@ export default function CatalogSlugPage({ params }) {
                             </div>
                             <button
                               className="a-main-compare__helper"
-                              title="В сравнение"
+                              title={similarCompare ? "Удалить" : "В сравнение"}
                               type="button"
+                              onClick={() => toggleCompare(item?.id)}
                             >
                               <span className="a-main-compare__icon">
                                 <svg className="a-svg">
@@ -980,7 +1026,13 @@ export default function CatalogSlugPage({ params }) {
                                   />
                                 </svg>
                               </span>
-                              <span className="a-main-compare__title a-main-compare__title--to-compare" />
+                              <span
+                                className={`a-main-compare__title ${
+                                  similarCompare
+                                    ? "a-main-compare__title--in-compare"
+                                    : "a-main-compare__title--to-compare"
+                                }`}
+                              />
                             </button>
                           </div>
                           <div

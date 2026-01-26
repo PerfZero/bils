@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { API_BASE_URL } from "../../../config/api";
 import { addToCart } from "../../lib/cart";
 import { isFavorite, loadFavorites, toggleFavorite } from "../../lib/favorites";
+import { isCompared, toggleCompare } from "../../lib/compare";
 import FastOrderModal from "./FastOrderModal";
 
 interface ProductListItemProps {
@@ -35,6 +36,7 @@ export function ProductListItem({ product }: ProductListItemProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [isFavoriteActive, setIsFavoriteActive] = useState(false);
   const [favoriteBusy, setFavoriteBusy] = useState(false);
+  const [isCompareActive, setIsCompareActive] = useState(false);
 
   const images =
     product.images && product.images.length > 1
@@ -102,6 +104,21 @@ export function ProductListItem({ product }: ProductListItemProps) {
     };
   }, [product.id]);
 
+  useEffect(() => {
+    let isActive = true;
+    const syncCompare = () => {
+      if (!isActive) return;
+      setIsCompareActive(isCompared(product.id));
+    };
+    syncCompare();
+    if (typeof window === "undefined") return () => {};
+    window.addEventListener("compare:updated", syncCompare);
+    return () => {
+      isActive = false;
+      window.removeEventListener("compare:updated", syncCompare);
+    };
+  }, [product.id]);
+
   const handleAddToCart = async () => {
     if (!product?.id || isAdding) return;
     setIsAdding(true);
@@ -123,6 +140,12 @@ export function ProductListItem({ product }: ProductListItemProps) {
     } finally {
       setFavoriteBusy(false);
     }
+  };
+
+  const handleToggleCompare = () => {
+    if (!product?.id) return;
+    toggleCompare(product.id);
+    setIsCompareActive(isCompared(product.id));
   };
 
   return (
@@ -502,7 +525,11 @@ export function ProductListItem({ product }: ProductListItemProps) {
                   </button>
                 </div>
                 <div className="product-card-line-tile__helpers">
-                  <div className="a-main-compare a-main-compare--type-line-tile">
+                  <div
+                    className={`a-main-compare a-main-compare--type-line-tile${
+                      isCompareActive ? " a-main-compare--active" : ""
+                    }`}
+                  >
                     <div
                       className="tooltip-main a-main-compare__tooltip tooltip-main--position-bottom-left"
                       color="white"
@@ -515,8 +542,9 @@ export function ProductListItem({ product }: ProductListItemProps) {
                     </div>
                     <button
                       className="a-main-compare__helper"
-                      title="В сравнение"
+                      title={isCompareActive ? "Удалить" : "В сравнение"}
                       type="button"
+                      onClick={handleToggleCompare}
                     >
                       <span className="a-main-compare__icon">
                         <svg className="a-svg">
@@ -532,7 +560,13 @@ export function ProductListItem({ product }: ProductListItemProps) {
                           />
                         </svg>
                       </span>
-                      <span className="a-main-compare__title a-main-compare__title--to-compare" />
+                      <span
+                        className={`a-main-compare__title ${
+                          isCompareActive
+                            ? "a-main-compare__title--in-compare"
+                            : "a-main-compare__title--to-compare"
+                        }`}
+                      />
                     </button>
                   </div>
                   <div

@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getOrCreateCart } from "../lib/cart";
 import { getFavoriteCount, loadFavorites } from "../lib/favorites";
+import { getCompareCount } from "../lib/compare";
 
 export default function MobileNavBar({ onProfileClick, onCatalogOpen }) {
   const [cartCount, setCartCount] = useState(0);
   const [favoritesCount, setFavoritesCount] = useState(0);
+  const [compareCount, setCompareCount] = useState(0);
 
   useEffect(() => {
     let isActive = true;
@@ -49,6 +51,21 @@ export default function MobileNavBar({ onProfileClick, onCatalogOpen }) {
     return () => {
       isActive = false;
       window.removeEventListener("favorites:updated", handler);
+    };
+  }, []);
+
+  useEffect(() => {
+    let isActive = true;
+    const syncCompare = () => {
+      if (!isActive) return;
+      setCompareCount(getCompareCount());
+    };
+    syncCompare();
+    const handler = () => syncCompare();
+    window.addEventListener("compare:updated", handler);
+    return () => {
+      isActive = false;
+      window.removeEventListener("compare:updated", handler);
     };
   }, []);
 
@@ -157,6 +174,35 @@ export default function MobileNavBar({ onProfileClick, onCatalogOpen }) {
                   )}
                 </span>
                 <span className="a-helper__label">Избранное</span>
+              </span>
+            </button>
+          </Link>
+        </li>
+        <li className="a-helper-list__item a-helper-list__item--comparison">
+          <Link
+            href="/personal/compare/"
+            className="a-helper-list__link"
+            rel="nofollow"
+          >
+            <button
+              type="button"
+              title="Сравнение"
+              className="a-helper a-helper--comparison a-helper--standalone"
+              link="/personal/compare/"
+            >
+              <span className="a-helper__container">
+                <span className="a-helper__wrap">
+                  <svg className="a-svg a-helper__icon">
+                    <use
+                      xmlnsXlink="http://www.w3.org/1999/xlink"
+                      xlinkHref="#icon-comparison-stroke"
+                    />
+                  </svg>
+                  {compareCount > 0 && (
+                    <span className="a-helper__count">{compareCount}</span>
+                  )}
+                </span>
+                <span className="a-helper__label">Сравнение</span>
               </span>
             </button>
           </Link>

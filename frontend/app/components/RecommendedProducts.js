@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { isFavorite, loadFavorites, toggleFavorite } from "../lib/favorites";
+import { isCompared, toggleCompare } from "../lib/compare";
 
 export default function RecommendedProducts() {
   const [, setFavoritesTick] = useState(0);
+  const [, setCompareTick] = useState(0);
   const products = [
     {
       id: 1,
@@ -71,6 +73,12 @@ export default function RecommendedProducts() {
     return () => window.removeEventListener("favorites:updated", handler);
   }, []);
 
+  useEffect(() => {
+    const handler = () => setCompareTick((tick) => tick + 1);
+    window.addEventListener("compare:updated", handler);
+    return () => window.removeEventListener("compare:updated", handler);
+  }, []);
+
   return (
     <section className="a-page-main__recommend">
       <div className="a-page-main__container">
@@ -113,6 +121,7 @@ export default function RecommendedProducts() {
               <ul className="a-main-recommend-list__list">
                 {products.map((product) => {
                   const favoriteActive = isFavorite(product.id);
+                  const compareActive = isCompared(product.id);
                   return (
                     <li
                       key={product.id}
@@ -171,7 +180,11 @@ export default function RecommendedProducts() {
                           </div>
                         )}
                         <div className="a-product-card__helpers">
-                          <div className="a-main-compare a-main-compare--type-vertical-vertical">
+                          <div
+                            className={`a-main-compare a-main-compare--type-vertical-vertical${
+                              compareActive ? " a-main-compare--active" : ""
+                            }`}
+                          >
                             <div
                               className="tooltip-main a-main-compare__tooltip tooltip-main--position-left"
                               color="white"
@@ -186,9 +199,10 @@ export default function RecommendedProducts() {
                               </div>
                             </div>
                             <button
-                              title="В сравнение"
+                              title={compareActive ? "Удалить" : "В сравнение"}
                               type="button"
                               className="a-main-compare__helper"
+                              onClick={() => toggleCompare(product.id)}
                             >
                               <span className="a-main-compare__icon">
                                 <svg className="a-svg">
@@ -198,7 +212,13 @@ export default function RecommendedProducts() {
                                   <use xlinkHref="#icon-comparison-solid"></use>
                                 </svg>
                               </span>
-                              <span className="a-main-compare__title a-main-compare__title--to-compare"></span>
+                              <span
+                                className={`a-main-compare__title ${
+                                  compareActive
+                                    ? "a-main-compare__title--in-compare"
+                                    : "a-main-compare__title--to-compare"
+                                }`}
+                              ></span>
                             </button>
                           </div>
                           <div

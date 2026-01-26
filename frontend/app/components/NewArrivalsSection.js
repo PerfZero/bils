@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination } from "swiper/modules";
 import { isFavorite, loadFavorites, toggleFavorite } from "../lib/favorites";
+import { isCompared, toggleCompare } from "../lib/compare";
 
 const formatPrice = (value) => {
   if (!Number.isFinite(value)) {
@@ -46,6 +47,7 @@ export default function NewArrivalsSection({ products = [] }) {
   const nextRef = useRef(null);
   const paginationRef = useRef(null);
   const [, setFavoritesTick] = useState(0);
+  const [, setCompareTick] = useState(0);
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
@@ -53,6 +55,12 @@ export default function NewArrivalsSection({ products = [] }) {
     const handler = () => setFavoritesTick((tick) => tick + 1);
     window.addEventListener("favorites:updated", handler);
     return () => window.removeEventListener("favorites:updated", handler);
+  }, []);
+
+  useEffect(() => {
+    const handler = () => setCompareTick((tick) => tick + 1);
+    window.addEventListener("compare:updated", handler);
+    return () => window.removeEventListener("compare:updated", handler);
   }, []);
 
   return (
@@ -87,6 +95,7 @@ export default function NewArrivalsSection({ products = [] }) {
           >
             {products.map((product) => {
               const favoriteActive = isFavorite(product.id);
+              const compareActive = isCompared(product.id);
               return (
                 <SwiperSlide
                   key={product.id}
@@ -155,7 +164,11 @@ export default function NewArrivalsSection({ products = [] }) {
                         )}
 
                       <div className="a-product-card__helpers">
-                        <div className="a-main-compare a-main-compare--type-vertical-vertical">
+                        <div
+                          className={`a-main-compare a-main-compare--type-vertical-vertical${
+                            compareActive ? " a-main-compare--active" : ""
+                          }`}
+                        >
                           <div className="tooltip-main a-main-compare__tooltip tooltip-main--position-left">
                             <div className="tooltip-main__content">
                               <a
@@ -167,9 +180,10 @@ export default function NewArrivalsSection({ products = [] }) {
                             </div>
                           </div>
                           <button
-                            title="В сравнение"
+                            title={compareActive ? "Удалить" : "В сравнение"}
                             type="button"
                             className="a-main-compare__helper"
+                            onClick={() => toggleCompare(product.id)}
                           >
                             <span className="a-main-compare__icon">
                               <svg className="a-svg">
@@ -179,7 +193,13 @@ export default function NewArrivalsSection({ products = [] }) {
                                 <use xlinkHref="#icon-comparison-solid"></use>
                               </svg>
                             </span>
-                            <span className="a-main-compare__title a-main-compare__title--to-compare"></span>
+                            <span
+                              className={`a-main-compare__title ${
+                                compareActive
+                                  ? "a-main-compare__title--in-compare"
+                                  : "a-main-compare__title--to-compare"
+                              }`}
+                            ></span>
                           </button>
                         </div>
 

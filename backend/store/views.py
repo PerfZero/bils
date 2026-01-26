@@ -4,6 +4,10 @@ from rest_framework.permissions import AllowAny
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.views import APIView
+from django.conf import settings
+from django.core.mail import send_mail
+import logging
 from django.db.models import Q, Exists, OuterRef
 from django.shortcuts import get_object_or_404
 from .models import (
@@ -48,6 +52,7 @@ from .serializers import (
 )
 
 MIN_PUBLIC_PRICE = Decimal("50000")
+logger = logging.getLogger(__name__)
 
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
@@ -275,6 +280,105 @@ class FAQQuestionViewSet(viewsets.ReadOnlyModelViewSet):
         return queryset
 
 
+class SearchView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        query = (request.query_params.get("q") or "").strip()
+        if not query:
+            return Response(
+                {
+                    "suggestions": [],
+                    "categories": [],
+                    "brands": [],
+                    "products": [],
+                }
+            )
+
+        products_qs = (
+            Product.objects.filter(is_active=True, price__gte=MIN_PUBLIC_PRICE)
+            .select_related("brand", "category")
+            .filter(
+                Q(name__icontains=query)
+                | Q(code__icontains=query)
+                | Q(article__icontains=query)
+                | Q(brand__name__icontains=query)
+                | Q(category__name__icontains=query)
+            )
+            .order_by("-created_at")[:8]
+        )
+
+        categories_qs = (
+            Category.objects.filter(is_active=True, name__icontains=query)
+            .order_by("order", "name")[:8]
+        )
+
+        brands_qs = (
+            Brand.objects.filter(is_active=True, name__icontains=query)
+            .order_by("order", "name")[:8]
+        )
+
+        suggestions = []
+        for product in products_qs:
+            if product.name not in suggestions:
+                suggestions.append(product.name)
+            if len(suggestions) >= 6:
+                break
+
+        products = [
+            {
+                "id": product.id,
+                "name": product.name,
+                "href": f"/product/{product.slug}/",
+                "price": product.price,
+                "retail_price": product.retail_price,
+                "image": product.image.url if product.image else None,
+            }
+            for product in products_qs
+        ]
+
+        categories = [
+            {
+                "id": category.id,
+                "name": category.name,
+                "href": f"/catalog/{category.slug}/",
+            }
+            for category in categories_qs
+        ]
+
+        brands = [
+            {
+                "id": brand.id,
+                "name": brand.name,
+                "href": f"/brands/{brand.slug}/",
+                "logo": brand.logo.url if brand.logo else None,
+            }
+            for brand in brands_qs
+        ]
+
+        return Response(
+            {
+                "suggestions": suggestions,
+                "categories": categories,
+                "brands": brands,
+                "products": products,
+            }
+        )
+
+
+class SiteSettingsView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        return Response(
+            {
+                "phone": getattr(settings, "SITE_PHONE", ""),
+                "phone_display": getattr(settings, "SITE_PHONE_DISPLAY", ""),
+                "logo": getattr(settings, "SITE_LOGO", "/logo.png"),
+            }
+        )
+
+
 class ProductReviewViewSet(viewsets.ModelViewSet):
     queryset = ProductReview.objects.filter(is_active=True).select_related("product")
     serializer_class = ProductReviewSerializer
@@ -333,6 +437,7 @@ class CartViewSet(viewsets.ViewSet):
         cart.refresh_from_db()
         response = CartSerializer(cart, context={"request": request})
         return Response(response.data)
+
 
 
 class ShareCartViewSet(viewsets.ViewSet):
@@ -495,6 +600,32 @@ class LeadRequestViewSet(viewsets.ModelViewSet):
     http_method_names = ["post", "head", "options"]
     authentication_classes = []
     permission_classes = [AllowAny]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        lead = serializer.save()
+
+        subject = "Новая заявка с сайта"
+        message = (
+            "Новая заявка\n\n"
+            f"Имя: {lead.name}\n"
+            f"Адрес: {lead.address}\n"
+            f"Email: {lead.email}\n"
+            f"Телефон: {lead.phone}\n"
+            f"Комментарий: {lead.comment or '-'}\n"
+        )
+        from_email = settings.DEFAULT_FROM_EMAIL
+        recipient = settings.LEAD_NOTIFICATION_EMAIL
+        if recipient:
+            try:
+                send_mail(subject, message, from_email, [recipient], fail_silently=False)
+            except Exception:
+                # Keep lead saved even if email fails, but log for diagnostics.
+                logger.exception("Failed to send lead email")
+
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 class DeliveryMethodViewSet(viewsets.ReadOnlyModelViewSet):

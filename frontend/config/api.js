@@ -8,6 +8,8 @@ export const API_ENDPOINTS = {
   CATEGORIES: `${API_BASE_URL}/api/categories/`,
   PRODUCTS: `${API_BASE_URL}/api/products/`,
   BRANDS: `${API_BASE_URL}/api/brands/`,
+  SEARCH: `${API_BASE_URL}/api/search/`,
+  SITE_SETTINGS: `${API_BASE_URL}/api/site-settings/`,
   CART: `${API_BASE_URL}/api/cart/`,
   FAVORITES: `${API_BASE_URL}/api/favorites/`,
   LEADS: `${API_BASE_URL}/api/leads/`,

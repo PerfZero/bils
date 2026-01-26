@@ -44,6 +44,91 @@ from .models import (
 )
 
 
+def _group_store_app(app):
+    model_map = {model["object_name"]: model for model in app.get("models", [])}
+    groups = [
+        (
+            "Каталог",
+            [
+                "Category",
+                "Brand",
+                "Product",
+                "Attribute",
+                "ProductAttribute",
+                "ProductImage",
+                "ProductDocument",
+                "ProductComplectation",
+                "ProductReview",
+            ],
+        ),
+        (
+            "Продажи",
+            [
+                "Order",
+                "OrderItem",
+                "Cart",
+                "CartItem",
+                "LeadRequest",
+                "PromoCode",
+                "DeliveryMethod",
+                "PaymentMethod",
+            ],
+        ),
+        ("Избранное", ["FavoriteList", "FavoriteItem"]),
+        ("FAQ", ["FAQCategory", "FAQQuestion"]),
+        ("Импорт", ["ProductImportLog"]),
+    ]
+    grouped = []
+    used = set()
+    for group_name, model_names in groups:
+        models = []
+        for name in model_names:
+            model = model_map.get(name)
+            if model:
+                models.append(model)
+                used.add(name)
+        if models:
+            grouped.append(
+                {
+                    "name": group_name,
+                    "app_label": f"store_{slugify(group_name, allow_unicode=True)}",
+                    "app_url": app.get("app_url"),
+                    "has_module_perms": app.get("has_module_perms", True),
+                    "models": models,
+                }
+            )
+
+    leftovers = [model for key, model in model_map.items() if key not in used]
+    if leftovers:
+        grouped.append(
+            {
+                "name": "Прочее",
+                "app_label": "store_other",
+                "app_url": app.get("app_url"),
+                "has_module_perms": app.get("has_module_perms", True),
+                "models": leftovers,
+            }
+        )
+    return grouped
+
+
+if not getattr(admin.site, "_bremax_grouped", False):
+    original_get_app_list = admin.site.get_app_list
+
+    def get_grouped_app_list(request):
+        app_list = original_get_app_list(request)
+        grouped_list = []
+        for app in app_list:
+            if app.get("app_label") == "store":
+                grouped_list.extend(_group_store_app(app))
+            else:
+                grouped_list.append(app)
+        return grouped_list
+
+    admin.site.get_app_list = get_grouped_app_list
+    admin.site._bremax_grouped = True
+
+
 @admin.register(Category)
 class CategoryAdmin(MPTTModelAdmin):
     list_display = ("name", "slug", "order", "is_popular", "is_active")

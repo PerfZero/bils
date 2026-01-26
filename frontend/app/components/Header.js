@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { API_BASE_URL } from "../../config/api";
+import { API_BASE_URL, API_ENDPOINTS } from "../../config/api";
 import { getOrCreateCart } from "../lib/cart";
 import { getFavoriteCount, loadFavorites } from "../lib/favorites";
+import { getCompareCount } from "../lib/compare";
+import SearchPanel from "./SearchPanel";
 
 const chunkItems = (items, size) => {
   if (!items?.length) {
@@ -31,6 +33,16 @@ export default function Header({ onProfileClick }) {
   const [loading, setLoading] = useState(true);
   const [cartCount, setCartCount] = useState(0);
   const [favoritesCount, setFavoritesCount] = useState(0);
+  const [compareCount, setCompareCount] = useState(0);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const searchRef = useRef(null);
+  const searchInputRef = useRef(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [siteSettings, setSiteSettings] = useState({
+    phone: "+7899749878997498",
+    phone_display: "+7 899 749-87-89",
+    logo: "/logo.png",
+  });
 
   useEffect(() => {
     const handleScroll = () => {
@@ -42,6 +54,38 @@ export default function Header({ onProfileClick }) {
 
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    let isActive = true;
+    const fetchSettings = async () => {
+      try {
+        const response = await fetch(API_ENDPOINTS.SITE_SETTINGS);
+        if (!response.ok) return;
+        const payload = await response.json();
+        if (isActive && payload) {
+          setSiteSettings({
+            phone: payload.phone || siteSettings.phone,
+            phone_display:
+              payload.phone_display ||
+              payload.phone ||
+              siteSettings.phone_display,
+            logo: payload.logo || siteSettings.logo,
+          });
+        }
+      } catch (error) {
+        // ignore
+      }
+    };
+    fetchSettings();
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  const handleSearchSubmit = () => {
+    if (!searchQuery) return;
+    window.location.href = `/catalog?q=${encodeURIComponent(searchQuery)}`;
+  };
 
   useEffect(() => {
     let isActive = true;
@@ -83,6 +127,21 @@ export default function Header({ onProfileClick }) {
     return () => {
       isActive = false;
       window.removeEventListener("favorites:updated", handler);
+    };
+  }, []);
+
+  useEffect(() => {
+    let isActive = true;
+    const syncCompare = () => {
+      if (!isActive) return;
+      setCompareCount(getCompareCount());
+    };
+    syncCompare();
+    const handler = () => syncCompare();
+    window.addEventListener("compare:updated", handler);
+    return () => {
+      isActive = false;
+      window.removeEventListener("compare:updated", handler);
     };
   }, []);
 
@@ -262,11 +321,16 @@ export default function Header({ onProfileClick }) {
           <div className="a-header__container a-bar">
             <div className="a-bar__logo">
               <Link href="/" className="a-bar__logo-link">
-                <img width="100" height="20" src="/logo.png" alt="Logo" />
+                <img
+                  width="100"
+                  height="20"
+                  src={siteSettings.logo || "/logo.png"}
+                  alt="Logo"
+                />
               </Link>
 
-              <a href="tel:+7899749878997498" className="phone-link">
-                +7 899 749-87-89
+              <a href={`tel:${siteSettings.phone}`} className="phone-link">
+                {siteSettings.phone_display}
               </a>
             </div>
             <div className="a-bar__buttons">
@@ -302,7 +366,7 @@ export default function Header({ onProfileClick }) {
                 {renderCatalogPlane(isStickyCatalogOpen)}
               </div>
             </div>
-            <div className="a-bar__search">
+            <div className="a-bar__search" ref={searchRef}>
               <form>
                 <div className="a-main-search">
                   <div className="a-main-search__container">
@@ -316,6 +380,18 @@ export default function Header({ onProfileClick }) {
                             name="q"
                             placeholder="Найти в BREMAX ..."
                             className="a-input-field__input digi-instant-search jc-ignore"
+                            ref={searchInputRef}
+                            value={searchQuery}
+                            onChange={(event) =>
+                              setSearchQuery(event.target.value)
+                            }
+                            onFocus={() => setIsSearchOpen(true)}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter") {
+                                event.preventDefault();
+                                handleSearchSubmit();
+                              }
+                            }}
                           />
                         </label>
                       </div>
@@ -324,6 +400,13 @@ export default function Header({ onProfileClick }) {
                           type="button"
                           title="Поиск"
                           className="a-main-search__button a-main-search__button--search"
+                          onClick={() => {
+                            if (searchQuery) {
+                              handleSearchSubmit();
+                              return;
+                            }
+                            setIsSearchOpen(true);
+                          }}
                         >
                           <svg className="a-svg">
                             <use
@@ -337,6 +420,19 @@ export default function Header({ onProfileClick }) {
                   </div>
                 </div>
               </form>
+              <SearchPanel
+                isOpen={isSearchOpen}
+                onClose={() => setIsSearchOpen(false)}
+                anchorRef={searchRef}
+                query={searchQuery}
+                onSelectQuery={(value) => {
+                  setSearchQuery(value);
+                  setIsSearchOpen(true);
+                  if (searchInputRef.current) {
+                    searchInputRef.current.focus();
+                  }
+                }}
+              />
             </div>
             <ul className="a-helper-list a-bar__helper-list">
               {/* <li className="a-helper-list__item a-helper-list__item--profile">
@@ -401,6 +497,11 @@ export default function Header({ onProfileClick }) {
                             xlinkHref="#icon-comparison-stroke"
                           />
                         </svg>
+                        {compareCount > 0 && (
+                          <span className="a-helper__count">
+                            {compareCount}
+                          </span>
+                        )}
                       </span>
                       {!isMobile && (
                         <span className="a-helper__label">Сравнение</span>
@@ -472,6 +573,7 @@ export default function Header({ onProfileClick }) {
                   type="button"
                   title=""
                   className="a-helper a-helper--search a-helper--active a-helper--standalone"
+                  onClick={() => setIsSearchOpen(true)}
                 >
                   <span className="a-helper__container">
                     <span className="a-helper__wrap">

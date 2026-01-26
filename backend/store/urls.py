@@ -1,4 +1,5 @@
 from rest_framework.routers import DefaultRouter
+from django.urls import path
 from .views import (
     CategoryViewSet,
     ProductViewSet,
@@ -6,6 +7,8 @@ from .views import (
     BrandViewSet,
     FAQCategoryViewSet,
     FAQQuestionViewSet,
+    SearchView,
+    SiteSettingsView,
     CartViewSet,
     ShareCartViewSet,
     FavoriteViewSet,
@@ -30,4 +33,7 @@ router.register("delivery-methods", DeliveryMethodViewSet, basename="delivery-me
 router.register("payment-methods", PaymentMethodViewSet, basename="payment-method")
 router.register("orders", OrderViewSet, basename="order")
 
-urlpatterns = router.urls
+urlpatterns = [
+    path("search/", SearchView.as_view()),
+    path("site-settings/", SiteSettingsView.as_view()),
+] + router.urls
