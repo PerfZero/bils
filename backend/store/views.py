@@ -1,5 +1,6 @@
 from decimal import Decimal, InvalidOperation
 from rest_framework import viewsets
+from rest_framework.permissions import AllowAny
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
@@ -483,6 +484,8 @@ class LeadRequestViewSet(viewsets.ModelViewSet):
     queryset = LeadRequest.objects.all().order_by("-created_at", "-id")
     serializer_class = LeadRequestSerializer
     http_method_names = ["post", "head", "options"]
+    authentication_classes = []
+    permission_classes = [AllowAny]
 
 
 class DeliveryMethodViewSet(viewsets.ReadOnlyModelViewSet):

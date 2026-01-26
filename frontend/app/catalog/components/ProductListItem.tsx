@@ -397,14 +397,6 @@ export function ProductListItem({ product }: ProductListItemProps) {
                   </>
                 ) : null}
               </div>
-              <div className="product-card-line-tile__mark-list">
-                <svg className="a-svg product-card-line-tile__mark-item product-card-line-tile__mark-item--color-blue">
-                  <use
-                    xlinkHref="#icon-bigam-sign-solid"
-                    xmlnsXlink="http://www.w3.org/1999/xlink"
-                  />
-                </svg>
-              </div>
             </div>
             <div className="product-card-line-tile__group-title">
               {product.code ? (

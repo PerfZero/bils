@@ -77,16 +77,9 @@ export default function RecommendedProducts() {
         <div className="a-main-recommend-list">
           <div className="a-main-recommend-list__row">
             <div className="a-main-recommend-list__column">
-              <div className="a-main-recommend-list__mark">
-                <svg className="a-svg">
-                  <use xlinkHref="#icon-last-recommend"></use>
-                </svg>
-              </div>
               <div className="a-main-recommend-list__logo">
                 <div className="a-main-recommend-list__logo-icon">
-                  <svg className="a-svg">
-                    <use xlinkHref="#icon-last-bigam-logo"></use>
-                  </svg>
+                  <img width="100" height="20" src="/logo.png" alt="Logo" />
                 </div>
                 <div className="a-main-recommend-list__logo-title">
                   Рекомендует
@@ -137,13 +130,6 @@ export default function RecommendedProducts() {
                             className="a-product-card__picture a-lazy-load a-is-loaded"
                           />
                           <span></span>
-                          <div className="a-product-card__mark-list">
-                            <div className="a-product-card__mark-item a-product-card__mark-item--color-blue">
-                              <svg className="a-svg">
-                                <use xlinkHref="#icon-bigam-sign-solid"></use>
-                              </svg>
-                            </div>
-                          </div>
                         </a>
                         <div className="a-product-card__description">
                           <div className="a-product-card__price">
