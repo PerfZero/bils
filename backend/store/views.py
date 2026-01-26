@@ -244,6 +244,7 @@ class BrandViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        limit = self.request.query_params.get("limit")
         hide_empty = self.request.query_params.get("hide_empty")
         if hide_empty is None or str(hide_empty).lower() in ("1", "true", "yes"):
             queryset = queryset.filter(
@@ -263,6 +264,8 @@ class BrandViewSet(viewsets.ReadOnlyModelViewSet):
                 "id", flat=True
             )
             queryset = queryset.filter(products__category_id__in=category_ids).distinct()
+        if limit and str(limit).isdigit():
+            queryset = queryset[: int(limit)]
         return queryset
 
 

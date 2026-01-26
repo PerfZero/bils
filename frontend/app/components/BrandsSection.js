@@ -28,7 +28,7 @@ export default function BrandsSection({ brands = [] }) {
             className="a-brand-carousel__container swiper-container"
             wrapperClass="a-brand-carousel__wrapper"
           >
-            {brands.map((brand) => (
+            {brands.slice(0, 10).map((brand) => (
               <SwiperSlide
                 key={brand.url || brand.name}
                 className="a-brand-carousel__slide"

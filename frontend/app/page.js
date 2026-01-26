@@ -23,7 +23,9 @@ async function getProducts() {
 }
 
 async function getBrands() {
-  const res = await fetch(`${apiUrl}/api/brands/`, { cache: "no-store" });
+  const res = await fetch(`${apiUrl}/api/brands/?limit=10`, {
+    cache: "no-store",
+  });
   if (!res.ok) {
     return [];
   }
