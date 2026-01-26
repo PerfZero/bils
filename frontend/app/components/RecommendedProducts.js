@@ -94,7 +94,7 @@ export default function RecommendedProducts() {
               </div>
               <div className="a-main-recommend-list__extend">
                 <a
-                  href="/catalog/recommended/"
+                  href="/catalog/"
                   rel="nofollow"
                   className="a-main-button a-main-button--display-inline a-main-button--type-large a-main-button--corner-round a-main-button--color-orange"
                 >

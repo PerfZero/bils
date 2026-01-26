@@ -9,6 +9,8 @@ import { ProductListItem } from "../components/ProductListItem";
 import { API_BASE_URL } from "../../../config/api";
 
 export default function CatalogSlugPage({ params }) {
+  const isAllCatalog = !params?.slug || params.slug === "all";
+  const basePath = isAllCatalog ? "/catalog" : `/catalog/${params.slug}`;
   const [category, setCategory] = useState(null);
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState([]);
@@ -89,6 +91,25 @@ export default function CatalogSlugPage({ params }) {
           ? rootPayload
           : rootPayload.results || [];
 
+        if (isAllCatalog) {
+          setCategory({
+            name: "Каталог",
+            slug: "catalog",
+            href: "/catalog",
+            description: "",
+            path: [
+              {
+                name: "Каталог",
+                slug: "catalog",
+                href: "/catalog",
+                children: rootData,
+                description: "",
+              },
+            ],
+          });
+          return;
+        }
+
         const findCategoryPath = (nodes, targetSlug, path = []) => {
           for (const node of nodes || []) {
             const nextPath = [...path, node];
@@ -116,10 +137,6 @@ export default function CatalogSlugPage({ params }) {
         setCategory(
           foundCategory ? { ...foundCategory, path: categoryPath } : null,
         );
-
-        // Отладка
-        console.log("Found category:", foundCategory);
-        console.log("Category path:", categoryPath);
       } catch (error) {
         console.error("Failed to fetch category:", error);
       } finally {
@@ -127,18 +144,22 @@ export default function CatalogSlugPage({ params }) {
       }
     };
 
-    if (params.slug) {
+    if (params.slug || isAllCatalog) {
       fetchCategory();
     }
-  }, [params.slug]);
+  }, [params.slug, isAllCatalog]);
 
   useEffect(() => {
     const fetchFilterOptions = async () => {
       try {
         const brandUrl = new URL(`${API_BASE_URL}/api/brands/`);
-        brandUrl.searchParams.set("category", params.slug);
+        if (!isAllCatalog) {
+          brandUrl.searchParams.set("category", params.slug);
+        }
         const countryUrl = new URL(`${API_BASE_URL}/api/products/countries/`);
-        countryUrl.searchParams.set("category", params.slug);
+        if (!isAllCatalog) {
+          countryUrl.searchParams.set("category", params.slug);
+        }
         if (selectedBrands.length) {
           countryUrl.searchParams.set("brand", selectedBrands.join(","));
         }
@@ -176,17 +197,19 @@ export default function CatalogSlugPage({ params }) {
       }
     };
 
-    if (params.slug) {
+    if (params.slug || isAllCatalog) {
       fetchFilterOptions();
     }
-  }, [params.slug, selectedBrands.join(",")]);
+  }, [params.slug, selectedBrands.join(","), isAllCatalog]);
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setProductsLoading(true);
         const productsUrl = new URL(`${API_BASE_URL}/api/products/`);
-        productsUrl.searchParams.set("category", params.slug);
+        if (!isAllCatalog) {
+          productsUrl.searchParams.set("category", params.slug);
+        }
         productsUrl.searchParams.set("page", String(currentPage));
         if (selectedBrands.length) {
           productsUrl.searchParams.set("brand", selectedBrands.join(","));
@@ -236,7 +259,7 @@ export default function CatalogSlugPage({ params }) {
       }
     };
 
-    if (params.slug) {
+    if (params.slug || isAllCatalog) {
       fetchProducts();
     }
   }, [
@@ -246,6 +269,7 @@ export default function CatalogSlugPage({ params }) {
     selectedCountries.join(","),
     priceMinParam,
     priceMaxParam,
+    isAllCatalog,
   ]);
 
   const handleBrandToggle = (value, checked) => {
@@ -296,9 +320,7 @@ export default function CatalogSlugPage({ params }) {
     }
     nextParams.set("page", "1");
     const query = nextParams.toString();
-    router.push(
-      query ? `/catalog/${params.slug}/?${query}` : `/catalog/${params.slug}/`,
-    );
+    router.push(query ? `${basePath}/?${query}` : `${basePath}/`);
   };
 
   const handleClearFilters = () => {
@@ -313,14 +335,12 @@ export default function CatalogSlugPage({ params }) {
     nextParams.delete("price_max");
     nextParams.set("page", "1");
     const query = nextParams.toString();
-    router.push(
-      query ? `/catalog/${params.slug}/?${query}` : `/catalog/${params.slug}/`,
-    );
+    router.push(query ? `${basePath}/?${query}` : `${basePath}/`);
   };
 
   const pageSize = 24;
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-  const pageHref = (page) => `/catalog/${params.slug}/?page=${page}`;
+  const pageHref = (page) => `${basePath}/?page=${page}`;
   const pageNumbers = buildPagination(currentPage, totalPages);
 
   const breadcrumbs = category?.path?.map((cat, index) => {
@@ -342,6 +362,15 @@ export default function CatalogSlugPage({ params }) {
     { label: "Каталог", href: "/catalog" },
     { label: loading ? "Загрузка..." : params.slug },
   ];
+
+  if (isAllCatalog) {
+    breadcrumbs.splice(
+      0,
+      breadcrumbs.length,
+      { label: "Главная", href: "/" },
+      { label: "Каталог", href: "/catalog" },
+    );
+  }
 
   // Добавляем главную и каталог если их нет
   if (breadcrumbs.length > 0 && breadcrumbs[0].label !== "Главная") {
@@ -454,7 +483,9 @@ export default function CatalogSlugPage({ params }) {
           <a
             className="a-back__link nuxt-link-active"
             href={
-              category?.path?.[category.path.length - 2]?.href || "/catalog"
+              isAllCatalog
+                ? "/catalog"
+                : category?.path?.[category.path.length - 2]?.href || "/catalog"
             }
           >
             <svg className="a-svg a-back__icon">
@@ -464,7 +495,9 @@ export default function CatalogSlugPage({ params }) {
               />
             </svg>
             <span className="a-back__text">
-              {category?.path?.[category.path.length - 2]?.name || "Каталог"}
+              {isAllCatalog
+                ? "Каталог"
+                : category?.path?.[category.path.length - 2]?.name || "Каталог"}
             </span>
           </a>
         </div>
@@ -476,8 +509,10 @@ export default function CatalogSlugPage({ params }) {
               <h1>
                 {loading
                   ? "Загрузка..."
-                  : category?.path?.[category.path.length - 1]?.name ||
-                    params.slug}
+                  : isAllCatalog
+                    ? "Каталог товаров"
+                    : category?.path?.[category.path.length - 1]?.name ||
+                      params.slug}
               </h1>
             </div>
             <div className="a-page-catalog__title-count">
@@ -742,25 +777,29 @@ export default function CatalogSlugPage({ params }) {
                   <div className="a-page-catalog__note">
                     {loading
                       ? "Загрузка описания..."
-                      : category?.path?.[category.path.length - 1]
-                          ?.description ||
-                        `В категории "${category?.path?.[category.path.length - 1]?.name || params.slug}" представлены товары для различных задач.`}
+                      : isAllCatalog
+                        ? "В каталоге представлены товары для различных задач."
+                        : category?.path?.[category.path.length - 1]
+                            ?.description ||
+                          `В категории "${category?.path?.[category.path.length - 1]?.name || params.slug}" представлены товары для различных задач.`}
                   </div>
-                  <div className="a-catalog-list">
-                    <ul className="a-catalog-list__list">
-                      {category?.path?.[
-                        category.path.length - 1
-                      ]?.children?.map((childCategory) => (
-                        <CatalogListItem
-                          key={childCategory.id}
-                          category={childCategory}
-                        />
-                      )) || <CatalogListItem />}
-                    </ul>
-                  </div>
+                  {!isAllCatalog && (
+                    <div className="a-catalog-list">
+                      <ul className="a-catalog-list__list">
+                        {category?.path?.[
+                          category.path.length - 1
+                        ]?.children?.map((childCategory) => (
+                          <CatalogListItem
+                            key={childCategory.id}
+                            category={childCategory}
+                          />
+                        )) || <CatalogListItem />}
+                      </ul>
+                    </div>
+                  )}
                 </>
               )}
-              {isMobile && (
+              {isMobile && !isAllCatalog && (
                 <div className="a-page-catalog__buttons">
                   <div className="catalog-mobile-groups">
                     <div className="catalog-mobile-groups__container">
@@ -2012,8 +2051,11 @@ export default function CatalogSlugPage({ params }) {
                 <div className="a-page-catalog__note">
                   {loading
                     ? "Загрузка описания..."
-                    : category?.path?.[category.path.length - 1]?.description ||
-                      `В категории "${category?.path?.[category.path.length - 1]?.name || params.slug}" представлены товары для различных задач.`}
+                    : isAllCatalog
+                      ? "В каталоге представлены товары для различных задач."
+                      : category?.path?.[category.path.length - 1]
+                          ?.description ||
+                        `В категории "${category?.path?.[category.path.length - 1]?.name || params.slug}" представлены товары для различных задач.`}
                 </div>
               )}
             </div>
