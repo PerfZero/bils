@@ -31,6 +31,9 @@ services:
     environment:
       DJANGO_DEBUG: "0"
       DJANGO_SECRET_KEY: "change-me"
+      CSRF_TRUSTED_ORIGINS: "${CSRF_TRUSTED_ORIGINS:-https://bremax.ru,https://www.bremax.ru}"
+      USE_X_FORWARDED_HOST: "${USE_X_FORWARDED_HOST:-1}"
+      SECURE_PROXY_SSL_HEADER: "${SECURE_PROXY_SSL_HEADER:-1}"
       POSTGRES_DB: shop
       POSTGRES_USER: shop
       POSTGRES_PASSWORD: shop
