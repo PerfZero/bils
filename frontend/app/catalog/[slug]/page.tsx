@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import type { CSSProperties } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import { CatalogListItem } from "../components/CatalogListItem";
@@ -1019,9 +1020,11 @@ export default function CatalogSlugPage({ params }) {
                             >
                               <div
                                 className="a-field-select__text"
-                                style={{
-                                  "--filter-item-text": `'${option.label}'`,
-                                }}
+                                style={
+                                  {
+                                    "--filter-item-text": `'${option.label}'`,
+                                  } as CSSProperties
+                                }
                               />
                             </li>
                           ))}

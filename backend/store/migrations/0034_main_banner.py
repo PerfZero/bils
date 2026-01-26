@@ -57,12 +57,6 @@ class Migration(migrations.Migration):
                     "show_on_desktop",
                     models.BooleanField(default=True, verbose_name="Показывать на десктопе"),
                 ),
-                (
-                    "advertiser",
-                    models.CharField(blank=True, max_length=200, verbose_name="Рекламодатель"),
-                ),
-                ("ogrn", models.CharField(blank=True, max_length=32, verbose_name="ОГРН")),
-                ("token", models.CharField(blank=True, max_length=200, verbose_name="Токен")),
             ],
             options={
                 "verbose_name": "Главный баннер",
