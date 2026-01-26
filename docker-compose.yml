@@ -38,7 +38,7 @@ services:
     build: ./frontend
     command: ["npm", "run", "dev", "--", "-H", "0.0.0.0", "-p", "3000"]
     environment:
-      API_URL: "${API_URL:-http://backend:8000}"
+      INTERNAL_API_URL: "${INTERNAL_API_URL:-http://backend:8000}"
       NEXT_PUBLIC_API_URL: "${NEXT_PUBLIC_API_URL:-http://localhost:8000}"
     volumes:
       - ./frontend:/app
