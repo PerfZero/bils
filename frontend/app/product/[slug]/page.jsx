@@ -140,7 +140,7 @@ export default function CatalogSlugPage({ params }) {
     const fetchSimilar = async () => {
       try {
         const response = await fetch(
-          `${API_BASE_URL}/api/products/?category=${categorySlug}`,
+          `${API_BASE_URL}/api/products/list/?category=${categorySlug}`,
         );
         const payload = await response.json();
         const items = Array.isArray(payload) ? payload : payload.results || [];

@@ -35,6 +35,7 @@ from .serializers import (
     BrandSerializer,
     BreadcrumbCategorySerializer,
     CategorySerializer,
+    ProductListSerializer,
     ProductSerializer,
     ProductReviewSerializer,
     ProductReviewCreateSerializer,
@@ -213,6 +214,19 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
         if price_max is not None:
             queryset = queryset.filter(price__lte=price_max)
         return queryset
+
+    @action(detail=False, methods=["get"], url_path="list")
+    def list_light(self, request):
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        serializer = ProductListSerializer(
+            page if page is not None else queryset,
+            many=True,
+            context={"request": request},
+        )
+        if page is not None:
+            return self.get_paginated_response(serializer.data)
+        return Response(serializer.data)
 
     @action(detail=False, methods=["get"])
     def countries(self, request):

@@ -19,7 +19,9 @@ const apiUrl =
 const publicApiUrl = process.env.NEXT_PUBLIC_API_URL || apiUrl;
 
 async function getProducts() {
-  const res = await fetch(`${apiUrl}/api/products/`, { cache: "no-store" });
+  const res = await fetch(`${apiUrl}/api/products/list/`, {
+    cache: "no-store",
+  });
   if (!res.ok) {
     return [];
   }

@@ -106,6 +106,95 @@ class BrandSerializer(serializers.ModelSerializer):
         return f"/brands/{obj.slug}/"
 
 
+class ProductListCategorySerializer(serializers.ModelSerializer):
+    href = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Category
+        fields = ["id", "name", "slug", "href"]
+
+    def get_href(self, obj):
+        return f"/catalog/{obj.slug}/"
+
+
+class ProductListBrandSerializer(serializers.ModelSerializer):
+    href = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Brand
+        fields = ["id", "name", "slug", "href"]
+
+    def get_href(self, obj):
+        return f"/brands/{obj.slug}/"
+
+
+class ProductListSerializer(serializers.ModelSerializer):
+    category = ProductListCategorySerializer(read_only=True)
+    brand = ProductListBrandSerializer(read_only=True)
+    image = serializers.SerializerMethodField()
+    images = serializers.SerializerMethodField()
+    href = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Product
+        fields = [
+            "id",
+            "code",
+            "article",
+            "name",
+            "slug",
+            "price",
+            "retail_price",
+            "discount_percent",
+            "rating",
+            "rating_count",
+            "is_new",
+            "is_active",
+            "created_at",
+            "image",
+            "images",
+            "category",
+            "brand",
+            "href",
+        ]
+
+    def _safe_file_url(self, file_field):
+        if not file_field:
+            return None
+        try:
+            if not file_field.storage.exists(file_field.name):
+                return None
+        except Exception:
+            return None
+        try:
+            return file_field.url
+        except Exception:
+            return None
+
+    def get_image(self, obj):
+        return self._safe_file_url(obj.image)
+
+    def get_images(self, obj):
+        images = []
+        for image in obj.images.all().order_by("order", "id")[:6]:
+            url = self._safe_file_url(image.image)
+            if not url:
+                continue
+            images.append(
+                {
+                    "id": image.id,
+                    "url": url,
+                    "alt": image.alt_text,
+                    "is_main": image.is_main,
+                    "order": image.order,
+                }
+            )
+        return images
+
+    def get_href(self, obj):
+        return f"/product/{obj.slug}/"
+
+
 class ProductSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     brand = BrandSerializer(read_only=True)

@@ -163,7 +163,7 @@ export default function BrandCategoryPage({ params }) {
     const fetchProducts = async () => {
       try {
         setProductsLoading(true);
-        const productsUrl = new URL(`${API_BASE_URL}/api/products/`);
+        const productsUrl = new URL(`${API_BASE_URL}/api/products/list/`);
         productsUrl.searchParams.set("brand", brandSlug);
         productsUrl.searchParams.set("category", categorySlug);
         productsUrl.searchParams.set("page", String(currentPage));

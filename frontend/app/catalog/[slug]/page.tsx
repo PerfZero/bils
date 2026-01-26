@@ -207,7 +207,7 @@ export default function CatalogSlugPage({ params }) {
     const fetchProducts = async () => {
       try {
         setProductsLoading(true);
-        const productsUrl = new URL(`${API_BASE_URL}/api/products/`);
+        const productsUrl = new URL(`${API_BASE_URL}/api/products/list/`);
         if (!isAllCatalog) {
           productsUrl.searchParams.set("category", params.slug);
         }
