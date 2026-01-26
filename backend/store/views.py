@@ -238,7 +238,10 @@ class BrandViewSet(viewsets.ReadOnlyModelViewSet):
         queryset = super().get_queryset()
         hide_empty = self.request.query_params.get("hide_empty")
         if hide_empty is None or str(hide_empty).lower() in ("1", "true", "yes"):
-            queryset = queryset.filter(products__is_active=True).distinct()
+            queryset = queryset.filter(
+                products__is_active=True,
+                products__price__gte=MIN_PUBLIC_PRICE,
+            ).distinct()
         letter = self.request.query_params.get("letter")
         category_slug = self.request.query_params.get("category")
         if letter:

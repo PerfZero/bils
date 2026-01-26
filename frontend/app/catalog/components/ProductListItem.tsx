@@ -494,7 +494,7 @@ export function ProductListItem({ product }: ProductListItemProps) {
                     className="a-main-button a-main-button--display-inline a-main-button--type-auto a-main-button--corner-round a-main-button--color-orange"
                     type="button"
                     onClick={handleAddToCart}
-                    disabled={isAdding}
+                    aria-busy={isAdding}
                   >
                     <span className="a-main-button__wrap">
                       <span className="a-main-button__content">В корзину</span>

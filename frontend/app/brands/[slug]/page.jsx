@@ -180,9 +180,9 @@ export default function BrandPage({ params }) {
                       <li className="a-catalog-list__item" key={category.id}>
                         <a
                           className="a-catalog-card"
-                          href={`/catalog/${category.slug}/?brand=${encodeURIComponent(
-                            brandSlug,
-                          )}`}
+                          href={`/brands/${brandHrefSlug}/${encodeURIComponent(
+                            category.slug,
+                          )}/`}
                         >
                           <div className="a-catalog-card__text">
                             {category.name}

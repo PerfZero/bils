@@ -13,7 +13,20 @@ function normalizeImageUrl(url) {
   return url;
 }
 
+function decodeSlug(value) {
+  if (!value) return "";
+  try {
+    return decodeURIComponent(value);
+  } catch (error) {
+    return value;
+  }
+}
+
 export default function BrandCategoryPage({ params }) {
+  const brandSlug = decodeSlug(params.slug);
+  const categorySlug = decodeSlug(params.category);
+  const brandHrefSlug = encodeURIComponent(brandSlug || params.slug);
+  const categoryHrefSlug = encodeURIComponent(categorySlug || params.category);
   const router = useRouter();
   const searchParams = useSearchParams();
   const pageParam = Number(searchParams.get("page") || "1");
@@ -77,14 +90,14 @@ export default function BrandCategoryPage({ params }) {
         const response = await fetch(`${API_BASE_URL}/api/brands/`);
         const payload = await response.json();
         const data = Array.isArray(payload) ? payload : payload.results || [];
-        const match = data.find((item) => item.slug === params.slug);
+        const match = data.find((item) => item.slug === brandSlug);
         setBrand(match || null);
       } catch (error) {
         setBrand(null);
       }
     };
     fetchBrand();
-  }, [params.slug]);
+  }, [params.slug, brandSlug]);
 
   useEffect(() => {
     const fetchCategory = async () => {
@@ -109,7 +122,7 @@ export default function BrandCategoryPage({ params }) {
           return null;
         };
 
-        const categoryPath = findCategoryPath(data, params.category) || [];
+        const categoryPath = findCategoryPath(data, categorySlug) || [];
         const foundCategory =
           categoryPath.length > 0
             ? categoryPath[categoryPath.length - 1]
@@ -122,39 +135,37 @@ export default function BrandCategoryPage({ params }) {
       }
     };
     fetchCategory();
-  }, [params.category]);
+  }, [params.category, categorySlug]);
 
   useEffect(() => {
     const fetchCountries = async () => {
       try {
         const countryUrl = new URL(`${API_BASE_URL}/api/products/countries/`);
-        countryUrl.searchParams.set("category", params.category);
-        countryUrl.searchParams.set("brand", params.slug);
+        countryUrl.searchParams.set("category", categorySlug);
+        countryUrl.searchParams.set("brand", brandSlug);
         const response = await fetch(countryUrl.toString());
         const data = await response.json();
         setCountryOptions(
-          (Array.isArray(data) ? data : [])
-            .filter(Boolean)
-            .map((country) => ({
-              id: country,
-              label: country,
-              title: country,
-            })),
+          (Array.isArray(data) ? data : []).filter(Boolean).map((country) => ({
+            id: country,
+            label: country,
+            title: country,
+          })),
         );
       } catch (error) {
         setCountryOptions([]);
       }
     };
     fetchCountries();
-  }, [params.slug, params.category]);
+  }, [params.slug, params.category, brandSlug, categorySlug]);
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setProductsLoading(true);
         const productsUrl = new URL(`${API_BASE_URL}/api/products/`);
-        productsUrl.searchParams.set("brand", params.slug);
-        productsUrl.searchParams.set("category", params.category);
+        productsUrl.searchParams.set("brand", brandSlug);
+        productsUrl.searchParams.set("category", categorySlug);
         productsUrl.searchParams.set("page", String(currentPage));
         if (selectedCountries.length) {
           productsUrl.searchParams.set("country", selectedCountries.join(","));
@@ -203,6 +214,8 @@ export default function BrandCategoryPage({ params }) {
   }, [
     params.slug,
     params.category,
+    brandSlug,
+    categorySlug,
     currentPage,
     selectedCountries.join(","),
     priceMinParam,
@@ -212,15 +225,15 @@ export default function BrandCategoryPage({ params }) {
   const pageSize = 24;
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
   const pageHref = (page) =>
-    `/brands/${params.slug}/${params.category}/?page=${page}`;
+    `/brands/${brandHrefSlug}/${categoryHrefSlug}/?page=${page}`;
   const pageNumbers = useMemo(
     () => buildPagination(currentPage, totalPages),
     [currentPage, totalPages],
   );
 
-  const brandName = brand?.name || params.slug;
+  const brandName = brand?.name || brandSlug || params.slug;
   const brandLogo = normalizeImageUrl(brand?.logo);
-  const categoryName = category?.name || params.category;
+  const categoryName = category?.name || categorySlug || params.category;
 
   const handleApplyFilters = () => {
     const nextParams = new URLSearchParams(searchParams.toString());
@@ -243,8 +256,8 @@ export default function BrandCategoryPage({ params }) {
     const query = nextParams.toString();
     router.push(
       query
-        ? `/brands/${params.slug}/${params.category}/?${query}`
-        : `/brands/${params.slug}/${params.category}/`,
+        ? `/brands/${brandHrefSlug}/${categoryHrefSlug}/?${query}`
+        : `/brands/${brandHrefSlug}/${categoryHrefSlug}/`,
     );
     setIsFilterOpen(false);
   };
@@ -261,8 +274,8 @@ export default function BrandCategoryPage({ params }) {
     const query = nextParams.toString();
     router.push(
       query
-        ? `/brands/${params.slug}/${params.category}/?${query}`
-        : `/brands/${params.slug}/${params.category}/`,
+        ? `/brands/${brandHrefSlug}/${categoryHrefSlug}/?${query}`
+        : `/brands/${brandHrefSlug}/${categoryHrefSlug}/`,
     );
   };
 
@@ -283,7 +296,7 @@ export default function BrandCategoryPage({ params }) {
           <li className="a-breadcrumbs__item">
             <a
               className="a-breadcrumbs__link nuxt-link-active"
-              href={`/brands/${params.slug}/`}
+              href={`/brands/${brandHrefSlug}/`}
             >
               {brandName}
             </a>
@@ -293,7 +306,10 @@ export default function BrandCategoryPage({ params }) {
           </li>
         </ul>
         <div className="a-back a-page-catalog__back">
-          <a className="a-back__link nuxt-link-active" href={`/brands/${params.slug}/`}>
+          <a
+            className="a-back__link nuxt-link-active"
+            href={`/brands/${brandHrefSlug}/`}
+          >
             <svg className="a-svg a-back__icon">
               <use
                 xlinkHref="#icon-old-arrow"
@@ -337,9 +353,9 @@ export default function BrandCategoryPage({ params }) {
                   </div>
                   <BaseFilter
                     manufacturerOptions={[
-                      { id: params.slug, label: brandName, title: brandName },
+                      { id: brandSlug, label: brandName, title: brandName },
                     ]}
-                    selectedManufacturers={[params.slug]}
+                    selectedManufacturers={[brandSlug]}
                     countryOptions={countryOptions}
                     selectedCountries={draftCountries}
                     priceMinBound={priceBounds.min}
@@ -401,7 +417,7 @@ export default function BrandCategoryPage({ params }) {
                           >
                             <input
                               defaultValue={option.value}
-                              id={`sort-${params.slug}-${params.category}-${index}`}
+                              id={`sort-${brandHrefSlug}-${categoryHrefSlug}-${index}`}
                               name="sort"
                               type="radio"
                               value={option.value}
@@ -409,7 +425,7 @@ export default function BrandCategoryPage({ params }) {
                               onChange={() => setSelectedSort(option.value)}
                             />
                             <label
-                              htmlFor={`sort-${params.slug}-${params.category}-${index}`}
+                              htmlFor={`sort-${brandHrefSlug}-${categoryHrefSlug}-${index}`}
                             >
                               {option.label}
                             </label>
@@ -419,7 +435,9 @@ export default function BrandCategoryPage({ params }) {
                     </div>
                     <div
                       className={`a-field-select${
-                        isSortOpen ? " a-field-select--focus a-field-select--open" : ""
+                        isSortOpen
+                          ? " a-field-select--focus a-field-select--open"
+                          : ""
                       }`}
                     >
                       <div
@@ -448,18 +466,31 @@ export default function BrandCategoryPage({ params }) {
                               className="a-field-select__fake"
                               title={
                                 [
-                                  { value: "popular-desc", label: "Популярности" },
+                                  {
+                                    value: "popular-desc",
+                                    label: "Популярности",
+                                  },
                                   { value: "rate-desc", label: "Рейтингу" },
-                                  { value: "price-desc", label: "Сначала дороже" },
-                                  { value: "price-asc", label: "Сначала дешевле" },
-                                ].find((option) => option.value === selectedSort)
-                                  ?.label
+                                  {
+                                    value: "price-desc",
+                                    label: "Сначала дороже",
+                                  },
+                                  {
+                                    value: "price-asc",
+                                    label: "Сначала дешевле",
+                                  },
+                                ].find(
+                                  (option) => option.value === selectedSort,
+                                )?.label
                               }
                               role="button"
                               tabIndex={0}
                               onClick={() => setIsSortOpen((prev) => !prev)}
                               onKeyDown={(event) => {
-                                if (event.key === "Enter" || event.key === " ") {
+                                if (
+                                  event.key === "Enter" ||
+                                  event.key === " "
+                                ) {
                                   event.preventDefault();
                                   setIsSortOpen((prev) => !prev);
                                 }
@@ -467,12 +498,22 @@ export default function BrandCategoryPage({ params }) {
                             >
                               {
                                 [
-                                  { value: "popular-desc", label: "Популярности" },
+                                  {
+                                    value: "popular-desc",
+                                    label: "Популярности",
+                                  },
                                   { value: "rate-desc", label: "Рейтингу" },
-                                  { value: "price-desc", label: "Сначала дороже" },
-                                  { value: "price-asc", label: "Сначала дешевле" },
-                                ].find((option) => option.value === selectedSort)
-                                  ?.label
+                                  {
+                                    value: "price-desc",
+                                    label: "Сначала дороже",
+                                  },
+                                  {
+                                    value: "price-asc",
+                                    label: "Сначала дешевле",
+                                  },
+                                ].find(
+                                  (option) => option.value === selectedSort,
+                                )?.label
                               }
                               <div className="a-field-select__icon">
                                 <svg className="a-svg">
@@ -641,7 +682,10 @@ export default function BrandCategoryPage({ params }) {
               aria-modal="true"
               className="vm--modal a-main-modal-parent"
             >
-              <div className="a-main-modal" style={{ top: "0px", transition: "none" }}>
+              <div
+                className="a-main-modal"
+                style={{ top: "0px", transition: "none" }}
+              >
                 <div className="a-main-modal__wrap">
                   <button
                     type="button"
@@ -658,9 +702,9 @@ export default function BrandCategoryPage({ params }) {
                   <div className="a-main-modal__content">
                     <BaseFilter
                       manufacturerOptions={[
-                        { id: params.slug, label: brandName, title: brandName },
+                        { id: brandSlug, label: brandName, title: brandName },
                       ]}
-                      selectedManufacturers={[params.slug]}
+                      selectedManufacturers={[brandSlug]}
                       countryOptions={countryOptions}
                       selectedCountries={draftCountries}
                       priceMinBound={priceBounds.min}
