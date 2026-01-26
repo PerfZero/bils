@@ -1,7 +1,10 @@
-"use client";
-
-import CatalogSlugPage from "./[slug]/page";
+import { Suspense } from "react";
+import CatalogPageClient from "./CatalogPageClient";
 
 export default function CatalogPage() {
-  return <CatalogSlugPage params={{ slug: "all" }} />;
+  return (
+    <Suspense fallback={null}>
+      <CatalogPageClient />
+    </Suspense>
+  );
 }
