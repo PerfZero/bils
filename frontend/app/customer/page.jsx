@@ -29,70 +29,6 @@ export default function CatalogSlugPage({ params }) {
               <div className="page-static-menu__list">
                 <div className="page-static-menu__item">
                   <a
-                    aria-current="page"
-                    className="page-static-menu__link nuxt-link-exact-active nuxt-link-active page-static-menu__link--active"
-                    href="/customer/"
-                  >
-                    Как заказать
-                  </a>
-                </div>
-                <div className="page-static-menu__item">
-                  <a className="page-static-menu__link" href="/promo/">
-                    Акции
-                  </a>
-                </div>
-                <div className="page-static-menu__item">
-                  <a className="page-static-menu__link" href="/corporate/">
-                    Корпоративным клиентам
-                  </a>
-                </div>
-                <div className="page-static-menu__item">
-                  <a
-                    className="page-static-menu__link"
-                    href="/customer/delivery/"
-                  >
-                    Доставка
-                  </a>
-                </div>
-                <div className="page-static-menu__item">
-                  <a
-                    className="page-static-menu__link"
-                    href="/customer/mobile-application/"
-                  >
-                    Мобильное приложение
-                  </a>
-                </div>
-                <div className="page-static-menu__item">
-                  <a className="page-static-menu__link" href="/customer/pay/">
-                    Оплата
-                  </a>
-                </div>
-                <div className="page-static-menu__item">
-                  <a
-                    className="page-static-menu__link"
-                    href="/customer/returns/"
-                  >
-                    Правила приемки и возврата
-                  </a>
-                </div>
-                <div className="page-static-menu__item">
-                  <a
-                    className="page-static-menu__link"
-                    href="/customer/garantii/"
-                  >
-                    Гарантии
-                  </a>
-                </div>
-                <div className="page-static-menu__item">
-                  <a
-                    className="page-static-menu__link"
-                    href="/customer/polzovatelskoe-soglashenie/"
-                  >
-                    Пользовательское соглашение
-                  </a>
-                </div>
-                <div className="page-static-menu__item">
-                  <a
                     className="page-static-menu__link"
                     href="/customer/politika-konfidentsialnosti/"
                   >
@@ -105,27 +41,6 @@ export default function CatalogSlugPage({ params }) {
                     href="/customer/bonusnaya-programma/"
                   >
                     Бонусная программа
-                  </a>
-                </div>
-                <div className="page-static-menu__item">
-                  <a
-                    className="page-static-menu__link"
-                    href="/customer/gift-cards/"
-                  >
-                    Подарочные карты
-                  </a>
-                </div>
-                <div className="page-static-menu__item">
-                  <a
-                    className="page-static-menu__link"
-                    href="/customer/promokody/"
-                  >
-                    Промокоды
-                  </a>
-                </div>
-                <div className="page-static-menu__item">
-                  <a className="page-static-menu__link" href="/customer/faq/">
-                    FAQ
                   </a>
                 </div>
               </div>

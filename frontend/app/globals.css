@@ -3225,6 +3225,11 @@ h5.a-title-indent {
     height: 19px;
 }
 
+.a-footer__icon--wa {
+    width: 19px;
+    height: 19px;
+}
+
 .a-footer__made-by {
     display: flex;
     align-items: flex-end;
@@ -3861,6 +3866,9 @@ h5.a-title-indent {
 
 .a-bar__logo {
     flex-shrink: 0;
+    display: flex;
+    gap: 10px;
+    align-items: center;
 }
 
 .a-bar__logo-link {

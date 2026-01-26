@@ -40,6 +40,8 @@ from .serializers import (
     OrderCreateSerializer,
 )
 
+MIN_PUBLIC_PRICE = Decimal("50000")
+
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Category.objects.filter(is_active=True).order_by("order", "name")
@@ -56,6 +58,7 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
             return self._non_empty_category_ids
         active_products = Product.objects.filter(
             is_active=True,
+            price__gte=MIN_PUBLIC_PRICE,
             category__tree_id=OuterRef("tree_id"),
             category__lft__gte=OuterRef("lft"),
             category__rght__lte=OuterRef("rght"),
@@ -96,7 +99,7 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
 
 class ProductViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = (
-        Product.objects.filter(is_active=True)
+        Product.objects.filter(is_active=True, price__gte=MIN_PUBLIC_PRICE)
         .select_related("category", "brand")
         .prefetch_related("images", "attributes__attribute", "documents", "reviews")
         .order_by("-created_at")

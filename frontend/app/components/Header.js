@@ -245,10 +245,11 @@ export default function Header({ onProfileClick }) {
             <div className="a-bar__logo">
               <Link href="/" className="a-bar__logo-link">
                 <img width="100" height="20" src="/logo.png" alt="Logo" />
-                <a href="tel:+7899749878997498" className="phone-link">
-                  +7 899 749-87-89
-                </a>
               </Link>
+
+              <a href="tel:+7899749878997498" className="phone-link">
+                +7 899 749-87-89
+              </a>
             </div>
             <div className="a-bar__buttons">
               <div

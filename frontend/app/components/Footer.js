@@ -396,58 +396,6 @@ export default function Footer() {
                   <ul class="a-footer__socials">
                     <li class="a-footer__social">
                       <a
-                        href="https://vk.com/bigam"
-                        target="_blank"
-                        title="ВКонтакте"
-                        rel="nofollow"
-                        class="a-footer__link"
-                      >
-                        <svg class="a-svg a-footer__icon a-footer__icon--vk">
-                          <use xlinkHref="#icon-old-social-vk"></use>
-                        </svg>
-                      </a>
-                    </li>
-                    <li class="a-footer__social">
-                      <a
-                        href="https://ok.ru/bigam"
-                        target="_blank"
-                        title="Одноклассники"
-                        rel="nofollow"
-                        class="a-footer__link"
-                      >
-                        <svg class="a-svg a-footer__icon a-footer__icon--ok">
-                          <use xlinkHref="#icon-old-social-ok"></use>
-                        </svg>
-                      </a>
-                    </li>
-                    <li class="a-footer__social">
-                      <a
-                        href="https://twitter.com/BigamRu"
-                        target="_blank"
-                        title="Twitter"
-                        rel="nofollow"
-                        class="a-footer__link"
-                      >
-                        <svg class="a-svg a-footer__icon a-footer__icon--tw">
-                          <use xlinkHref="#icon-old-social-tw"></use>
-                        </svg>
-                      </a>
-                    </li>
-                    <li class="a-footer__social">
-                      <a
-                        href="https://www.youtube.com/user/BigamRu/"
-                        target="_blank"
-                        title="YouTube"
-                        rel="nofollow"
-                        class="a-footer__link"
-                      >
-                        <svg class="a-svg a-footer__icon a-footer__icon--yt">
-                          <use xlinkHref="#icon-old-social-yt"></use>
-                        </svg>
-                      </a>
-                    </li>
-                    <li class="a-footer__social">
-                      <a
                         href="https://t.me/bigam_ru"
                         target="_blank"
                         title="Telegram"
@@ -456,6 +404,13 @@ export default function Footer() {
                       >
                         <svg class="a-svg a-footer__icon a-footer__icon--tg">
                           <use xlinkHref="#icon-old-social-tg"></use>
+                        </svg>
+                      </a>
+                    </li>
+                    <li class="a-footer__social">
+                      <a href="#" title="WhatsApp" class="a-footer__link">
+                        <svg class="a-svg a-footer__icon a-footer__icon--wa">
+                          <use xlinkHref="#icon-old-social-wa"></use>
                         </svg>
                       </a>
                     </li>
@@ -723,58 +678,6 @@ export default function Footer() {
                   <ul class="a-footer__socials">
                     <li class="a-footer__social">
                       <a
-                        href="https://vk.com/bigam"
-                        target="_blank"
-                        title="ВКонтакте"
-                        rel="nofollow"
-                        class="a-footer__link"
-                      >
-                        <svg class="a-svg a-footer__icon a-footer__icon--vk">
-                          <use xlinkHref="#icon-old-social-vk"></use>
-                        </svg>
-                      </a>
-                    </li>
-                    <li class="a-footer__social">
-                      <a
-                        href="https://ok.ru/bigam"
-                        target="_blank"
-                        title="Одноклассники"
-                        rel="nofollow"
-                        class="a-footer__link"
-                      >
-                        <svg class="a-svg a-footer__icon a-footer__icon--ok">
-                          <use xlinkHref="#icon-old-social-ok"></use>
-                        </svg>
-                      </a>
-                    </li>
-                    <li class="a-footer__social">
-                      <a
-                        href="https://twitter.com/BigamRu"
-                        target="_blank"
-                        title="Twitter"
-                        rel="nofollow"
-                        class="a-footer__link"
-                      >
-                        <svg class="a-svg a-footer__icon a-footer__icon--tw">
-                          <use xlinkHref="#icon-old-social-tw"></use>
-                        </svg>
-                      </a>
-                    </li>
-                    <li class="a-footer__social">
-                      <a
-                        href="https://www.youtube.com/user/BigamRu/"
-                        target="_blank"
-                        title="YouTube"
-                        rel="nofollow"
-                        class="a-footer__link"
-                      >
-                        <svg class="a-svg a-footer__icon a-footer__icon--yt">
-                          <use xlinkHref="#icon-old-social-yt"></use>
-                        </svg>
-                      </a>
-                    </li>
-                    <li class="a-footer__social">
-                      <a
                         href="https://t.me/bigam_ru"
                         target="_blank"
                         title="Telegram"
@@ -783,6 +686,13 @@ export default function Footer() {
                       >
                         <svg class="a-svg a-footer__icon a-footer__icon--tg">
                           <use xlinkHref="#icon-old-social-tg"></use>
+                        </svg>
+                      </a>
+                    </li>
+                    <li class="a-footer__social">
+                      <a href="#" title="WhatsApp" class="a-footer__link">
+                        <svg class="a-svg a-footer__icon a-footer__icon--wa">
+                          <use xlinkHref="#icon-old-social-wa"></use>
                         </svg>
                       </a>
                     </li>
