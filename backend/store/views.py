@@ -293,6 +293,9 @@ class ProductReviewViewSet(viewsets.ModelViewSet):
 
 
 class CartViewSet(viewsets.ViewSet):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
     def _get_cart(self, token):
         return get_object_or_404(Cart.objects.prefetch_related("items__product"), token=token)
 
@@ -424,6 +427,9 @@ class ShareCartViewSet(viewsets.ViewSet):
 
 
 class FavoriteViewSet(viewsets.ViewSet):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
     def _get_favorites(self, token):
         return get_object_or_404(
             FavoriteList.objects.prefetch_related("items__product__category"),
