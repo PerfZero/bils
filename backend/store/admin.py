@@ -41,6 +41,8 @@ from .models import (
     PromoCode,
     DeliveryMethod,
     PaymentMethod,
+    SiteSetting,
+    MainBanner,
 )
 
 
@@ -72,11 +74,13 @@ def _group_store_app(app):
                 "PromoCode",
                 "DeliveryMethod",
                 "PaymentMethod",
+                "SiteSetting",
             ],
         ),
         ("Избранное", ["FavoriteList", "FavoriteItem"]),
         ("FAQ", ["FAQCategory", "FAQQuestion"]),
         ("Импорт", ["ProductImportLog"]),
+        ("Маркетинг", ["MainBanner"]),
     ]
     grouped = []
     used = set()
@@ -148,6 +152,29 @@ class BrandAdmin(admin.ModelAdmin):
     search_fields = ("name", "slug")
     prepopulated_fields = {"slug": ("name",)}
     ordering = ("letter", "order", "name")
+
+
+@admin.register(SiteSetting)
+class SiteSettingAdmin(admin.ModelAdmin):
+    list_display = ("site_name", "phone", "phone_display")
+
+    def has_add_permission(self, request):
+        return not SiteSetting.objects.exists()
+
+
+@admin.register(MainBanner)
+class MainBannerAdmin(admin.ModelAdmin):
+    list_display = (
+        "title",
+        "banner_type",
+        "position",
+        "is_active",
+        "show_on_mobile",
+        "show_on_desktop",
+    )
+    list_filter = ("banner_type", "is_active", "show_on_mobile", "show_on_desktop")
+    search_fields = ("title", "href", "advertiser", "ogrn", "token")
+    ordering = ("position", "id")
 
 
 class ProductImageInline(admin.TabularInline):

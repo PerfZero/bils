@@ -9,6 +9,7 @@ from .views import (
     FAQQuestionViewSet,
     SearchView,
     SiteSettingsView,
+    MainBannerViewSet,
     CartViewSet,
     ShareCartViewSet,
     FavoriteViewSet,
@@ -32,6 +33,7 @@ router.register("leads", LeadRequestViewSet, basename="lead")
 router.register("delivery-methods", DeliveryMethodViewSet, basename="delivery-method")
 router.register("payment-methods", PaymentMethodViewSet, basename="payment-method")
 router.register("orders", OrderViewSet, basename="order")
+router.register("main-banners", MainBannerViewSet, basename="main-banner")
 
 urlpatterns = [
     path("search/", SearchView.as_view()),

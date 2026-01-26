@@ -493,6 +493,40 @@ class SiteSetting(models.Model):
         return self.site_name or "Настройки сайта"
 
 
+class MainBanner(models.Model):
+    TYPE_CAROUSEL = "carousel"
+    TYPE_STATIC = "static"
+    TYPE_CHOICES = [
+        (TYPE_CAROUSEL, "Слайдер"),
+        (TYPE_STATIC, "Статичный"),
+    ]
+
+    title = models.CharField("Название", max_length=200, blank=True)
+    href = models.CharField("Ссылка", max_length=500, blank=True)
+    image = models.ImageField("Изображение", upload_to="banners/")
+    image_desktop = models.ImageField(
+        "Изображение (десктоп)", upload_to="banners/", blank=True
+    )
+    position = models.PositiveIntegerField("Порядок", default=0)
+    is_active = models.BooleanField("Активен", default=True)
+    banner_type = models.CharField(
+        "Тип баннера", max_length=20, choices=TYPE_CHOICES, default=TYPE_CAROUSEL
+    )
+    show_on_mobile = models.BooleanField("Показывать на мобиле", default=True)
+    show_on_desktop = models.BooleanField("Показывать на десктопе", default=True)
+    advertiser = models.CharField("Рекламодатель", max_length=200, blank=True)
+    ogrn = models.CharField("ОГРН", max_length=32, blank=True)
+    token = models.CharField("Токен", max_length=200, blank=True)
+
+    class Meta:
+        verbose_name = "Главный баннер"
+        verbose_name_plural = "Главные баннеры"
+        ordering = ["position", "id"]
+
+    def __str__(self):
+        return self.title or f"Баннер #{self.id}"
+
+
 class CartItem(models.Model):
     cart = models.ForeignKey(
         Cart, related_name="items", on_delete=models.CASCADE, verbose_name="Корзина"

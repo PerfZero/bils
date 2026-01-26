@@ -22,6 +22,7 @@ from .models import (
     ProductReview,
     FAQCategory,
     FAQQuestion,
+    MainBanner,
 )
 
 
@@ -739,6 +740,44 @@ class LeadRequestSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = ["id", "status", "created_at"]
+
+
+class MainBannerSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+    image_desktop = serializers.SerializerMethodField()
+
+    class Meta:
+        model = MainBanner
+        fields = [
+            "id",
+            "title",
+            "href",
+            "image",
+            "image_desktop",
+            "position",
+            "banner_type",
+            "show_on_mobile",
+            "show_on_desktop",
+            "advertiser",
+            "ogrn",
+            "token",
+        ]
+
+    def get_image(self, obj):
+        if obj.image:
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            return obj.image.url
+        return None
+
+    def get_image_desktop(self, obj):
+        if obj.image_desktop:
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(obj.image_desktop.url)
+            return obj.image_desktop.url
+        return None
 
 
 class CartItemUpdateSerializer(serializers.Serializer):

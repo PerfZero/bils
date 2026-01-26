@@ -10,6 +10,7 @@ export const API_ENDPOINTS = {
   BRANDS: `${API_BASE_URL}/api/brands/`,
   SEARCH: `${API_BASE_URL}/api/search/`,
   SITE_SETTINGS: `${API_BASE_URL}/api/site-settings/`,
+  MAIN_BANNERS: `${API_BASE_URL}/api/main-banners/`,
   CART: `${API_BASE_URL}/api/cart/`,
   FAVORITES: `${API_BASE_URL}/api/favorites/`,
   LEADS: `${API_BASE_URL}/api/leads/`,

@@ -28,6 +28,8 @@ from .models import (
     ProductReview,
     FAQCategory,
     FAQQuestion,
+    SiteSetting,
+    MainBanner,
 )
 from .serializers import (
     BrandSerializer,
@@ -38,6 +40,7 @@ from .serializers import (
     ProductReviewCreateSerializer,
     FAQCategorySerializer,
     FAQQuestionSerializer,
+    MainBannerSerializer,
     CartSerializer,
     CartItemSerializer,
     CartItemCreateSerializer,
@@ -370,13 +373,23 @@ class SiteSettingsView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
+        settings_obj = SiteSetting.objects.first()
+        logo_url = "/logo.png"
+        if settings_obj and settings_obj.logo:
+            logo_url = request.build_absolute_uri(settings_obj.logo.url)
         return Response(
             {
-                "phone": getattr(settings, "SITE_PHONE", ""),
-                "phone_display": getattr(settings, "SITE_PHONE_DISPLAY", ""),
-                "logo": getattr(settings, "SITE_LOGO", "/logo.png"),
+                "phone": settings_obj.phone if settings_obj else "",
+                "phone_display": settings_obj.phone_display if settings_obj else "",
+                "logo": logo_url,
             }
         )
+
+
+class MainBannerViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = MainBanner.objects.filter(is_active=True).order_by("position", "id")
+    serializer_class = MainBannerSerializer
+    pagination_class = None
 
 
 class ProductReviewViewSet(viewsets.ModelViewSet):

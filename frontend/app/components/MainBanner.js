@@ -3,39 +3,16 @@
 import { useEffect, useRef, useState } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
+import { API_BASE_URL, API_ENDPOINTS } from "../../config/api";
 
-const carouselSlides = [
-  {
-    href: "/catalog/snegouborochnye-mashiny-5942/filter/proizvoditel-is-snirrex/apply/",
-    src: "https://cdn.bigam.ru/iblock/38e/38eede7e7e3712c36027d7b12cef6a15/c10c6d87_4189_47e3_86dc_1038b107735c.jpg",
-    position: 1,
-  },
-  {
-    href: "/promo/darim-5000-bonusov-za-pokupku-2049673/",
-    src: "https://cdn.bigam.ru/iblock/9ed/9edb4b1b80c2b0fd6f38daf69a94582d/792h346.jpg",
-    position: 2,
-  },
-  {
-    href: "/promo/novinki-yanvarya-2049847/",
-    src: "https://cdn.bigam.ru/iblock/6ce/6cefa941390eeab5ec02a0a4031e14d8/792x346.jpg",
-    position: 3,
-  },
-  {
-    href: "/promo/uspei-kupit-tovary-so-skidkami-do-30-1796165/",
-    src: "https://cdn.bigam.ru/iblock/b20/rwwyep09thc02m7zsu9c0f207svvznzl/Frame-7142-_1_.jpg",
-    position: 5,
-  },
-];
-
-const staticBanner = {
-  href: "/promo/luchshie-predlozheniya-yanvarya-2026-god-2050045/",
-  src: "https://cdn.bigam.ru/iblock/eaf/eaf9b21800298d768c3f86d04d3b1668/538h239-_2_.jpg",
-  desktopSrc:
-    "https://cdn.bigam.ru/resize_cache/744041/e4df8ff52d47681371555f6ccd9eb1f8/iblock/91d/91d58c67297b7e8c73e12a6c787cb380/1000h1000.jpg",
-  position: 4,
-};
-
-function TooltipCommercial({ isMobile, onOpen }) {
+function TooltipCommercial({
+  isMobile,
+  onOpen,
+  title,
+  advertiser,
+  ogrn,
+  token,
+}) {
   const iconId = isMobile ? "#icon-reklama-mobile" : "#icon-reklama-desktop";
   if (isMobile) {
     return (
@@ -74,12 +51,30 @@ function TooltipCommercial({ isMobile, onOpen }) {
             <div data-v-bf32e510="" className="tooltip-commercial__title">
               Реклама
             </div>
-            <div data-v-bf32e510="" className="tooltip-commercial__advertiser">
-              Рекламодатель: ООО "BREMAX-Инвест" г. Ярославль
-            </div>
-            <div data-v-bf32e510="" className="tooltip-commercial__advertiser">
-              ОГРН 1127604010555
-            </div>
+            {title && (
+              <div
+                data-v-bf32e510=""
+                className="tooltip-commercial__advertiser"
+              >
+                {title}
+              </div>
+            )}
+            {advertiser && (
+              <div
+                data-v-bf32e510=""
+                className="tooltip-commercial__advertiser"
+              >
+                Рекламодатель: {advertiser}
+              </div>
+            )}
+            {ogrn && (
+              <div
+                data-v-bf32e510=""
+                className="tooltip-commercial__advertiser"
+              >
+                ОГРН {ogrn}
+              </div>
+            )}
             <div data-v-bf32e510="" className="a-copy-button">
               <button
                 aria-label="Скопировать токен"
@@ -107,7 +102,14 @@ function TooltipCommercial({ isMobile, onOpen }) {
   );
 }
 
-function TooltipCommercialModal({ isOpen, onClose }) {
+function TooltipCommercialModal({
+  isOpen,
+  onClose,
+  title,
+  advertiser,
+  ogrn,
+  token,
+}) {
   if (!isOpen) {
     return null;
   }
@@ -164,15 +166,29 @@ function TooltipCommercialModal({ isOpen, onClose }) {
               <div className="a-main-modal__content">
                 <div className="tooltip-commercial-modal">
                   <div className="tooltip-commercial-modal__title">Реклама</div>
-                  <div className="tooltip-commercial-modal__advertiser">
-                    Рекламодатель: ООО "BREMAX-Инвест" г. Ярославль
-                  </div>
-                  <div className="tooltip-commercial-modal__advertiser">
-                    ОГРН 1127604010555
-                  </div>
+                  {title && (
+                    <div className="tooltip-commercial-modal__advertiser">
+                      {title}
+                    </div>
+                  )}
+                  {advertiser && (
+                    <div className="tooltip-commercial-modal__advertiser">
+                      Рекламодатель: {advertiser}
+                    </div>
+                  )}
+                  {ogrn && (
+                    <div className="tooltip-commercial-modal__advertiser">
+                      ОГРН {ogrn}
+                    </div>
+                  )}
                   <button
                     type="button"
                     className="a-main-button a-main-button--display-inline a-main-button--type-medium a-main-button--corner-round a-main-button--color-light-blue"
+                    onClick={() => {
+                      if (token && navigator?.clipboard) {
+                        navigator.clipboard.writeText(token);
+                      }
+                    }}
                   >
                     <span className="a-main-button__wrap">
                       <span className="a-main-button__content">
@@ -196,6 +212,28 @@ export default function MainBanner() {
   const paginationRef = useRef(null);
   const [isMobile, setIsMobile] = useState(false);
   const [isTooltipOpen, setIsTooltipOpen] = useState(false);
+  const [banners, setBanners] = useState([]);
+
+  useEffect(() => {
+    let isActive = true;
+    const fetchBanners = async () => {
+      try {
+        const response = await fetch(API_ENDPOINTS.MAIN_BANNERS);
+        if (!response.ok) return;
+        const payload = await response.json();
+        const list = Array.isArray(payload) ? payload : payload.results || [];
+        if (isActive) {
+          setBanners(list);
+        }
+      } catch (error) {
+        // ignore
+      }
+    };
+    fetchBanners();
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   useEffect(() => {
     const media = window.matchMedia("(max-width: 568px)");
@@ -209,15 +247,49 @@ export default function MainBanner() {
     return () => media.removeListener(update);
   }, []);
 
+  const carouselSlides = banners
+    .filter((item) => item.banner_type === "carousel")
+    .filter((item) => (isMobile ? item.show_on_mobile : item.show_on_desktop))
+    .map((item) => ({
+      href: item.href,
+      src: item.image,
+      position: item.position,
+    }));
+
+  const staticBanner = banners
+    .filter((item) => item.banner_type === "static")
+    .find((item) => (isMobile ? item.show_on_mobile : item.show_on_desktop));
+
+  const normalizeImageUrl = (url) => {
+    if (!url) return url;
+    if (url.startsWith("http") || url.startsWith("//")) return url;
+    if (url.startsWith("/media/")) return `${API_BASE_URL}${url}`;
+    return url;
+  };
+
+  const baseSlides = carouselSlides.length
+    ? carouselSlides
+    : staticBanner
+      ? [staticBanner]
+      : [];
   const swiperSlides = isMobile
-    ? [
-        carouselSlides[0],
-        carouselSlides[1],
-        carouselSlides[2],
-        staticBanner,
-        carouselSlides[3],
-      ].filter(Boolean)
-    : carouselSlides;
+    ? [...baseSlides]
+        .filter(Boolean)
+        .sort((a, b) => (a.position || 0) - (b.position || 0))
+        .map((item) => ({
+          ...item,
+          src: item.image || item.src,
+          href: item.href || "#",
+          position: item.position,
+        }))
+    : baseSlides.map((item) => ({
+        ...item,
+        src: item.image || item.src,
+        href: item.href || "#",
+        position: item.position,
+      }));
+
+  const modalBanner = staticBanner || swiperSlides[0];
 
   return (
     <section className="a-page-main__banner">
@@ -264,24 +336,30 @@ export default function MainBanner() {
                 {swiperSlides.map((slide) => (
                   <SwiperSlide
                     className="a-main-carousel__slide"
-                    key={slide.href}
+                    key={slide.href || slide.position}
                   >
                     <a
                       className="a-picture-card"
                       href={slide.href}
                       position={slide.position}
-                      isstatic={slide === staticBanner ? "true" : undefined}
+                      isstatic={
+                        slide.banner_type === "static" ? "true" : undefined
+                      }
                       title=""
                       type="default"
                     >
                       <img
                         alt=""
                         className="a-picture-card__picture a-lazy-load a-is-loaded"
-                        src={slide.src}
+                        src={normalizeImageUrl(slide.src || slide.image)}
                       />
                       <span />
                       <TooltipCommercial
                         isMobile={isMobile}
+                        title={slide.title}
+                        advertiser={slide.advertiser}
+                        ogrn={slide.ogrn}
+                        token={slide.token}
                         onOpen={() => setIsTooltipOpen(true)}
                       />
                     </a>
@@ -320,11 +398,11 @@ export default function MainBanner() {
               )}
             </div>
           </div>{" "}
-          {!isMobile && (
+          {!isMobile && staticBanner && (
             <div className="a-main-banner__static-banner">
               <a
                 className="a-picture-card"
-                href={staticBanner.href}
+                href={staticBanner.href || "#"}
                 isstatic="true"
                 position={staticBanner.position}
                 title=""
@@ -333,11 +411,17 @@ export default function MainBanner() {
                 <img
                   alt=""
                   className="a-picture-card__picture a-lazy-load a-is-loaded"
-                  src={staticBanner.desktopSrc || staticBanner.src}
+                  src={normalizeImageUrl(
+                    staticBanner.image_desktop || staticBanner.image,
+                  )}
                 />
                 <span />
                 <TooltipCommercial
                   isMobile={isMobile}
+                  title={staticBanner.title}
+                  advertiser={staticBanner.advertiser}
+                  ogrn={staticBanner.ogrn}
+                  token={staticBanner.token}
                   onOpen={() => setIsTooltipOpen(true)}
                 />
               </a>
@@ -365,6 +449,10 @@ export default function MainBanner() {
         <TooltipCommercialModal
           isOpen={isMobile && isTooltipOpen}
           onClose={() => setIsTooltipOpen(false)}
+          title={modalBanner?.title}
+          advertiser={modalBanner?.advertiser}
+          ogrn={modalBanner?.ogrn}
+          token={modalBanner?.token}
         />
       </div>
     </section>
