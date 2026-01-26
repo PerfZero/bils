@@ -39,6 +39,8 @@ services:
       POSTGRES_PASSWORD: shop
       POSTGRES_HOST: db
       POSTGRES_PORT: "5432"
+    volumes:
+      - /var/www/bremax.ru/bils/media:/app/media
     ports:
       - "8000:8000"
     depends_on:

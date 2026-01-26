@@ -211,14 +211,29 @@ class ProductSerializer(serializers.ModelSerializer):
     def get_documents(self, obj):
         documents = []
         for document in obj.documents.all():
-            file_name = Path(document.file.name).name if document.file else ""
+            if not document.file:
+                continue
+            try:
+                if not document.file.storage.exists(document.file.name):
+                    continue
+            except Exception:
+                continue
+            file_name = Path(document.file.name).name
+            try:
+                url = document.file.url
+            except Exception:
+                url = ""
+            try:
+                file_size = document.file.size
+            except Exception:
+                file_size = None
             documents.append(
                 {
                     "id": document.id,
                     "title": document.title or file_name,
-                    "url": document.file.url if document.file else "",
+                    "url": url,
                     "file_name": file_name,
-                    "file_size": document.file.size if document.file else None,
+                    "file_size": file_size,
                     "order": document.order,
                 }
             )
