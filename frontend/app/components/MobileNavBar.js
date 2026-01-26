@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getOrCreateCart } from "../lib/cart";
+import { getFavoriteCount, loadFavorites } from "../lib/favorites";
 
 export default function MobileNavBar({ onProfileClick, onCatalogOpen }) {
   const [cartCount, setCartCount] = useState(0);
+  const [favoritesCount, setFavoritesCount] = useState(0);
 
   useEffect(() => {
     let isActive = true;
@@ -31,6 +33,22 @@ export default function MobileNavBar({ onProfileClick, onCatalogOpen }) {
     return () => {
       isActive = false;
       window.removeEventListener("cart:updated", handleCartUpdate);
+    };
+  }, []);
+
+  useEffect(() => {
+    let isActive = true;
+    const syncFavorites = () => {
+      if (!isActive) return;
+      setFavoritesCount(getFavoriteCount());
+    };
+    loadFavorites().catch(() => {});
+    syncFavorites();
+    const handler = () => syncFavorites();
+    window.addEventListener("favorites:updated", handler);
+    return () => {
+      isActive = false;
+      window.removeEventListener("favorites:updated", handler);
     };
   }, []);
 
@@ -134,6 +152,9 @@ export default function MobileNavBar({ onProfileClick, onCatalogOpen }) {
                       xlinkHref="#icon-favorite-stroke"
                     />
                   </svg>
+                  {favoritesCount > 0 && (
+                    <span className="a-helper__count">{favoritesCount}</span>
+                  )}
                 </span>
                 <span className="a-helper__label">Избранное</span>
               </span>

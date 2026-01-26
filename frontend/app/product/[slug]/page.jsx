@@ -7,12 +7,16 @@ import Breadcrumbs from "../../components/Breadcrumbs";
 import ProductTabs from "../../components/ProductTabs";
 import { API_BASE_URL } from "../../../config/api";
 import { addToCart } from "../../lib/cart";
+import { isFavorite, loadFavorites, toggleFavorite } from "../../lib/favorites";
 
 export default function CatalogSlugPage({ params }) {
   const [breadcrumbs, setBreadcrumbs] = useState([]);
   const [product, setProduct] = useState(null);
   const [similarProducts, setSimilarProducts] = useState([]);
   const [addingItemId, setAddingItemId] = useState(null);
+  const [isFavoriteActive, setIsFavoriteActive] = useState(false);
+  const [favoriteBusy, setFavoriteBusy] = useState(false);
+  const [, setFavoritesVersion] = useState(0);
 
   useEffect(() => {
     const fetchProductData = async () => {
@@ -80,6 +84,29 @@ export default function CatalogSlugPage({ params }) {
   }, [params.slug]);
 
   useEffect(() => {
+    if (!product?.id) return;
+    let isActive = true;
+    const syncFavorite = () => {
+      if (!isActive) return;
+      setIsFavoriteActive(isFavorite(product.id));
+    };
+    loadFavorites()
+      .then(syncFavorite)
+      .catch(() => {});
+    syncFavorite();
+    if (typeof window === "undefined") return () => {};
+    const handler = () => {
+      syncFavorite();
+      setFavoritesVersion((version) => version + 1);
+    };
+    window.addEventListener("favorites:updated", handler);
+    return () => {
+      isActive = false;
+      window.removeEventListener("favorites:updated", handler);
+    };
+  }, [product?.id]);
+
+  useEffect(() => {
     const categorySlug = product?.category?.slug;
     const currentSlug = product?.slug;
     if (!categorySlug) {
@@ -135,6 +162,23 @@ export default function CatalogSlugPage({ params }) {
     } finally {
       setAddingItemId(null);
     }
+  };
+
+  const handleToggleFavoriteById = async (productId) => {
+    if (!productId || favoriteBusy) return;
+    setFavoriteBusy(true);
+    try {
+      await toggleFavorite(productId);
+      if (product?.id) {
+        setIsFavoriteActive(isFavorite(product.id));
+      }
+    } finally {
+      setFavoriteBusy(false);
+    }
+  };
+
+  const handleToggleFavorite = async () => {
+    return handleToggleFavoriteById(product?.id);
   };
   const ratingText = ratingValue ? ratingValue.toFixed(1) : "0";
   const reviewHref = product?.reviews_href || "#";
@@ -632,7 +676,11 @@ export default function CatalogSlugPage({ params }) {
                   <span className="a-main-compare__title a-main-compare__title--to-compare" />
                 </button>
               </div>
-              <div className="a-main-like a-main-like--type-horizontal">
+              <div
+                className={`a-main-like a-main-like--type-horizontal${
+                  isFavoriteActive ? " a-main-like--active" : ""
+                }`}
+              >
                 <div
                   className="tooltip-main a-main-like__tooltip tooltip-main--position-left"
                   color="white"
@@ -645,8 +693,10 @@ export default function CatalogSlugPage({ params }) {
                 </div>
                 <button
                   className="a-main-like__helper"
-                  title="В избранное"
+                  title={isFavoriteActive ? "Удалить" : "В избранное"}
                   type="button"
+                  onClick={handleToggleFavorite}
+                  disabled={favoriteBusy}
                 >
                   <span className="a-main-like__icon">
                     <svg className="a-svg">
@@ -662,7 +712,13 @@ export default function CatalogSlugPage({ params }) {
                       />
                     </svg>
                   </span>
-                  <span className="a-main-like__title a-main-like__title--to-favorite" />
+                  <span
+                    className={`a-main-like__title ${
+                      isFavoriteActive
+                        ? "a-main-like__title--in-favorite"
+                        : "a-main-like__title--to-favorite"
+                    }`}
+                  />
                 </button>
               </div>
             </div>
@@ -840,6 +896,7 @@ export default function CatalogSlugPage({ params }) {
                 const similarRating = Number(
                   item?.review_stats?.average ?? item?.rating ?? 0,
                 );
+                const similarFavorite = isFavorite(item?.id);
 
                 return (
                   <SwiperSlide
@@ -926,7 +983,11 @@ export default function CatalogSlugPage({ params }) {
                               <span className="a-main-compare__title a-main-compare__title--to-compare" />
                             </button>
                           </div>
-                          <div className="a-main-like a-main-like--type-vertical-vertical">
+                          <div
+                            className={`a-main-like a-main-like--type-vertical-vertical${
+                              similarFavorite ? " a-main-like--active" : ""
+                            }`}
+                          >
                             <div
                               className="tooltip-main a-main-like__tooltip tooltip-main--position-left"
                               color="white"
@@ -942,8 +1003,12 @@ export default function CatalogSlugPage({ params }) {
                             </div>
                             <button
                               className="a-main-like__helper"
-                              title="В избранное"
+                              title={
+                                similarFavorite ? "Удалить" : "В избранное"
+                              }
                               type="button"
+                              onClick={() => handleToggleFavoriteById(item?.id)}
+                              disabled={favoriteBusy}
                             >
                               <span className="a-main-like__icon">
                                 <svg className="a-svg">
@@ -959,7 +1024,13 @@ export default function CatalogSlugPage({ params }) {
                                   />
                                 </svg>
                               </span>
-                              <span className="a-main-like__title a-main-like__title--to-favorite" />
+                              <span
+                                className={`a-main-like__title ${
+                                  similarFavorite
+                                    ? "a-main-like__title--in-favorite"
+                                    : "a-main-like__title--to-favorite"
+                                }`}
+                              />
                             </button>
                           </div>
                         </div>

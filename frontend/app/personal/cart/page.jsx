@@ -8,7 +8,9 @@ import {
   applyPromoCode,
   removePromoCode,
 } from "../../lib/cart";
+import { isFavorite, loadFavorites, toggleFavorite } from "../../lib/favorites";
 import { API_BASE_URL } from "../../../config/api";
+import { createLead } from "../../lib/leads";
 
 function normalizeImageUrl(url) {
   if (!url) return "/images/layouts/no_picture.svg";
@@ -43,6 +45,18 @@ export default function CartPage() {
   const [promoError, setPromoError] = useState("");
   const [promoBusy, setPromoBusy] = useState(false);
   const [shareAlert, setShareAlert] = useState(false);
+  const [, setFavoritesTick] = useState(0);
+  const [isLeadOpen, setIsLeadOpen] = useState(false);
+  const [leadSubmitting, setLeadSubmitting] = useState(false);
+  const [leadSuccess, setLeadSuccess] = useState(false);
+  const [leadForm, setLeadForm] = useState({
+    name: "",
+    address: "",
+    email: "",
+    phone: "",
+    comment: "",
+  });
+  const [leadErrors, setLeadErrors] = useState({});
 
   useEffect(() => {
     let isActive = true;
@@ -63,6 +77,14 @@ export default function CartPage() {
     return () => {
       isActive = false;
     };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    loadFavorites().catch(() => {});
+    const handler = () => setFavoritesTick((tick) => tick + 1);
+    window.addEventListener("favorites:updated", handler);
+    return () => window.removeEventListener("favorites:updated", handler);
   }, []);
 
   const handleUpdateQuantity = async (itemId, nextQuantity) => {
@@ -125,6 +147,50 @@ export default function CartPage() {
       setError("Не удалось удалить выбранные товары.");
     } finally {
       setUpdatingItem(null);
+    }
+  };
+
+  const handleLeadChange = (field, value) => {
+    setLeadForm((prev) => ({ ...prev, [field]: value }));
+    setLeadErrors((prev) => ({ ...prev, [field]: "" }));
+  };
+
+  const validateLead = () => {
+    const nextErrors = {};
+    if (!leadForm.name.trim()) nextErrors.name = "Обязательное поле";
+    if (!leadForm.address.trim()) nextErrors.address = "Обязательное поле";
+    if (!leadForm.email.trim()) nextErrors.email = "Обязательное поле";
+    if (!leadForm.phone.trim()) nextErrors.phone = "Обязательное поле";
+    setLeadErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const handleSubmitLead = async (event) => {
+    event.preventDefault();
+    if (leadSubmitting) return;
+    if (!validateLead()) return;
+    setLeadSubmitting(true);
+    setError(null);
+    try {
+      await createLead({
+        name: leadForm.name.trim(),
+        address: leadForm.address.trim(),
+        email: leadForm.email.trim(),
+        phone: leadForm.phone.trim(),
+        comment: leadForm.comment.trim(),
+      });
+      setLeadSuccess(true);
+      setLeadForm({
+        name: "",
+        address: "",
+        email: "",
+        phone: "",
+        comment: "",
+      });
+    } catch (err) {
+      setError("Не удалось отправить заявку.");
+    } finally {
+      setLeadSubmitting(false);
     }
   };
 
@@ -253,28 +319,7 @@ export default function CartPage() {
           <div className="a-page-personal__wrap">
             <div className="a-page-cart a-page-personal__content a-page-cart--empty a-page-personal__content--cart">
               <div className="v-portal" style={{ display: "none" }} />
-              {/* <div className="choose-user a-page-cart__content">
-                <div className="choose-user__auth">
-                  <div className="choose-user__auth-text">
-                    <span className="choose-user__text--bold">
-                      Войдите или зарегистрируйтесь
-                    </span>
-                    <span className="choose-user__text">
-                      Доступ к бонусным баллам, персональным ценам и скидкам
-                    </span>
-                  </div>
-                  <button
-                    className="a-main-button a-main-button--display-inline a-main-button--type-medium a-main-button--corner-round a-main-button--color-orange"
-                    type="button"
-                  >
-                    <span className="a-main-button__wrap">
-                      <span className="a-main-button__content">
-                        Вход или регистрация
-                      </span>
-                    </span>
-                  </button>
-                </div>
-              </div>*/}
+
               <section className="a-page-cart__content a-page-cart__content--empty">
                 <h2>Добавьте в корзину нужные товары</h2>
                 <p>
@@ -324,28 +369,7 @@ export default function CartPage() {
         <div className="a-page-personal__wrap">
           <div className="a-page-cart a-page-personal__content a-page-personal__content--cart">
             <div className="v-portal" style={{ display: "none" }} />
-            <div className="choose-user a-page-cart__content">
-              <div className="choose-user__auth">
-                <div className="choose-user__auth-text">
-                  <span className="choose-user__text--bold">
-                    Войдите или зарегистрируйтесь
-                  </span>
-                  <span className="choose-user__text">
-                    Доступ к бонусным баллам, персональным ценам и скидкам
-                  </span>
-                </div>
-                <button
-                  className="a-main-button a-main-button--display-inline a-main-button--type-medium a-main-button--corner-round a-main-button--color-orange"
-                  type="button"
-                >
-                  <span className="a-main-button__wrap">
-                    <span className="a-main-button__content">
-                      Вход или регистрация
-                    </span>
-                  </span>
-                </button>
-              </div>
-            </div>
+
             <section className="a-page-cart__content">
               <div className="a-cart-table">
                 <div className="a-cart-table__head">
@@ -447,6 +471,7 @@ export default function CartPage() {
                       item.discount_total && Number(item.discount_total) > 0
                         ? Number(item.discount_total)
                         : 0;
+                    const favoriteActive = isFavorite(item.product_id);
                     return (
                       <div className="a-cart-table__row" key={item.id}>
                         <div className="a-cart-table__product">
@@ -563,7 +588,11 @@ export default function CartPage() {
                                   </button>
                                 </div>
                               </div>
-                              <div className="a-main-like a-main-like--type-horizontal">
+                              <div
+                                className={`a-main-like a-main-like--type-horizontal${
+                                  favoriteActive ? " a-main-like--active" : ""
+                                }`}
+                              >
                                 <div
                                   className="tooltip-main a-main-like__tooltip tooltip-main--position-left"
                                   color="white"
@@ -578,9 +607,14 @@ export default function CartPage() {
                                   </div>
                                 </div>
                                 <button
-                                  title="В избранное"
+                                  title={
+                                    favoriteActive ? "Удалить" : "В избранное"
+                                  }
                                   type="button"
                                   className="a-main-like__helper"
+                                  onClick={() =>
+                                    toggleFavorite(item.product_id)
+                                  }
                                 >
                                   <span className="a-main-like__icon">
                                     <svg className="a-svg">
@@ -596,7 +630,13 @@ export default function CartPage() {
                                       />
                                     </svg>
                                   </span>
-                                  <span className="a-main-like__title a-main-like__title--to-favorite" />
+                                  <span
+                                    className={`a-main-like__title ${
+                                      favoriteActive
+                                        ? "a-main-like__title--in-favorite"
+                                        : "a-main-like__title--to-favorite"
+                                    }`}
+                                  />
                                 </button>
                               </div>
                               <button
@@ -757,16 +797,20 @@ export default function CartPage() {
                     </div>
                   </div>
                   <div className="a-main-sidebar__button">
-                    <a
+                    <button
                       className="a-main-button a-main-button--display-block a-main-button--type-auto a-main-button--corner-round a-main-button--color-orange"
-                      href="/personal/order/make/"
+                      type="button"
+                      onClick={() => {
+                        setLeadSuccess(false);
+                        setIsLeadOpen(true);
+                      }}
                     >
                       <span className="a-main-button__wrap">
                         <span className="a-main-button__content">
                           Перейти к оформлению
                         </span>
                       </span>
-                    </a>
+                    </button>
                   </div>
                   <div className="a-main-sidebar__type">
                     <span>
@@ -787,6 +831,242 @@ export default function CartPage() {
           </div>
         </div>
       </div>
+      {isLeadOpen ? (
+        <div id="modals-container">
+          <div className="vm--container scrollable">
+            <div
+              data-modal="lead-request"
+              aria-expanded="true"
+              className="vm--overlay"
+              onClick={() => setIsLeadOpen(false)}
+            >
+              <div className="vm--top-right-slot" />
+            </div>
+            <div
+              aria-expanded="true"
+              role="dialog"
+              aria-modal="true"
+              className="vm--modal a-main-modal-parent"
+            >
+              <div
+                className="a-main-modal"
+                style={{ top: "0px", transition: "none" }}
+              >
+                <div
+                  className="a-main-modal__drag"
+                  style={{
+                    touchAction: "none",
+                    userSelect: "none",
+                    WebkitUserDrag: "none",
+                    WebkitTapHighlightColor: "rgba(0, 0, 0, 0)",
+                  }}
+                />
+                <div className="a-main-modal__wrap">
+                  <button
+                    type="button"
+                    className="a-main-modal__close"
+                    onClick={() => setIsLeadOpen(false)}
+                  >
+                    <svg className="a-svg">
+                      <use
+                        xmlnsXlink="http://www.w3.org/1999/xlink"
+                        xlinkHref="#icon-cross"
+                      />
+                    </svg>
+                  </button>
+                  <div className="a-main-modal__content">
+                    <div className="a-fast-order-modal-content">
+                      <div className="a-fast-order-modal-content__title a-title-h3">
+                        Заявка
+                      </div>
+                      <div className="a-fast-order-modal-content__alert">
+                        <div className="a-main-alert a-main-alert--blue">
+                          <svg className="a-svg a-main-alert__icon a-svg--medium a-main-alert__icon--blue">
+                            <use
+                              xmlnsXlink="http://www.w3.org/1999/xlink"
+                              xlinkHref="#icon-notice-stroke"
+                            />
+                          </svg>
+                          <div className="a-main-alert__content">
+                            Мы обязательно Вам перезвоним
+                          </div>
+                        </div>
+                      </div>
+                      {leadSuccess ? (
+                        <div className="a-main-alert a-main-alert--green">
+                          <svg className="a-svg a-main-alert__icon a-svg--medium a-main-alert__icon--green">
+                            <use
+                              xmlnsXlink="http://www.w3.org/1999/xlink"
+                              xlinkHref="#icon-like"
+                            />
+                          </svg>
+                          <div className="a-main-alert__content">
+                            Заявка отправлена.
+                          </div>
+                        </div>
+                      ) : (
+                        <form
+                          className="a-fast-order-modal-content__form"
+                          onSubmit={handleSubmitLead}
+                        >
+                          <div className="a-fast-order-modal-content__field">
+                            <div className="a-input-field a-input-field--type-name">
+                              <label className="a-input-field__constrain">
+                                <span className="a-input-field__label">
+                                  Ваше имя *
+                                </span>
+                                <input
+                                  type="text"
+                                  placeholder="Ваше имя"
+                                  spellCheck="false"
+                                  autoComplete="off"
+                                  inputMode="text"
+                                  className="a-input-field__input"
+                                  value={leadForm.name}
+                                  onChange={(event) =>
+                                    handleLeadChange("name", event.target.value)
+                                  }
+                                />
+                              </label>
+                              {leadErrors.name ? (
+                                <div className="a-input-field__error">
+                                  {leadErrors.name}
+                                </div>
+                              ) : null}
+                            </div>
+                          </div>
+                          <div className="a-fast-order-modal-content__field">
+                            <div className="a-input-field a-input-field--type-address">
+                              <label className="a-input-field__constrain">
+                                <span className="a-input-field__label">
+                                  Ваш адрес *
+                                </span>
+                                <input
+                                  type="text"
+                                  placeholder="Ваш адрес"
+                                  spellCheck="false"
+                                  autoComplete="off"
+                                  inputMode="text"
+                                  className="a-input-field__input"
+                                  value={leadForm.address}
+                                  onChange={(event) =>
+                                    handleLeadChange(
+                                      "address",
+                                      event.target.value,
+                                    )
+                                  }
+                                />
+                              </label>
+                              {leadErrors.address ? (
+                                <div className="a-input-field__error">
+                                  {leadErrors.address}
+                                </div>
+                              ) : null}
+                            </div>
+                          </div>
+                          <div className="a-fast-order-modal-content__field">
+                            <div className="a-input-field a-input-field--type-email">
+                              <label className="a-input-field__constrain">
+                                <span className="a-input-field__label">
+                                  Ваш Email *
+                                </span>
+                                <input
+                                  type="email"
+                                  placeholder="Ваш Email"
+                                  spellCheck="false"
+                                  autoComplete="off"
+                                  inputMode="email"
+                                  className="a-input-field__input"
+                                  value={leadForm.email}
+                                  onChange={(event) =>
+                                    handleLeadChange(
+                                      "email",
+                                      event.target.value,
+                                    )
+                                  }
+                                />
+                              </label>
+                              {leadErrors.email ? (
+                                <div className="a-input-field__error">
+                                  {leadErrors.email}
+                                </div>
+                              ) : null}
+                            </div>
+                          </div>
+                          <div className="a-fast-order-modal-content__field">
+                            <div className="a-input-field a-input-field--type-phone">
+                              <label className="a-input-field__constrain">
+                                <span className="a-input-field__label">
+                                  Ваш телефон *
+                                </span>
+                                <input
+                                  type="tel"
+                                  placeholder="Ваш телефон"
+                                  spellCheck="false"
+                                  autoComplete="off"
+                                  inputMode="tel"
+                                  className="a-input-field__input"
+                                  value={leadForm.phone}
+                                  onChange={(event) =>
+                                    handleLeadChange(
+                                      "phone",
+                                      event.target.value,
+                                    )
+                                  }
+                                />
+                              </label>
+                              {leadErrors.phone ? (
+                                <div className="a-input-field__error">
+                                  {leadErrors.phone}
+                                </div>
+                              ) : null}
+                            </div>
+                          </div>
+                          <div className="a-fast-order-modal-content__field">
+                            <div className="a-input-field a-input-field--type-comment">
+                              <label className="a-input-field__constrain">
+                                <span className="a-input-field__label">
+                                  Комментарий
+                                </span>
+                                <textarea
+                                  placeholder="Комментарий"
+                                  spellCheck="false"
+                                  className="a-input-field__input"
+                                  rows="3"
+                                  value={leadForm.comment}
+                                  onChange={(event) =>
+                                    handleLeadChange(
+                                      "comment",
+                                      event.target.value,
+                                    )
+                                  }
+                                />
+                              </label>
+                            </div>
+                          </div>
+                          <div className="a-fast-order-modal-content__buttons">
+                            <button
+                              type="submit"
+                              className="a-main-button a-main-button--display-block a-main-button--type-medium a-main-button--corner-round a-main-button--color-orange"
+                              disabled={leadSubmitting}
+                            >
+                              <span className="a-main-button__wrap">
+                                <span className="a-main-button__content">
+                                  Отправить
+                                </span>
+                              </span>
+                            </button>
+                          </div>
+                        </form>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }

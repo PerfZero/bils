@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { API_BASE_URL } from "../../../config/api";
 import { addToCart } from "../../lib/cart";
+import { isFavorite, loadFavorites, toggleFavorite } from "../../lib/favorites";
 import FastOrderModal from "./FastOrderModal";
 
 interface ProductListItemProps {
@@ -32,6 +33,8 @@ export function ProductListItem({ product }: ProductListItemProps) {
   const [isFastOrderOpen, setIsFastOrderOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
+  const [isFavoriteActive, setIsFavoriteActive] = useState(false);
+  const [favoriteBusy, setFavoriteBusy] = useState(false);
 
   const images =
     product.images && product.images.length > 1
@@ -80,6 +83,25 @@ export function ProductListItem({ product }: ProductListItemProps) {
     return () => media.removeListener(handleChange);
   }, []);
 
+  useEffect(() => {
+    let isActive = true;
+    const syncFavorite = () => {
+      if (!isActive) return;
+      setIsFavoriteActive(isFavorite(product.id));
+    };
+    loadFavorites()
+      .then(syncFavorite)
+      .catch(() => {});
+    syncFavorite();
+    if (typeof window === "undefined") return () => {};
+    const handler = () => syncFavorite();
+    window.addEventListener("favorites:updated", handler);
+    return () => {
+      isActive = false;
+      window.removeEventListener("favorites:updated", handler);
+    };
+  }, [product.id]);
+
   const handleAddToCart = async () => {
     if (!product?.id || isAdding) return;
     setIsAdding(true);
@@ -89,6 +111,17 @@ export function ProductListItem({ product }: ProductListItemProps) {
       console.error("Failed to add item to cart", error);
     } finally {
       setIsAdding(false);
+    }
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!product?.id || favoriteBusy) return;
+    setFavoriteBusy(true);
+    try {
+      await toggleFavorite(product.id);
+      setIsFavoriteActive(isFavorite(product.id));
+    } finally {
+      setFavoriteBusy(false);
     }
   };
 
@@ -510,7 +543,11 @@ export function ProductListItem({ product }: ProductListItemProps) {
                       <span className="a-main-compare__title a-main-compare__title--to-compare" />
                     </button>
                   </div>
-                  <div className="a-main-like a-main-like--type-line-tile">
+                  <div
+                    className={`a-main-like a-main-like--type-line-tile${
+                      isFavoriteActive ? " a-main-like--active" : ""
+                    }`}
+                  >
                     <div
                       className="tooltip-main a-main-like__tooltip tooltip-main--position-bottom-left"
                       color="white"
@@ -526,8 +563,10 @@ export function ProductListItem({ product }: ProductListItemProps) {
                     </div>
                     <button
                       className="a-main-like__helper"
-                      title="В избранное"
+                      title={isFavoriteActive ? "Удалить" : "В избранное"}
                       type="button"
+                      onClick={handleToggleFavorite}
+                      disabled={favoriteBusy}
                     >
                       <span className="a-main-like__icon">
                         <svg className="a-svg">
@@ -543,7 +582,13 @@ export function ProductListItem({ product }: ProductListItemProps) {
                           />
                         </svg>
                       </span>
-                      <span className="a-main-like__title a-main-like__title--to-favorite" />
+                      <span
+                        className={`a-main-like__title ${
+                          isFavoriteActive
+                            ? "a-main-like__title--in-favorite"
+                            : "a-main-like__title--to-favorite"
+                        }`}
+                      />
                     </button>
                   </div>
                 </div>

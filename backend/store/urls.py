@@ -8,6 +8,8 @@ from .views import (
     FAQQuestionViewSet,
     CartViewSet,
     ShareCartViewSet,
+    FavoriteViewSet,
+    LeadRequestViewSet,
     DeliveryMethodViewSet,
     PaymentMethodViewSet,
     OrderViewSet,
@@ -22,6 +24,8 @@ router.register("faq-categories", FAQCategoryViewSet, basename="faq-category")
 router.register("faq-questions", FAQQuestionViewSet, basename="faq-question")
 router.register("cart", CartViewSet, basename="cart")
 router.register("share-cart", ShareCartViewSet, basename="share-cart")
+router.register("favorites", FavoriteViewSet, basename="favorites")
+router.register("leads", LeadRequestViewSet, basename="lead")
 router.register("delivery-methods", DeliveryMethodViewSet, basename="delivery-method")
 router.register("payment-methods", PaymentMethodViewSet, basename="payment-method")
 router.register("orders", OrderViewSet, basename="order")

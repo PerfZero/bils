@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { API_BASE_URL } from "../../config/api";
 import { getOrCreateCart } from "../lib/cart";
+import { getFavoriteCount, loadFavorites } from "../lib/favorites";
 
 const chunkItems = (items, size) => {
   if (!items?.length) {
@@ -29,6 +30,7 @@ export default function Header({ onProfileClick }) {
   const [catalogItems, setCatalogItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [cartCount, setCartCount] = useState(0);
+  const [favoritesCount, setFavoritesCount] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -65,6 +67,22 @@ export default function Header({ onProfileClick }) {
     return () => {
       isActive = false;
       window.removeEventListener("cart:updated", handleCartUpdate);
+    };
+  }, []);
+
+  useEffect(() => {
+    let isActive = true;
+    const syncFavorites = () => {
+      if (!isActive) return;
+      setFavoritesCount(getFavoriteCount());
+    };
+    loadFavorites().catch(() => {});
+    syncFavorites();
+    const handler = () => syncFavorites();
+    window.addEventListener("favorites:updated", handler);
+    return () => {
+      isActive = false;
+      window.removeEventListener("favorites:updated", handler);
     };
   }, []);
 
@@ -410,6 +428,11 @@ export default function Header({ onProfileClick }) {
                             xlinkHref="#icon-favorite-stroke"
                           />
                         </svg>
+                        {favoritesCount > 0 && (
+                          <span className="a-helper__count">
+                            {favoritesCount}
+                          </span>
+                        )}
                       </span>
                       <span className="a-helper__label">Избранное</span>
                     </span>

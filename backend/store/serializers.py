@@ -7,6 +7,9 @@ from .models import (
     Product,
     Cart,
     CartItem,
+    FavoriteList,
+    FavoriteItem,
+    LeadRequest,
     PromoCode,
     DeliveryMethod,
     PaymentMethod,
@@ -417,6 +420,91 @@ class CartItemSerializer(serializers.ModelSerializer):
         return obj.product.weight_kg * obj.quantity
 
 
+class FavoriteItemSerializer(serializers.ModelSerializer):
+    product_name = serializers.SerializerMethodField()
+    product_slug = serializers.SerializerMethodField()
+    product_image = serializers.SerializerMethodField()
+    price = serializers.SerializerMethodField()
+    retail_price = serializers.SerializerMethodField()
+    discount_percent = serializers.SerializerMethodField()
+    rating = serializers.SerializerMethodField()
+    rating_count = serializers.SerializerMethodField()
+    is_new = serializers.SerializerMethodField()
+    category_name = serializers.SerializerMethodField()
+    category_slug = serializers.SerializerMethodField()
+    href = serializers.SerializerMethodField()
+
+    class Meta:
+        model = FavoriteItem
+        fields = [
+            "id",
+            "product_id",
+            "product_name",
+            "product_slug",
+            "product_image",
+            "price",
+            "retail_price",
+            "discount_percent",
+            "rating",
+            "rating_count",
+            "is_new",
+            "category_name",
+            "category_slug",
+            "href",
+            "created_at",
+        ]
+
+    def get_product_name(self, obj):
+        return obj.product.name
+
+    def get_product_slug(self, obj):
+        return obj.product.slug
+
+    def get_product_image(self, obj):
+        if obj.product.image:
+            return obj.product.image.url
+        return None
+
+    def get_price(self, obj):
+        return obj.product.price
+
+    def get_retail_price(self, obj):
+        return obj.product.retail_price
+
+    def get_discount_percent(self, obj):
+        return obj.product.discount_percent
+
+    def get_rating(self, obj):
+        return obj.product.rating
+
+    def get_rating_count(self, obj):
+        return obj.product.rating_count
+
+    def get_is_new(self, obj):
+        return obj.product.is_new
+
+    def get_category_name(self, obj):
+        return obj.product.category.name if obj.product.category else None
+
+    def get_category_slug(self, obj):
+        return obj.product.category.slug if obj.product.category else None
+
+    def get_href(self, obj):
+        return f"/product/{obj.product.slug}/"
+
+
+class FavoriteListSerializer(serializers.ModelSerializer):
+    items = FavoriteItemSerializer(many=True, read_only=True)
+    total_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = FavoriteList
+        fields = ["token", "created_at", "items", "total_count"]
+
+    def get_total_count(self, obj):
+        return obj.items.count()
+
+
 class CartSerializer(serializers.ModelSerializer):
     items = CartItemSerializer(many=True, read_only=True)
     promo_code = serializers.SerializerMethodField()
@@ -623,6 +711,34 @@ class CartItemCreateSerializer(serializers.Serializer):
             raise serializers.ValidationError("Не найден товар для корзины.")
         attrs["product"] = product
         return attrs
+
+
+class FavoriteItemCreateSerializer(serializers.Serializer):
+    product_id = serializers.IntegerField()
+
+    def validate(self, attrs):
+        product_id = attrs.get("product_id")
+        product = Product.objects.filter(id=product_id).first()
+        if product is None:
+            raise serializers.ValidationError("Не найден товар для избранного.")
+        attrs["product"] = product
+        return attrs
+
+
+class LeadRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LeadRequest
+        fields = [
+            "id",
+            "name",
+            "address",
+            "email",
+            "phone",
+            "comment",
+            "status",
+            "created_at",
+        ]
+        read_only_fields = ["id", "status", "created_at"]
 
 
 class CartItemUpdateSerializer(serializers.Serializer):

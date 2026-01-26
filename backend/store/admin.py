@@ -35,6 +35,7 @@ from .models import (
     ProductDocument,
     ProductReview,
     ProductImportLog,
+    LeadRequest,
     FAQCategory,
     FAQQuestion,
     PromoCode,
@@ -771,6 +772,13 @@ class ProductImportLogAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request):
         return False
+
+
+@admin.register(LeadRequest)
+class LeadRequestAdmin(admin.ModelAdmin):
+    list_display = ("id", "name", "phone", "email", "status", "created_at")
+    list_filter = ("status", "created_at")
+    search_fields = ("name", "phone", "email", "address")
 
 def parse_decimal(value):
     if value is None or value == "":

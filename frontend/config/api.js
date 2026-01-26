@@ -9,6 +9,8 @@ export const API_ENDPOINTS = {
   PRODUCTS: `${API_BASE_URL}/api/products/`,
   BRANDS: `${API_BASE_URL}/api/brands/`,
   CART: `${API_BASE_URL}/api/cart/`,
+  FAVORITES: `${API_BASE_URL}/api/favorites/`,
+  LEADS: `${API_BASE_URL}/api/leads/`,
   ORDERS: `${API_BASE_URL}/api/orders/`,
   DELIVERY_METHODS: `${API_BASE_URL}/api/delivery-methods/`,
   PAYMENT_METHODS: `${API_BASE_URL}/api/payment-methods/`,

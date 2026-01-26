@@ -346,6 +346,46 @@ class Cart(models.Model):
         return str(self.token)
 
 
+class FavoriteList(models.Model):
+    token = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    created_at = models.DateTimeField("Создан", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Избранное"
+        verbose_name_plural = "Избранное"
+
+    def __str__(self):
+        return str(self.token)
+
+
+class LeadRequest(models.Model):
+    STATUS_NEW = "new"
+    STATUS_PROCESSED = "processed"
+
+    STATUS_CHOICES = [
+        (STATUS_NEW, "Новая"),
+        (STATUS_PROCESSED, "Обработана"),
+    ]
+
+    name = models.CharField("Ваше имя", max_length=120)
+    address = models.CharField("Ваш адрес", max_length=200)
+    email = models.EmailField("Ваш Email")
+    phone = models.CharField("Ваш телефон", max_length=40)
+    comment = models.TextField("Комментарий", blank=True)
+    status = models.CharField(
+        "Статус", max_length=20, choices=STATUS_CHOICES, default=STATUS_NEW
+    )
+    created_at = models.DateTimeField("Создана", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Заявка"
+        verbose_name_plural = "Заявки"
+        ordering = ["-created_at", "-id"]
+
+    def __str__(self):
+        return f"Заявка #{self.id}"
+
+
 class PromoCode(models.Model):
     TYPE_PERCENT = "percent"
     TYPE_FIXED = "fixed"
@@ -455,6 +495,32 @@ class CartItem(models.Model):
 
     def __str__(self):
         return f"{self.product} x {self.quantity}"
+
+
+class FavoriteItem(models.Model):
+    favorites = models.ForeignKey(
+        FavoriteList,
+        related_name="items",
+        on_delete=models.CASCADE,
+        verbose_name="Избранное",
+    )
+    product = models.ForeignKey(
+        Product, on_delete=models.PROTECT, verbose_name="Товар"
+    )
+    created_at = models.DateTimeField("Создан", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Позиция избранного"
+        verbose_name_plural = "Позиции избранного"
+        ordering = ["-created_at", "-id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["favorites", "product"], name="unique_favorite_product"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.product} (favorite)"
 
 
 class Order(models.Model):

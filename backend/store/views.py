@@ -11,6 +11,9 @@ from .models import (
     Product,
     Cart,
     CartItem,
+    FavoriteList,
+    FavoriteItem,
+    LeadRequest,
     PromoCode,
     DeliveryMethod,
     PaymentMethod,
@@ -34,6 +37,9 @@ from .serializers import (
     CartItemSerializer,
     CartItemCreateSerializer,
     CartItemUpdateSerializer,
+    FavoriteListSerializer,
+    FavoriteItemCreateSerializer,
+    LeadRequestSerializer,
     DeliveryMethodSerializer,
     PaymentMethodSerializer,
     OrderSerializer,
@@ -414,6 +420,69 @@ class ShareCartViewSet(viewsets.ViewSet):
                 "total_weight": total_weight if has_weight else None,
             }
         )
+
+
+class FavoriteViewSet(viewsets.ViewSet):
+    def _get_favorites(self, token):
+        return get_object_or_404(
+            FavoriteList.objects.prefetch_related("items__product__category"),
+            token=token,
+        )
+
+    def _serialize(self, favorites, request):
+        serializer = FavoriteListSerializer(favorites, context={"request": request})
+        return serializer.data
+
+    def create(self, request):
+        favorites = FavoriteList.objects.create()
+        return Response(self._serialize(favorites, request), status=status.HTTP_201_CREATED)
+
+    def retrieve(self, request, pk=None):
+        favorites = self._get_favorites(pk)
+        return Response(self._serialize(favorites, request))
+
+    @action(detail=True, methods=["post"], url_path="items")
+    def add_item(self, request, pk=None):
+        favorites = self._get_favorites(pk)
+        serializer = FavoriteItemCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        product = serializer.validated_data["product"]
+        FavoriteItem.objects.get_or_create(favorites=favorites, product=product)
+        favorites.refresh_from_db()
+        return Response(self._serialize(favorites, request))
+
+    @action(detail=True, methods=["delete"], url_path="items/(?P<item_id>[^/.]+)/remove")
+    def remove_item(self, request, pk=None, item_id=None):
+        favorites = self._get_favorites(pk)
+        item = get_object_or_404(FavoriteItem, favorites=favorites, id=item_id)
+        item.delete()
+        favorites.refresh_from_db()
+        return Response(self._serialize(favorites, request))
+
+    @action(detail=True, methods=["delete"], url_path="items/remove")
+    def remove_by_product(self, request, pk=None):
+        favorites = self._get_favorites(pk)
+        product_id = request.query_params.get("product_id")
+        if product_id is None:
+            product_id = request.data.get("product_id") if isinstance(request.data, dict) else None
+        if not product_id:
+            return Response({"detail": "product_id is required."}, status=status.HTTP_400_BAD_REQUEST)
+        FavoriteItem.objects.filter(favorites=favorites, product_id=product_id).delete()
+        favorites.refresh_from_db()
+        return Response(self._serialize(favorites, request))
+
+    @action(detail=True, methods=["delete"], url_path="clear")
+    def clear(self, request, pk=None):
+        favorites = self._get_favorites(pk)
+        favorites.items.all().delete()
+        favorites.refresh_from_db()
+        return Response(self._serialize(favorites, request))
+
+
+class LeadRequestViewSet(viewsets.ModelViewSet):
+    queryset = LeadRequest.objects.all().order_by("-created_at", "-id")
+    serializer_class = LeadRequestSerializer
+    http_method_names = ["post", "head", "options"]
 
 
 class DeliveryMethodViewSet(viewsets.ReadOnlyModelViewSet):
