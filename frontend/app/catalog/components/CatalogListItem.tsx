@@ -11,7 +11,7 @@ export function CatalogListItem({ category }: CatalogListItemProps) {
     ? category.image.startsWith("http") || category.image.startsWith("//")
       ? category.image
       : `${API_BASE_URL}${category.image}`
-    : `https://cdn.bigam.ru/resize_cache/iblock/f76/1pdkw4ua1yph314yu390tc842dcfdm89/156_156_0/${category.slug}.jpg`;
+    : "/images/layouts/no_picture.svg";
 
   return (
     <li className="a-catalog-list__item">
