@@ -48,6 +48,7 @@ export function ProductListItem({ product }: ProductListItemProps) {
   const [cartItemId, setCartItemId] = useState<number | null>(null);
   const [draftQuantity, setDraftQuantity] = useState(0);
   const [counterBusy, setCounterBusy] = useState(false);
+  const pendingQuantityRef = useRef<number | null>(null);
   const [isFavoriteActive, setIsFavoriteActive] = useState(false);
   const [favoriteBusy, setFavoriteBusy] = useState(false);
   const [isCompareActive, setIsCompareActive] = useState(false);
@@ -181,15 +182,18 @@ export function ProductListItem({ product }: ProductListItemProps) {
     let isActive = true;
     const syncFromCart = (cart) => {
       if (!isActive) return;
+      if (!cart?.items) return;
       const item = cart?.items?.find?.(
         (entry) => entry?.product_id === product.id,
       );
       if (item) {
         setCartItemId(item.id);
         setCartQuantity(Number(item.quantity || 0));
+        pendingQuantityRef.current = null;
       } else {
         setCartItemId(null);
         setCartQuantity(0);
+        pendingQuantityRef.current = null;
       }
     };
     const loadCart = async () => {
@@ -257,6 +261,10 @@ export function ProductListItem({ product }: ProductListItemProps) {
     if (counterBusy) return;
     setCounterBusy(true);
     try {
+      const optimisticNext = cartQuantity + 1;
+      pendingQuantityRef.current = optimisticNext;
+      setCartQuantity(optimisticNext);
+      setDraftQuantity(optimisticNext);
       if (!cartItemId) {
         const cart = await addToCart(product.id, 1);
         const item = cart?.items?.find?.(
@@ -265,6 +273,7 @@ export function ProductListItem({ product }: ProductListItemProps) {
         if (item) {
           setCartItemId(item.id);
           setCartQuantity(Number(item.quantity || 1));
+          pendingQuantityRef.current = null;
         }
         return;
       }
@@ -276,6 +285,7 @@ export function ProductListItem({ product }: ProductListItemProps) {
       );
       if (item) {
         setCartQuantity(Number(item.quantity || 0));
+        pendingQuantityRef.current = null;
       }
     } catch (error) {
       console.error("Failed to increase cart item", error);
@@ -288,12 +298,17 @@ export function ProductListItem({ product }: ProductListItemProps) {
     if (counterBusy || !cartItemId) return;
     setCounterBusy(true);
     try {
+      const optimisticNext = Math.max(0, cartQuantity - 1);
+      pendingQuantityRef.current = optimisticNext;
+      setCartQuantity(optimisticNext);
+      setDraftQuantity(optimisticNext);
       const token = await ensureCartToken();
       if (!token) return;
       if (cartQuantity <= 1) {
         await removeCartItem(token, cartItemId);
         setCartItemId(null);
         setCartQuantity(0);
+        pendingQuantityRef.current = null;
         return;
       }
       const cart = await updateCartItem(token, cartItemId, cartQuantity - 1);
@@ -302,6 +317,7 @@ export function ProductListItem({ product }: ProductListItemProps) {
       );
       if (item) {
         setCartQuantity(Number(item.quantity || 0));
+        pendingQuantityRef.current = null;
       }
     } catch (error) {
       console.error("Failed to decrease cart item", error);
@@ -742,9 +758,8 @@ export function ProductListItem({ product }: ProductListItemProps) {
                           aria-label="Уменьшить количество"
                           title="Уменьшить количество"
                           type="button"
-                          className={`a-link-button${counterBusy ? " a-link-button--disabled" : ""}`}
+                          className="a-link-button"
                           onClick={handleDecrease}
-                          disabled={counterBusy}
                         >
                           <span className="a-link-button__content a-link-button__content--black" />
                           <span className="a-link-button__icon a-link-button__icon--grey">
@@ -782,9 +797,8 @@ export function ProductListItem({ product }: ProductListItemProps) {
                           aria-label="Увеличить количество"
                           title="Увеличить количество"
                           type="button"
-                          className={`a-link-button${counterBusy ? " a-link-button--disabled" : ""}`}
+                          className="a-link-button"
                           onClick={handleIncrease}
-                          disabled={counterBusy}
                         >
                           <span className="a-link-button__content a-link-button__content--black" />
                           <span className="a-link-button__icon a-link-button__icon--grey">
