@@ -166,11 +166,6 @@ export default function Footer() {
                               Каталог товаров
                             </a>
                           </li>
-                          <li class="a-footer__section">
-                            <a href="/promo/" class="a-footer__link">
-                              Акции
-                            </a>
-                          </li>
                         </ul>
                       </div>
                     </li>
