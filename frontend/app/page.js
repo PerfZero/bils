@@ -147,7 +147,7 @@ export default async function Home() {
       <PopularCategoriesSlider categories={popularCategories} />
       <BrandsSection brands={brandItems} />
       <NewArrivalsSection products={newArrivals} />
-      <PromotionsSection />
+      {/* <PromotionsSection />*/}
       <RecommendedProducts />
       <ReviewsSection />
       <WhyUsSection />
