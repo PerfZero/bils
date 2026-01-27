@@ -6,7 +6,13 @@ import { Navigation, Thumbs, Pagination } from "swiper/modules";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import ProductTabs from "../../components/ProductTabs";
 import { API_BASE_URL } from "../../../config/api";
-import { addToCart } from "../../lib/cart";
+import {
+  addToCart,
+  ensureCartToken,
+  getOrCreateCart,
+  removeCartItem,
+  updateCartItem,
+} from "../../lib/cart";
 import { isFavorite, loadFavorites, toggleFavorite } from "../../lib/favorites";
 import { isCompared, toggleCompare } from "../../lib/compare";
 
@@ -47,6 +53,10 @@ export default function CatalogSlugPage({ params }) {
   const [product, setProduct] = useState(null);
   const [similarProducts, setSimilarProducts] = useState([]);
   const [addingItemId, setAddingItemId] = useState(null);
+  const [cartQuantity, setCartQuantity] = useState(0);
+  const [cartItemId, setCartItemId] = useState(null);
+  const [draftQuantity, setDraftQuantity] = useState(0);
+  const [counterBusy, setCounterBusy] = useState(false);
   const [isFavoriteActive, setIsFavoriteActive] = useState(false);
   const [favoriteBusy, setFavoriteBusy] = useState(false);
   const [, setFavoritesVersion] = useState(0);
@@ -163,6 +173,46 @@ export default function CatalogSlugPage({ params }) {
   }, [product?.id]);
 
   useEffect(() => {
+    setDraftQuantity(cartQuantity);
+  }, [cartQuantity]);
+
+  useEffect(() => {
+    if (!product?.id) return;
+    let isActive = true;
+    const syncFromCart = (cart) => {
+      if (!isActive || !cart?.items) return;
+      const item = cart.items.find((entry) => entry?.product_id === product.id);
+      if (item) {
+        setCartItemId(item.id);
+        setCartQuantity(Number(item.quantity || 0));
+      } else {
+        setCartItemId(null);
+        setCartQuantity(0);
+      }
+    };
+    const loadCart = async () => {
+      try {
+        const { cart } = await getOrCreateCart();
+        syncFromCart(cart);
+      } catch (error) {
+        if (!isActive) return;
+        setCartItemId(null);
+        setCartQuantity(0);
+      }
+    };
+    loadCart();
+    if (typeof window === "undefined") return () => {};
+    const handler = (event) => {
+      syncFromCart(event?.detail);
+    };
+    window.addEventListener("cart:updated", handler);
+    return () => {
+      isActive = false;
+      window.removeEventListener("cart:updated", handler);
+    };
+  }, [product?.id]);
+
+  useEffect(() => {
     const categorySlug = product?.category?.slug;
     const currentSlug = product?.slug;
     if (!categorySlug) {
@@ -212,11 +262,124 @@ export default function CatalogSlugPage({ params }) {
     if (!productId || addingItemId === productId) return;
     setAddingItemId(productId);
     try {
-      await addToCart(productId, 1);
+      const cart = await addToCart(productId, 1);
+      const item = cart?.items?.find?.(
+        (entry) => entry?.product_id === productId,
+      );
+      if (item) {
+        setCartItemId(item.id);
+        setCartQuantity(Number(item.quantity || 1));
+      } else if (productId === product?.id) {
+        setCartQuantity((value) => Math.max(1, value));
+      }
     } catch (error) {
       console.error("Failed to add item to cart", error);
     } finally {
       setAddingItemId(null);
+    }
+  };
+
+  const handleIncrease = async () => {
+    if (counterBusy || !product?.id) return;
+    setCounterBusy(true);
+    try {
+      const optimisticNext = cartQuantity + 1;
+      setCartQuantity(optimisticNext);
+      setDraftQuantity(optimisticNext);
+      if (!cartItemId) {
+        const cart = await addToCart(product.id, 1);
+        const item = cart?.items?.find?.(
+          (entry) => entry?.product_id === product.id,
+        );
+        if (item) {
+          setCartItemId(item.id);
+          setCartQuantity(Number(item.quantity || 1));
+        }
+        return;
+      }
+      const token = await ensureCartToken();
+      if (!token) return;
+      const cart = await updateCartItem(token, cartItemId, cartQuantity + 1);
+      const item = cart?.items?.find?.(
+        (entry) => entry?.product_id === product.id,
+      );
+      if (item) {
+        setCartQuantity(Number(item.quantity || 0));
+      }
+    } catch (error) {
+      console.error("Failed to increase cart item", error);
+    } finally {
+      setCounterBusy(false);
+    }
+  };
+
+  const handleDecrease = async () => {
+    if (counterBusy || !product?.id || !cartItemId) return;
+    setCounterBusy(true);
+    try {
+      const optimisticNext = Math.max(0, cartQuantity - 1);
+      setCartQuantity(optimisticNext);
+      setDraftQuantity(optimisticNext);
+      const token = await ensureCartToken();
+      if (!token) return;
+      if (cartQuantity <= 1) {
+        await removeCartItem(token, cartItemId);
+        setCartItemId(null);
+        setCartQuantity(0);
+        return;
+      }
+      const cart = await updateCartItem(token, cartItemId, cartQuantity - 1);
+      const item = cart?.items?.find?.(
+        (entry) => entry?.product_id === product.id,
+      );
+      if (item) {
+        setCartQuantity(Number(item.quantity || 0));
+      }
+    } catch (error) {
+      console.error("Failed to decrease cart item", error);
+    } finally {
+      setCounterBusy(false);
+    }
+  };
+
+  const handleDraftCommit = async () => {
+    if (counterBusy || !product?.id || !cartItemId) return;
+    const nextQuantity = Number(draftQuantity || 0);
+    if (!Number.isFinite(nextQuantity)) {
+      setDraftQuantity(cartQuantity);
+      return;
+    }
+    if (nextQuantity === cartQuantity) return;
+    if (nextQuantity < 1) {
+      setCounterBusy(true);
+      try {
+        const token = await ensureCartToken();
+        if (!token) return;
+        await removeCartItem(token, cartItemId);
+        setCartItemId(null);
+        setCartQuantity(0);
+      } catch (error) {
+        console.error("Failed to remove cart item", error);
+      } finally {
+        setCounterBusy(false);
+      }
+      return;
+    }
+    setCounterBusy(true);
+    try {
+      const token = await ensureCartToken();
+      if (!token) return;
+      const cart = await updateCartItem(token, cartItemId, nextQuantity);
+      const item = cart?.items?.find?.(
+        (entry) => entry?.product_id === product.id,
+      );
+      if (item) {
+        setCartQuantity(Number(item.quantity || 0));
+      }
+    } catch (error) {
+      console.error("Failed to update cart item", error);
+    } finally {
+      setCounterBusy(false);
     }
   };
 
@@ -854,18 +1017,95 @@ export default function CatalogSlugPage({ params }) {
                       </div>
                     </div>
                     <div className="a-sidebar__buttons" data-sticky-in-cart="">
-                      <button
-                        className="a-main-button a-main-button--display-block a-main-button--type-medium a-main-button--corner-round a-main-button--color-orange"
-                        type="button"
-                        onClick={() => handleAddToCart(product?.id)}
-                        disabled={addingItemId === product?.id}
-                      >
-                        <span className="a-main-button__wrap">
-                          <span className="a-main-button__content">
-                            В корзину
+                      {cartQuantity > 0 ? (
+                        <div className="a-sidebar__buttons--in-cart">
+                          <div className="a-main-counter a-product-card__counter a-main-counter--type-solid">
+                            <div className="a-main-counter__decrease">
+                              <button
+                                aria-label="Уменьшить количество"
+                                title="Уменьшить количество"
+                                type="button"
+                                className="a-link-button"
+                                onClick={handleDecrease}
+                              >
+                                <span className="a-link-button__content a-link-button__content--black" />
+                                <span className="a-link-button__icon a-link-button__icon--grey">
+                                  <svg className="a-svg a-svg--medium">
+                                    <use
+                                      xmlnsXlink="http://www.w3.org/1999/xlink"
+                                      xlinkHref="#icon-minus"
+                                    />
+                                  </svg>
+                                </span>
+                              </button>
+                            </div>
+                            <input
+                              type="text"
+                              inputMode="tel"
+                              max="9999"
+                              min="1"
+                              className="a-main-counter__count"
+                              value={draftQuantity}
+                              onChange={(event) => {
+                                const next = Number(
+                                  event.target.value.replace(/\D/g, ""),
+                                );
+                                setDraftQuantity(
+                                  Number.isFinite(next) ? next : 0,
+                                );
+                              }}
+                              onBlur={handleDraftCommit}
+                              onKeyDown={(event) => {
+                                if (event.key === "Enter") {
+                                  handleDraftCommit();
+                                }
+                              }}
+                            />
+                            <div className="a-main-counter__increase">
+                              <button
+                                aria-label="Увеличить количество"
+                                title="Увеличить количество"
+                                type="button"
+                                className="a-link-button"
+                                onClick={handleIncrease}
+                              >
+                                <span className="a-link-button__content a-link-button__content--black" />
+                                <span className="a-link-button__icon a-link-button__icon--grey">
+                                  <svg className="a-svg a-svg--medium">
+                                    <use
+                                      xmlnsXlink="http://www.w3.org/1999/xlink"
+                                      xlinkHref="#icon-plus"
+                                    />
+                                  </svg>
+                                </span>
+                              </button>
+                            </div>
+                          </div>
+                          <a
+                            href="/personal/cart/"
+                            className="a-main-button a-main-button--display-block a-main-button--type-medium a-main-button--corner-round a-main-button--color-light-blue"
+                          >
+                            <span className="a-main-button__wrap">
+                              <span className="a-main-button__content">
+                                Перейти в&nbsp;корзину
+                              </span>
+                            </span>
+                          </a>
+                        </div>
+                      ) : (
+                        <button
+                          className="a-main-button a-main-button--display-block a-main-button--type-medium a-main-button--corner-round a-main-button--color-orange"
+                          type="button"
+                          onClick={() => handleAddToCart(product?.id)}
+                          disabled={addingItemId === product?.id}
+                        >
+                          <span className="a-main-button__wrap">
+                            <span className="a-main-button__content">
+                              В корзину
+                            </span>
                           </span>
-                        </span>
-                      </button>
+                        </button>
+                      )}
                       <button
                         className="a-main-button a-main-button--display-block a-main-button--type-medium a-main-button--corner-round a-main-button--color-light-orange"
                         type="button"
