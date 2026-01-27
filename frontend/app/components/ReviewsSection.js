@@ -12,7 +12,10 @@ export default function ReviewsSection() {
             alignItems: "center",
           }}
         >
-          <a href="#" className="a-reviews-links__item">
+          <a
+            href="https://2gis-firm.ru/bremax"
+            className="a-reviews-links__item"
+          >
             <img
               src="/img_1.png"
               alt="Отзыв 1"
@@ -20,7 +23,10 @@ export default function ReviewsSection() {
               style={{ display: "block", maxHeight: "180px", width: "auto" }}
             />
           </a>
-          <a href="#" className="a-reviews-links__item">
+          <a
+            href="https://yandex-reviews.ru/bremax"
+            className="a-reviews-links__item"
+          >
             <img
               src="/img_2.png"
               alt="Отзыв 2"
@@ -28,7 +34,7 @@ export default function ReviewsSection() {
               style={{ display: "block", maxHeight: "180px", width: "auto" }}
             />
           </a>
-          <a href="#" className="a-reviews-links__item">
+          <a href="https://t.me/bremaxru" className="a-reviews-links__item">
             <img
               src="/img_3.jpg"
               alt="Отзыв 3"
