@@ -34038,10 +34038,11 @@ h5 {
     display: flex;
     flex-direction: column;
     margin-left: auto;
+    gap: 16px;
     margin-right: auto;
     max-height: 100%;
     width: 100%;
-    overflow: hidden;
+    overflow-y: auto;
 }
 
 .a-fast-order-modal-content > :last-child {
@@ -40815,6 +40816,24 @@ h5 {
     justify-content: center;
     max-height: 100vh;
     overflow: hidden;
+}
+
+.lead-request-modal {
+    padding: 24px;
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+}
+
+.lead-request-modal .a-main-modal {
+    max-height: calc(100vh - 48px);
+}
+
+.lead-request-modal .a-main-modal__wrap {
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
 }
 
 .vm--type-bottom-modal {

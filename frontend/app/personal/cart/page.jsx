@@ -87,6 +87,19 @@ export default function CartPage() {
     return () => window.removeEventListener("favorites:updated", handler);
   }, []);
 
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const className = "vm--block-scroll";
+    if (isLeadOpen) {
+      document.body.classList.add(className);
+    } else {
+      document.body.classList.remove(className);
+    }
+    return () => {
+      document.body.classList.remove(className);
+    };
+  }, [isLeadOpen]);
+
   const handleUpdateQuantity = async (itemId, nextQuantity) => {
     if (!cartToken || nextQuantity < 1) return;
     setUpdatingItem(itemId);
@@ -201,6 +214,19 @@ export default function CartPage() {
         phone: leadForm.phone.trim(),
         comment: finalComment,
       });
+      if (cartToken && items.length) {
+        let updatedCart = cart;
+        for (const item of items) {
+          updatedCart = await removeCartItem(cartToken, item.id);
+        }
+        try {
+          updatedCart = await removePromoCode(cartToken);
+        } catch (_) {
+          // Ignore promo removal failures after lead submit.
+        }
+        setCart(updatedCart);
+        setSelectedItemIds(new Set());
+      }
       setLeadSuccess(true);
       setLeadForm({
         name: "",
@@ -868,11 +894,16 @@ export default function CartPage() {
               aria-expanded="true"
               role="dialog"
               aria-modal="true"
-              className="vm--modal a-main-modal-parent"
+              className="vm--modal a-main-modal-parent lead-request-modal"
+              style={{ top: 0, left: 0, width: "100%", height: "100%" }}
             >
               <div
                 className="a-main-modal"
-                style={{ top: "0px", transition: "none" }}
+                style={{
+                  transition: "none",
+                  width: "auto",
+                  maxWidth: "calc(100vw - 32px)",
+                }}
               >
                 <div
                   className="a-main-modal__drag"
