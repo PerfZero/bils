@@ -34,7 +34,7 @@ export default function BrandPage({ params }) {
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [productsLoading, setProductsLoading] = useState(true);
-  const [selectedSort, setSelectedSort] = useState("popular-desc");
+  const [selectedSort, setSelectedSort] = useState("price-desc");
 
   useEffect(() => {
     const fetchBrand = async () => {
@@ -61,6 +61,9 @@ export default function BrandPage({ params }) {
         const productsUrl = new URL(`${API_BASE_URL}/api/products/list/`);
         productsUrl.searchParams.set("brand", brandSlug);
         productsUrl.searchParams.set("page", String(currentPage));
+        if (selectedSort) {
+          productsUrl.searchParams.set("sort", selectedSort);
+        }
         const response = await fetch(productsUrl.toString());
         const payload = await response.json();
         const data = Array.isArray(payload) ? payload : payload.results || [];
@@ -75,7 +78,7 @@ export default function BrandPage({ params }) {
       }
     };
     fetchProducts();
-  }, [params.slug, currentPage, brandSlug]);
+  }, [params.slug, currentPage, brandSlug, selectedSort]);
 
   useEffect(() => {
     const unique = new Map();
@@ -211,8 +214,6 @@ export default function BrandPage({ params }) {
                           Сортировать по:
                         </span>
                         {[
-                          { value: "popular-desc", label: "Популярности" },
-                          { value: "rate-desc", label: "Рейтингу" },
                           { value: "price-desc", label: "Сначала дороже" },
                           { value: "price-asc", label: "Сначала дешевле" },
                         ].map((option, index) => (
@@ -254,11 +255,6 @@ export default function BrandPage({ params }) {
                               title={
                                 [
                                   {
-                                    value: "popular-desc",
-                                    label: "Популярности",
-                                  },
-                                  { value: "rate-desc", label: "Рейтингу" },
-                                  {
                                     value: "price-desc",
                                     label: "Сначала дороже",
                                   },
@@ -273,11 +269,6 @@ export default function BrandPage({ params }) {
                             >
                               {
                                 [
-                                  {
-                                    value: "popular-desc",
-                                    label: "Популярности",
-                                  },
-                                  { value: "rate-desc", label: "Рейтингу" },
                                   {
                                     value: "price-desc",
                                     label: "Сначала дороже",
@@ -303,8 +294,6 @@ export default function BrandPage({ params }) {
                         </div>
                         <ul className="a-field-select__list">
                           {[
-                            { value: "popular-desc", label: "Популярности" },
-                            { value: "rate-desc", label: "Рейтингу" },
                             { value: "price-desc", label: "Сначала дороже" },
                             { value: "price-asc", label: "Сначала дешевле" },
                           ].map((option) => (

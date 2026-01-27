@@ -141,6 +141,21 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
     )
     serializer_class = ProductSerializer
 
+    def _apply_sort(self, queryset, sort_value):
+        if not sort_value:
+            return queryset
+        sort_value = str(sort_value).strip().lower()
+        sort_map = {
+            "price-asc": ("price", "id"),
+            "price-desc": ("-price", "-id"),
+            "new-desc": ("-created_at", "-id"),
+            "new-asc": ("created_at", "id"),
+        }
+        ordering = sort_map.get(sort_value)
+        if ordering:
+            return queryset.order_by(*ordering)
+        return queryset
+
     def _parse_param_list(self, key):
         raw_values = self.request.query_params.getlist(key)
         if not raw_values:
@@ -212,6 +227,7 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
         category_slug = self.request.query_params.get("category")
         slug = self.request.query_params.get("slug")
         is_new = self.request.query_params.get("is_new")
+        sort_value = self.request.query_params.get("sort")
         brand_values = self._parse_param_list("brand")
         country_values = self._parse_param_list("country")
         price_min = self._parse_decimal(self.request.query_params.get("price_min"))
@@ -232,6 +248,8 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
             queryset = queryset.filter(price__gte=price_min)
         if price_max is not None:
             queryset = queryset.filter(price__lte=price_max)
+        if sort_value:
+            queryset = self._apply_sort(queryset, sort_value)
         return queryset
 
     @action(detail=False, methods=["get"], url_path="list")
@@ -493,6 +511,27 @@ class CartViewSet(viewsets.ViewSet):
         cart.items.all().delete()
         cart.promo_code = None
         cart.save(update_fields=["promo_code"])
+        cart.refresh_from_db()
+        response = CartSerializer(cart, context={"request": request})
+        return Response(response.data)
+
+    def update_item(self, request, pk=None, item_id=None):
+        cart = self._get_cart(pk)
+        item = get_object_or_404(CartItem, cart=cart, id=item_id)
+        serializer = CartItemUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        item.quantity = serializer.validated_data["quantity"]
+        item.price = item.product.price
+        item.save(update_fields=["quantity", "price"])
+
+        cart.refresh_from_db()
+        response = CartSerializer(cart, context={"request": request})
+        return Response(response.data)
+
+    def remove_item(self, request, pk=None, item_id=None):
+        cart = self._get_cart(pk)
+        item = get_object_or_404(CartItem, cart=cart, id=item_id)
+        item.delete()
         cart.refresh_from_db()
         response = CartSerializer(cart, context={"request": request})
         return Response(response.data)

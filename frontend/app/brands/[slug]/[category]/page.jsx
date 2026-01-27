@@ -44,7 +44,7 @@ export default function BrandCategoryPage({ params }) {
   const [isMobile, setIsMobile] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isSortOpen, setIsSortOpen] = useState(false);
-  const [selectedSort, setSelectedSort] = useState("popular-desc");
+  const [selectedSort, setSelectedSort] = useState("price-desc");
 
   const selectedCountries = useMemo(() => {
     const raw = searchParams.get("country") || "";
@@ -176,6 +176,9 @@ export default function BrandCategoryPage({ params }) {
         if (priceMaxParam) {
           productsUrl.searchParams.set("price_max", priceMaxParam);
         }
+        if (selectedSort) {
+          productsUrl.searchParams.set("sort", selectedSort);
+        }
         const response = await fetch(productsUrl.toString());
         const data = await response.json();
         if (Array.isArray(data)) {
@@ -220,6 +223,7 @@ export default function BrandCategoryPage({ params }) {
     selectedCountries.join(","),
     priceMinParam,
     priceMaxParam,
+    selectedSort,
   ]);
 
   const pageSize = 24;
@@ -406,8 +410,6 @@ export default function BrandCategoryPage({ params }) {
                           Сортировать по:
                         </span>
                         {[
-                          { value: "popular-desc", label: "Популярности" },
-                          { value: "rate-desc", label: "Рейтингу" },
                           { value: "price-desc", label: "Сначала дороже" },
                           { value: "price-asc", label: "Сначала дешевле" },
                         ].map((option, index) => (
@@ -467,11 +469,6 @@ export default function BrandCategoryPage({ params }) {
                               title={
                                 [
                                   {
-                                    value: "popular-desc",
-                                    label: "Популярности",
-                                  },
-                                  { value: "rate-desc", label: "Рейтингу" },
-                                  {
                                     value: "price-desc",
                                     label: "Сначала дороже",
                                   },
@@ -499,11 +496,6 @@ export default function BrandCategoryPage({ params }) {
                               {
                                 [
                                   {
-                                    value: "popular-desc",
-                                    label: "Популярности",
-                                  },
-                                  { value: "rate-desc", label: "Рейтингу" },
-                                  {
                                     value: "price-desc",
                                     label: "Сначала дороже",
                                   },
@@ -528,8 +520,6 @@ export default function BrandCategoryPage({ params }) {
                         </div>
                         <ul className="a-field-select__list">
                           {[
-                            { value: "popular-desc", label: "Популярности" },
-                            { value: "rate-desc", label: "Рейтингу" },
                             { value: "price-desc", label: "Сначала дороже" },
                             { value: "price-asc", label: "Сначала дешевле" },
                           ].map((option) => (

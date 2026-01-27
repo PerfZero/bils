@@ -46,7 +46,7 @@ export default function CatalogSlugPage({ params }) {
   const [isMobile, setIsMobile] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isSortOpen, setIsSortOpen] = useState(false);
-  const [selectedSort, setSelectedSort] = useState("popular-desc");
+  const [selectedSort, setSelectedSort] = useState("price-desc");
 
   useEffect(() => {
     setDraftBrands(selectedBrands);
@@ -212,6 +212,9 @@ export default function CatalogSlugPage({ params }) {
         if (priceMaxParam) {
           productsUrl.searchParams.set("price_max", priceMaxParam);
         }
+        if (selectedSort) {
+          productsUrl.searchParams.set("sort", selectedSort);
+        }
         const response = await fetch(productsUrl.toString());
         const data = await response.json();
         if (Array.isArray(data)) {
@@ -258,6 +261,7 @@ export default function CatalogSlugPage({ params }) {
     selectedCountries.join(","),
     priceMinParam,
     priceMaxParam,
+    selectedSort,
     isAllCatalog,
   ]);
 
@@ -369,8 +373,6 @@ export default function CatalogSlugPage({ params }) {
 
   const sortOptions = useMemo(
     () => [
-      { value: "popular-desc", label: "По популярности" },
-      { value: "rate-desc", label: "По рейтингу" },
       { value: "price-desc", label: "Сначала дороже" },
       { value: "price-asc", label: "Сначала дешевле" },
     ],
@@ -982,7 +984,7 @@ export default function CatalogSlugPage({ params }) {
                             >
                               {sortOptions.find(
                                 (option) => option.value === selectedSort,
-                              )?.label || "По популярности"}
+                              )?.label || sortOptions[0]?.label}
                               <div className="a-field-select__icon">
                                 <svg className="a-svg">
                                   <use

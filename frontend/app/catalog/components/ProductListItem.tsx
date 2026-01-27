@@ -2,7 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import { API_BASE_URL } from "../../../config/api";
-import { addToCart } from "../../lib/cart";
+import {
+  addToCart,
+  ensureCartToken,
+  getOrCreateCart,
+  removeCartItem,
+  updateCartItem,
+} from "../../lib/cart";
 import { isFavorite, loadFavorites, toggleFavorite } from "../../lib/favorites";
 import { isCompared, toggleCompare } from "../../lib/compare";
 import FastOrderModal from "./FastOrderModal";
@@ -38,6 +44,10 @@ export function ProductListItem({ product }: ProductListItemProps) {
   const addAnimationRef = useRef<number | null>(null);
   const addButtonRef = useRef<HTMLButtonElement | null>(null);
   const addButtonAnimRef = useRef<Animation | null>(null);
+  const [cartQuantity, setCartQuantity] = useState(0);
+  const [cartItemId, setCartItemId] = useState<number | null>(null);
+  const [draftQuantity, setDraftQuantity] = useState(0);
+  const [counterBusy, setCounterBusy] = useState(false);
   const [isFavoriteActive, setIsFavoriteActive] = useState(false);
   const [favoriteBusy, setFavoriteBusy] = useState(false);
   const [isCompareActive, setIsCompareActive] = useState(false);
@@ -163,11 +173,52 @@ export function ProductListItem({ product }: ProductListItemProps) {
     };
   }, [isAdded]);
 
+  useEffect(() => {
+    setDraftQuantity(cartQuantity);
+  }, [cartQuantity]);
+
+  useEffect(() => {
+    let isActive = true;
+    const syncFromCart = (cart) => {
+      if (!isActive) return;
+      const item = cart?.items?.find?.(
+        (entry) => entry?.product_id === product.id,
+      );
+      if (item) {
+        setCartItemId(item.id);
+        setCartQuantity(Number(item.quantity || 0));
+      } else {
+        setCartItemId(null);
+        setCartQuantity(0);
+      }
+    };
+    const loadCart = async () => {
+      try {
+        const { cart } = await getOrCreateCart();
+        syncFromCart(cart);
+      } catch (error) {
+        if (!isActive) return;
+        setCartItemId(null);
+        setCartQuantity(0);
+      }
+    };
+    loadCart();
+    if (typeof window === "undefined") return () => {};
+    const handler = (event) => {
+      syncFromCart(event?.detail);
+    };
+    window.addEventListener("cart:updated", handler);
+    return () => {
+      isActive = false;
+      window.removeEventListener("cart:updated", handler);
+    };
+  }, [product.id]);
+
   const handleAddToCart = async () => {
     if (!product?.id || isAdding) return;
     setIsAdding(true);
     try {
-      await addToCart(product.id, 1);
+      const cart = await addToCart(product.id, 1);
       setIsAdded(false);
       if (typeof window !== "undefined") {
         window.requestAnimationFrame(() => setIsAdded(true));
@@ -181,10 +232,122 @@ export function ProductListItem({ product }: ProductListItemProps) {
         setIsAdded(false);
         addAnimationRef.current = null;
       }, 650);
+      if (cart) {
+        const item = cart?.items?.find?.(
+          (entry) => entry?.product_id === product.id,
+        );
+        if (item) {
+          setCartItemId(item.id);
+          setCartQuantity(Number(item.quantity || 1));
+        } else {
+          setCartItemId(null);
+          setCartQuantity(1);
+        }
+      } else {
+        setCartQuantity((value) => Math.max(1, value));
+      }
     } catch (error) {
       console.error("Failed to add item to cart", error);
     } finally {
       setIsAdding(false);
+    }
+  };
+
+  const handleIncrease = async () => {
+    if (counterBusy) return;
+    setCounterBusy(true);
+    try {
+      if (!cartItemId) {
+        const cart = await addToCart(product.id, 1);
+        const item = cart?.items?.find?.(
+          (entry) => entry?.product_id === product.id,
+        );
+        if (item) {
+          setCartItemId(item.id);
+          setCartQuantity(Number(item.quantity || 1));
+        }
+        return;
+      }
+      const token = await ensureCartToken();
+      if (!token) return;
+      const cart = await updateCartItem(token, cartItemId, cartQuantity + 1);
+      const item = cart?.items?.find?.(
+        (entry) => entry?.product_id === product.id,
+      );
+      if (item) {
+        setCartQuantity(Number(item.quantity || 0));
+      }
+    } catch (error) {
+      console.error("Failed to increase cart item", error);
+    } finally {
+      setCounterBusy(false);
+    }
+  };
+
+  const handleDecrease = async () => {
+    if (counterBusy || !cartItemId) return;
+    setCounterBusy(true);
+    try {
+      const token = await ensureCartToken();
+      if (!token) return;
+      if (cartQuantity <= 1) {
+        await removeCartItem(token, cartItemId);
+        setCartItemId(null);
+        setCartQuantity(0);
+        return;
+      }
+      const cart = await updateCartItem(token, cartItemId, cartQuantity - 1);
+      const item = cart?.items?.find?.(
+        (entry) => entry?.product_id === product.id,
+      );
+      if (item) {
+        setCartQuantity(Number(item.quantity || 0));
+      }
+    } catch (error) {
+      console.error("Failed to decrease cart item", error);
+    } finally {
+      setCounterBusy(false);
+    }
+  };
+
+  const handleDraftCommit = async () => {
+    if (counterBusy || !cartItemId) return;
+    const nextQuantity = Number(draftQuantity || 0);
+    if (!Number.isFinite(nextQuantity)) {
+      setDraftQuantity(cartQuantity);
+      return;
+    }
+    if (nextQuantity === cartQuantity) return;
+    if (nextQuantity < 1) {
+      setCounterBusy(true);
+      try {
+        const token = await ensureCartToken();
+        if (!token) return;
+        await removeCartItem(token, cartItemId);
+        setCartItemId(null);
+        setCartQuantity(0);
+      } catch (error) {
+        console.error("Failed to remove cart item", error);
+      } finally {
+        setCounterBusy(false);
+      }
+      return;
+    }
+    setCounterBusy(true);
+    try {
+      const token = await ensureCartToken();
+      if (!token) return;
+      const cart = await updateCartItem(token, cartItemId, nextQuantity);
+      const item = cart?.items?.find?.(
+        (entry) => entry?.product_id === product.id,
+      );
+      if (item) {
+        setCartQuantity(Number(item.quantity || 0));
+      }
+    } catch (error) {
+      console.error("Failed to update cart item", error);
+    } finally {
+      setCounterBusy(false);
     }
   };
 
@@ -571,21 +734,103 @@ export function ProductListItem({ product }: ProductListItemProps) {
                 </div>
               </div>
               <div className="product-card-line-tile__buttons">
-                <div className="product-buttons-add">
-                  <button
-                    className={`a-main-button a-main-button--display-inline a-main-button--type-auto a-main-button--corner-round a-main-button--color-orange${isAdded ? " a-main-button--cart-bump" : ""}`}
-                    type="button"
-                    onClick={handleAddToCart}
-                    aria-busy={isAdding}
-                    ref={addButtonRef}
-                  >
-                    <span className="a-main-button__wrap">
-                      <span className="a-main-button__content">
-                        {isAdded ? "Добавлено" : "В корзину"}
+                {cartQuantity > 0 ? (
+                  <>
+                    <div className="a-main-counter product-card-line-tile__counter a-main-counter--type-solid">
+                      <div className="a-main-counter__decrease">
+                        <button
+                          aria-label="Уменьшить количество"
+                          title="Уменьшить количество"
+                          type="button"
+                          className={`a-link-button${counterBusy ? " a-link-button--disabled" : ""}`}
+                          onClick={handleDecrease}
+                          disabled={counterBusy}
+                        >
+                          <span className="a-link-button__content a-link-button__content--black" />
+                          <span className="a-link-button__icon a-link-button__icon--grey">
+                            <svg className="a-svg a-svg--medium">
+                              <use
+                                xmlnsXlink="http://www.w3.org/1999/xlink"
+                                xlinkHref="#icon-minus"
+                              />
+                            </svg>
+                          </span>
+                        </button>
+                      </div>
+                      <input
+                        type="text"
+                        inputMode="tel"
+                        max="9999"
+                        min="1"
+                        className="a-main-counter__count"
+                        value={draftQuantity}
+                        onChange={(event) => {
+                          const next = Number(
+                            event.target.value.replace(/\D/g, ""),
+                          );
+                          setDraftQuantity(Number.isFinite(next) ? next : 0);
+                        }}
+                        onBlur={handleDraftCommit}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            handleDraftCommit();
+                          }
+                        }}
+                      />
+                      <div className="a-main-counter__increase">
+                        <button
+                          aria-label="Увеличить количество"
+                          title="Увеличить количество"
+                          type="button"
+                          className={`a-link-button${counterBusy ? " a-link-button--disabled" : ""}`}
+                          onClick={handleIncrease}
+                          disabled={counterBusy}
+                        >
+                          <span className="a-link-button__content a-link-button__content--black" />
+                          <span className="a-link-button__icon a-link-button__icon--grey">
+                            <svg className="a-svg a-svg--medium">
+                              <use
+                                xmlnsXlink="http://www.w3.org/1999/xlink"
+                                xlinkHref="#icon-plus"
+                              />
+                            </svg>
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+                    <a
+                      href="/personal/cart/"
+                      className="a-main-button product-card-line-tile__to-cart a-main-button--display-inline a-main-button--type-medium a-main-button--corner-round a-main-button--color-light-blue"
+                      aria-label="Перейти в корзину"
+                      title="Перейти в корзину"
+                    >
+                      <span className="a-main-button__constrain">
+                        <svg className="a-svg a-main-button__icon a-main-button__icon--center a-svg--medium a-main-button__icon--icon-to-cart a-main-button__icon--color">
+                          <use
+                            xmlnsXlink="http://www.w3.org/1999/xlink"
+                            xlinkHref="#icon-to-cart"
+                          />
+                        </svg>
                       </span>
-                    </span>
-                  </button>
-                </div>
+                    </a>
+                  </>
+                ) : (
+                  <div className="product-buttons-add">
+                    <button
+                      className={`a-main-button a-main-button--display-inline a-main-button--type-auto a-main-button--corner-round a-main-button--color-orange${isAdded ? " a-main-button--cart-bump" : ""}`}
+                      type="button"
+                      onClick={handleAddToCart}
+                      aria-busy={isAdding}
+                      ref={addButtonRef}
+                    >
+                      <span className="a-main-button__wrap">
+                        <span className="a-main-button__content">
+                          В корзину
+                        </span>
+                      </span>
+                    </button>
+                  </div>
+                )}
                 <div className="product-card-line-tile__helpers">
                   <div
                     className={`a-main-compare a-main-compare--type-line-tile${

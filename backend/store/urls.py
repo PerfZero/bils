@@ -38,4 +38,14 @@ router.register("main-banners", MainBannerViewSet, basename="main-banner")
 urlpatterns = [
     path("search/", SearchView.as_view()),
     path("site-settings/", SiteSettingsView.as_view()),
+    path(
+        "cart/<str:pk>/items/<int:item_id>/",
+        CartViewSet.as_view({"put": "update_item", "patch": "update_item"}),
+        name="cart-item-update",
+    ),
+    path(
+        "cart/<str:pk>/items/<int:item_id>/remove/",
+        CartViewSet.as_view({"delete": "remove_item"}),
+        name="cart-item-remove",
+    ),
 ] + router.urls
