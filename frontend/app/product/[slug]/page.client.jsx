@@ -10,6 +10,38 @@ import { addToCart } from "../../lib/cart";
 import { isFavorite, loadFavorites, toggleFavorite } from "../../lib/favorites";
 import { isCompared, toggleCompare } from "../../lib/compare";
 
+const RECENTLY_VIEWED_KEY = "mms_recently_viewed";
+
+function saveRecentlyViewed(product) {
+  if (typeof window === "undefined" || !product?.id) return;
+  try {
+    const raw = window.localStorage.getItem(RECENTLY_VIEWED_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    const items = Array.isArray(parsed) ? parsed : [];
+    const nextItem = {
+      id: product.id,
+      slug: product.slug,
+      name: product.name,
+      image: product.image || product?.images?.[0]?.url || null,
+      price: product.price,
+      retail_price: product.retail_price,
+      rating: product.rating,
+      href: product.href || `/product/${product.slug}/`,
+      viewed_at: Date.now(),
+    };
+    const deduped = items.filter(
+      (item) => item?.id !== product.id && item?.slug !== product.slug,
+    );
+    deduped.unshift(nextItem);
+    window.localStorage.setItem(
+      RECENTLY_VIEWED_KEY,
+      JSON.stringify(deduped.slice(0, 20)),
+    );
+  } catch (error) {
+    // Ignore storage errors (privacy mode, quota, etc.).
+  }
+}
+
 export default function CatalogSlugPage({ params }) {
   const [breadcrumbs, setBreadcrumbs] = useState([]);
   const [product, setProduct] = useState(null);
@@ -36,6 +68,7 @@ export default function CatalogSlugPage({ params }) {
         if (productData.length > 0) {
           const currentProduct = productData[0];
           setProduct(currentProduct);
+          saveRecentlyViewed(currentProduct);
 
           // Загрузка пути категории для breadcrumbs
           const categoryId = currentProduct.category?.id;
