@@ -164,6 +164,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     brand = ProductListBrandSerializer(read_only=True)
     image = serializers.SerializerMethodField()
     images = serializers.SerializerMethodField()
+    attributes = serializers.SerializerMethodField()
     href = serializers.SerializerMethodField()
 
     class Meta:
@@ -184,6 +185,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             "created_at",
             "image",
             "images",
+            "attributes",
             "category",
             "brand",
             "href",
@@ -221,6 +223,34 @@ class ProductListSerializer(serializers.ModelSerializer):
                 }
             )
         return images
+
+    def get_attributes(self, obj):
+        attributes = []
+        for attribute in (
+            obj.attributes.select_related("attribute")
+            .all()
+            .order_by("order", "id")[:7]
+        ):
+            value = None
+            if attribute.value_number is not None:
+                value = attribute.value_number
+            elif attribute.value_bool is not None:
+                value = "Да" if attribute.value_bool else "Нет"
+            else:
+                value = attribute.value_text
+            attributes.append(
+                {
+                    "id": attribute.id,
+                    "attribute_id": attribute.attribute_id,
+                    "name": attribute.attribute.name,
+                    "slug": attribute.attribute.slug,
+                    "data_type": attribute.attribute.data_type,
+                    "unit": attribute.attribute.unit,
+                    "value": value,
+                    "order": attribute.order,
+                }
+            )
+        return attributes
 
     def get_href(self, obj):
         return f"/product/{obj.slug}/"

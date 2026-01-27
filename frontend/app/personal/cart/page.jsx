@@ -165,6 +165,22 @@ export default function CartPage() {
     return Object.keys(nextErrors).length === 0;
   };
 
+  const buildLeadProductsSummary = () => {
+    if (!items.length) return "";
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const lines = items.map((item, index) => {
+      const unitPrice = formatPrice(item.price);
+      const totalPrice = formatPrice(item.total ?? item.price * item.quantity);
+      const slug = item.product_slug ? ` (${item.product_slug})` : "";
+      const href = item.product_slug
+        ? `${origin}/product/${item.product_slug}/`
+        : "";
+      const link = href ? `\nСсылка: ${href}` : "";
+      return `${index + 1}. ${item.product_name}${slug} — ${item.quantity} шт × ${unitPrice} = ${totalPrice}${link}`;
+    });
+    return `Товары:\n${lines.join("\n")}`;
+  };
+
   const handleSubmitLead = async (event) => {
     event.preventDefault();
     if (leadSubmitting) return;
@@ -172,12 +188,18 @@ export default function CartPage() {
     setLeadSubmitting(true);
     setError(null);
     try {
+      const commentParts = [];
+      const commentText = leadForm.comment.trim();
+      if (commentText) commentParts.push(commentText);
+      const productsSummary = buildLeadProductsSummary();
+      if (productsSummary) commentParts.push(productsSummary);
+      const finalComment = commentParts.join("\n\n");
       await createLead({
         name: leadForm.name.trim(),
         address: leadForm.address.trim(),
         email: leadForm.email.trim(),
         phone: leadForm.phone.trim(),
-        comment: leadForm.comment.trim(),
+        comment: finalComment,
       });
       setLeadSuccess(true);
       setLeadForm({

@@ -327,7 +327,7 @@ export function ProductListItem({ product }: ProductListItemProps) {
               </div>
               <div className="product-card-line-tile__props">
                 {product.attributes?.length
-                  ? product.attributes.slice(0, 6).map((attribute: any) => (
+                  ? product.attributes.slice(0, 7).map((attribute: any) => (
                       <div key={attribute.id}>
                         <span
                           className="seo-text"
@@ -470,7 +470,7 @@ export function ProductListItem({ product }: ProductListItemProps) {
             </div>
             <div className="product-card-line-tile__props">
               {product.attributes?.length
-                ? product.attributes.slice(0, 6).map((attribute: any) => (
+                ? product.attributes.slice(0, 7).map((attribute: any) => (
                     <div key={attribute.id}>
                       <span
                         className="seo-text"

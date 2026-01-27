@@ -18,6 +18,8 @@ services:
   backend:
     build: ./backend
     command: ["sh", "/app/entrypoint.sh"]
+    env_file:
+      - ./backend/.env
     environment:
       DJANGO_DEBUG: "1"
       DJANGO_SECRET_KEY: "dev-secret-key"

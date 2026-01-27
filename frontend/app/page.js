@@ -11,6 +11,12 @@ import CompanyDescription from "./components/CompanyDescription";
 import RecommendedProducts from "./components/RecommendedProducts";
 import PopularCategoriesSlider from "./components/PopularCategoriesSlider";
 
+export const metadata = {
+  title: "Bremax — интернет-магазин инструментов и оборудования",
+  description:
+    "Товары для дома, сада, строительства и сервиса: инструменты, оборудование и расходные материалы. Удобный поиск и быстрая доставка.",
+};
+
 const apiUrl =
   process.env.INTERNAL_API_URL ||
   process.env.API_URL ||
