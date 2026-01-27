@@ -14,6 +14,11 @@ function setStoredCartToken(token: string) {
   window.localStorage.setItem(CART_TOKEN_KEY, token);
 }
 
+function clearStoredCartToken() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(CART_TOKEN_KEY);
+}
+
 async function parseJson(response: Response) {
   const text = await response.text();
   if (!text) return null;
@@ -188,6 +193,28 @@ export async function removePromoCode(token: string) {
   if (!response.ok) {
     throw new Error(payload?.detail || "Failed to remove promo code");
   }
+  if (payload) {
+    emitCartUpdate(payload);
+  }
+  return payload;
+}
+
+export async function clearCart(token: string) {
+  const response = await fetch(`${API_ENDPOINTS.CART}${token}/clear/`, {
+    method: "DELETE",
+  });
+  if (response.status === 404) {
+    clearStoredCartToken();
+    const created = await createCart();
+    if (created) {
+      emitCartUpdate(created);
+    }
+    return created;
+  }
+  if (!response.ok) {
+    throw new Error("Failed to clear cart");
+  }
+  const payload = await parseJson(response);
   if (payload) {
     emitCartUpdate(payload);
   }

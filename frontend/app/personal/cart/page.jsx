@@ -7,6 +7,7 @@ import {
   removeCartItem,
   applyPromoCode,
   removePromoCode,
+  clearCart,
 } from "../../lib/cart";
 import { isFavorite, loadFavorites, toggleFavorite } from "../../lib/favorites";
 import { API_BASE_URL } from "../../../config/api";
@@ -215,16 +216,10 @@ export default function CartPage() {
         comment: finalComment,
       });
       if (cartToken && items.length) {
-        let updatedCart = cart;
-        for (const item of items) {
-          updatedCart = await removeCartItem(cartToken, item.id);
+        const updatedCart = await clearCart(cartToken);
+        if (updatedCart) {
+          setCart(updatedCart);
         }
-        try {
-          updatedCart = await removePromoCode(cartToken);
-        } catch (_) {
-          // Ignore promo removal failures after lead submit.
-        }
-        setCart(updatedCart);
         setSelectedItemIds(new Set());
       }
       setLeadSuccess(true);

@@ -28,6 +28,8 @@ services:
         "--timeout",
         "120",
       ]
+    env_file:
+      - ./backend/.env
     environment:
       DJANGO_DEBUG: "0"
       DJANGO_SECRET_KEY: "change-me"

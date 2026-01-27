@@ -487,6 +487,16 @@ class CartViewSet(viewsets.ViewSet):
         response = CartSerializer(cart, context={"request": request})
         return Response(response.data)
 
+    @action(detail=True, methods=["delete"], url_path="clear")
+    def clear(self, request, pk=None):
+        cart = self._get_cart(pk)
+        cart.items.all().delete()
+        cart.promo_code = None
+        cart.save(update_fields=["promo_code"])
+        cart.refresh_from_db()
+        response = CartSerializer(cart, context={"request": request})
+        return Response(response.data)
+
 
 
 class ShareCartViewSet(viewsets.ViewSet):
