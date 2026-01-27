@@ -168,7 +168,7 @@ export default function Footer() {
                           </li>
                           <li class="a-footer__section">
                             <a href="/about/" class="a-footer__link">
-                              Каталог товаров
+                              О нас
                             </a>
                           </li>
                           <li class="a-footer__section">
@@ -258,7 +258,7 @@ export default function Footer() {
               </div>
               <div className="a-footer__bottom">
                 <p className="a-footer__copyrights">
-                  © 2009-2026, ООО «БИГАМ-Инвест». Все права защищены.
+                  © 2009-2026, ООО «Вейринг». Все права защищены.
                 </p>{" "}
               </div>
             </>

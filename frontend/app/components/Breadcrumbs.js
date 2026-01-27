@@ -3,9 +3,10 @@ import React, { useState } from "react";
 const Breadcrumbs = ({ items, className = "" }) => {
   const classes = ["a-breadcrumbs", className].filter(Boolean).join(" ");
   const [activeIndex, setActiveIndex] = useState(null);
+  const list = Array.isArray(items) ? items : [];
   return (
     <ul className={classes}>
-      {items.map((item, index) => {
+      {list.map((item, index) => {
         const hasDropdown = item.dropdown && item.dropdown.length > 0;
         return (
           <li

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { API_BASE_URL } from "../../../config/api";
 import { addToCart } from "../../lib/cart";
 import { isFavorite, loadFavorites, toggleFavorite } from "../../lib/favorites";
@@ -34,6 +34,10 @@ export function ProductListItem({ product }: ProductListItemProps) {
   const [isFastOrderOpen, setIsFastOrderOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
+  const [isAdded, setIsAdded] = useState(false);
+  const addAnimationRef = useRef<number | null>(null);
+  const addButtonRef = useRef<HTMLButtonElement | null>(null);
+  const addButtonAnimRef = useRef<Animation | null>(null);
   const [isFavoriteActive, setIsFavoriteActive] = useState(false);
   const [favoriteBusy, setFavoriteBusy] = useState(false);
   const [isCompareActive, setIsCompareActive] = useState(false);
@@ -119,11 +123,64 @@ export function ProductListItem({ product }: ProductListItemProps) {
     };
   }, [product.id]);
 
+  useEffect(() => {
+    return () => {
+      if (addAnimationRef.current) {
+        window.clearTimeout(addAnimationRef.current);
+        addAnimationRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isAdded || typeof window === "undefined") return;
+    const button = addButtonRef.current;
+    if (!button) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (addButtonAnimRef.current) {
+      addButtonAnimRef.current.cancel();
+    }
+    addButtonAnimRef.current = button.animate(
+      [
+        { transform: "scale(1)", boxShadow: "0 0 0 rgba(0,0,0,0)" },
+        {
+          transform: "scale(1.05)",
+          boxShadow: "0 0 0.6rem rgba(243,86,67,0.35)",
+        },
+        { transform: "scale(1)", boxShadow: "0 0 0 rgba(0,0,0,0)" },
+      ],
+      {
+        duration: 420,
+        easing: "cubic-bezier(0.2, 0.7, 0.2, 1)",
+        iterations: 1,
+      },
+    );
+    return () => {
+      if (addButtonAnimRef.current) {
+        addButtonAnimRef.current.cancel();
+        addButtonAnimRef.current = null;
+      }
+    };
+  }, [isAdded]);
+
   const handleAddToCart = async () => {
     if (!product?.id || isAdding) return;
     setIsAdding(true);
     try {
       await addToCart(product.id, 1);
+      setIsAdded(false);
+      if (typeof window !== "undefined") {
+        window.requestAnimationFrame(() => setIsAdded(true));
+      } else {
+        setIsAdded(true);
+      }
+      if (addAnimationRef.current) {
+        window.clearTimeout(addAnimationRef.current);
+      }
+      addAnimationRef.current = window.setTimeout(() => {
+        setIsAdded(false);
+        addAnimationRef.current = null;
+      }, 650);
     } catch (error) {
       console.error("Failed to add item to cart", error);
     } finally {
@@ -516,13 +573,16 @@ export function ProductListItem({ product }: ProductListItemProps) {
               <div className="product-card-line-tile__buttons">
                 <div className="product-buttons-add">
                   <button
-                    className="a-main-button a-main-button--display-inline a-main-button--type-auto a-main-button--corner-round a-main-button--color-orange"
+                    className={`a-main-button a-main-button--display-inline a-main-button--type-auto a-main-button--corner-round a-main-button--color-orange${isAdded ? " a-main-button--cart-bump" : ""}`}
                     type="button"
                     onClick={handleAddToCart}
                     aria-busy={isAdding}
+                    ref={addButtonRef}
                   >
                     <span className="a-main-button__wrap">
-                      <span className="a-main-button__content">В корзину</span>
+                      <span className="a-main-button__content">
+                        {isAdded ? "Добавлено" : "В корзину"}
+                      </span>
                     </span>
                   </button>
                 </div>

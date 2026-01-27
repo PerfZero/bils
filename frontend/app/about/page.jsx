@@ -31,35 +31,6 @@ export default function CatalogSlugPage({ params }) {
               />{" "}
               <script />
             </div>{" "}
-            <div className="a-page-static__sidebar">
-              <div className="page-static-menu__list">
-                <div className="page-static-menu__item">
-                  <a className="page-static-menu__link" href="/brands/">
-                    Производители
-                  </a>
-                </div>
-                <div className="page-static-menu__item">
-                  <a className="page-static-menu__link" href="/about/career/">
-                    Карьера
-                  </a>
-                </div>
-                <div className="page-static-menu__item">
-                  <a className="page-static-menu__link" href="/about/charity/">
-                    Благотворительность
-                  </a>
-                </div>
-                <div className="page-static-menu__item">
-                  <a className="page-static-menu__link" href="/about/novosti/">
-                    Новости
-                  </a>
-                </div>
-                <div className="page-static-menu__item">
-                  <a className="page-static-menu__link" href="/stati/">
-                    Статьи
-                  </a>
-                </div>
-              </div>
-            </div>{" "}
             <div className="a-page-static__description a-page-static__description--old">
               <img
                 alt="BREMAX.png"
