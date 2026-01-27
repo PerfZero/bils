@@ -166,6 +166,16 @@ export default function Footer() {
                               Каталог товаров
                             </a>
                           </li>
+                          <li class="a-footer__section">
+                            <a href="/about/" class="a-footer__link">
+                              Каталог товаров
+                            </a>
+                          </li>
+                          <li class="a-footer__section">
+                            <a href="/customer/faq/" class="a-footer__link">
+                              Вопросы и ответы
+                            </a>
+                          </li>
                         </ul>
                       </div>
                     </li>
@@ -195,6 +205,9 @@ export default function Footer() {
               <div class="a-footer__sections a-footer__sections--space-between">
                 <div class="a-footer__section a-footer__section--desktop a-footer__section--contacts">
                   <div class="a-footer__contacts">
+                    <a href="tel:+74952870727" class="a-footer__link">
+                      8 (495) 287-07-27
+                    </a>
                     <a href="mailto:support@bremax.ru" class="a-footer__link">
                       support@bremax.ru
                     </a>
@@ -242,6 +255,11 @@ export default function Footer() {
                     </li>
                   </ul>
                 </div>
+              </div>
+              <div className="a-footer__bottom">
+                <p className="a-footer__copyrights">
+                  © 2009-2026, ООО «БИГАМ-Инвест». Все права защищены.
+                </p>{" "}
               </div>
             </>
           )}
