@@ -714,6 +714,7 @@ export function ProductListItem({ product }: ProductListItemProps) {
                           "--seo-text": formatSeoText(attribute.name),
                         }}
                       />
+                      :
                       <span
                         className="seo-text product-card-line-tile__prop-value"
                         style={{

@@ -10489,6 +10489,11 @@ h5.a-title-indent {
     line-height: 120%;
     color: #a3a3a3;
 }
+.product-card-line-tile__props div {
+    display: flex;
+
+    gap: 2px;
+}
 
 .product-card-line-tile__prop-value {
     color: #3d3d3d;
