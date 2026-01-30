@@ -56,7 +56,7 @@ from .serializers import (
     OrderCreateSerializer,
 )
 
-MIN_PUBLIC_PRICE = Decimal("50000")
+MIN_PUBLIC_PRICE = Decimal("20000")
 logger = logging.getLogger(__name__)
 
 
