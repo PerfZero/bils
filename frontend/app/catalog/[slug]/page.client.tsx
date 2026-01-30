@@ -192,6 +192,43 @@ export default function CatalogSlugPage({ params }) {
   }, [params.slug, selectedBrands.join(","), isAllCatalog]);
 
   useEffect(() => {
+    const fetchPriceRange = async () => {
+      try {
+        const rangeUrl = new URL(`${API_BASE_URL}/api/products/price-range/`);
+        if (!isAllCatalog) {
+          rangeUrl.searchParams.set("category", params.slug);
+        }
+        if (selectedBrands.length) {
+          rangeUrl.searchParams.set("brand", selectedBrands.join(","));
+        }
+        if (selectedCountries.length) {
+          rangeUrl.searchParams.set("country", selectedCountries.join(","));
+        }
+        const response = await fetch(rangeUrl.toString());
+        const data = await response.json();
+        const minValue = Number(data?.min);
+        const maxValue = Number(data?.max);
+        setPriceBounds({
+          min: Number.isFinite(minValue) ? minValue : 0,
+          max: Number.isFinite(maxValue) ? maxValue : 0,
+        });
+      } catch (error) {
+        console.error("Failed to fetch price range:", error);
+        setPriceBounds({ min: 0, max: 0 });
+      }
+    };
+
+    if (params.slug || isAllCatalog) {
+      fetchPriceRange();
+    }
+  }, [
+    params.slug,
+    selectedBrands.join(","),
+    selectedCountries.join(","),
+    isAllCatalog,
+  ]);
+
+  useEffect(() => {
     const fetchProducts = async () => {
       try {
         setProductsLoading(true);
@@ -220,27 +257,9 @@ export default function CatalogSlugPage({ params }) {
         if (Array.isArray(data)) {
           setProducts(data);
           setTotalCount(data.length);
-          const numericPrices = data
-            .map((item) => Number(item?.price))
-            .filter((value) => Number.isFinite(value));
-          if (numericPrices.length) {
-            setPriceBounds({
-              min: Math.min(...numericPrices),
-              max: Math.max(...numericPrices),
-            });
-          }
         } else {
           setProducts(data.results || []);
           setTotalCount(data.count || 0);
-          const numericPrices = (data.results || [])
-            .map((item) => Number(item?.price))
-            .filter((value) => Number.isFinite(value));
-          if (numericPrices.length) {
-            setPriceBounds({
-              min: Math.min(...numericPrices),
-              max: Math.max(...numericPrices),
-            });
-          }
         }
       } catch (error) {
         console.error("Failed to fetch products:", error);

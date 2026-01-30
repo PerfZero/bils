@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 from django.conf import settings
 from django.core.mail import send_mail
 import logging
-from django.db.models import Q, Exists, OuterRef
+from django.db.models import Q, Exists, OuterRef, Min, Max
 from django.shortcuts import get_object_or_404
 from .models import (
     Brand,
@@ -222,7 +222,7 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
         except (InvalidOperation, ValueError):
             return None
 
-    def get_queryset(self):
+    def _get_filtered_queryset(self, include_price_filters=True):
         queryset = super().get_queryset()
         category_slug = self.request.query_params.get("category")
         slug = self.request.query_params.get("slug")
@@ -244,13 +244,17 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
             queryset = self._apply_brand_filter(queryset, brand_values)
         if country_values:
             queryset = self._apply_country_filter(queryset, country_values)
-        if price_min is not None:
-            queryset = queryset.filter(price__gte=price_min)
-        if price_max is not None:
-            queryset = queryset.filter(price__lte=price_max)
+        if include_price_filters:
+            if price_min is not None:
+                queryset = queryset.filter(price__gte=price_min)
+            if price_max is not None:
+                queryset = queryset.filter(price__lte=price_max)
         if sort_value:
             queryset = self._apply_sort(queryset, sort_value)
         return queryset
+
+    def get_queryset(self):
+        return self._get_filtered_queryset(include_price_filters=True)
 
     @action(detail=False, methods=["get"], url_path="list")
     def list_light(self, request):
@@ -286,6 +290,14 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
             .order_by("value_text")
         )
         return Response(list(countries))
+
+    @action(detail=False, methods=["get"], url_path="price-range")
+    def price_range(self, request):
+        queryset = self._get_filtered_queryset(include_price_filters=False)
+        agg = queryset.aggregate(min_price=Min("price"), max_price=Max("price"))
+        min_price = agg.get("min_price") or 0
+        max_price = agg.get("max_price") or 0
+        return Response({"min": min_price, "max": max_price})
 
 
 class BrandViewSet(viewsets.ReadOnlyModelViewSet):

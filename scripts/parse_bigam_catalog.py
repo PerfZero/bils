@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 import argparse
+import datetime
 import http.cookiejar
 import json
 import re
 import os
+import random
 import shutil
 import subprocess
 import time
@@ -864,6 +866,28 @@ def fetch_html_playwright(url, timeout_ms=30000):
         return html
 
 
+def _parse_retry_after(headers):
+    if not headers:
+        return None
+    value = headers.get("Retry-After")
+    if not value:
+        return None
+    value = str(value).strip()
+    if not value:
+        return None
+    if value.isdigit():
+        return max(0.0, float(value))
+    try:
+        from email.utils import parsedate_to_datetime
+        retry_at = parsedate_to_datetime(value)
+        if retry_at is None:
+            return None
+        wait = (retry_at - datetime.datetime.now(retry_at.tzinfo)).total_seconds()
+        return max(0.0, wait)
+    except Exception:
+        return None
+
+
 def fetch_html(url, retries=3, backoff=2.0):
     global LAST_REQUEST_AT
     if RATE_LIMIT and RATE_LIMIT > 0:
@@ -903,7 +927,12 @@ def fetch_html(url, retries=3, backoff=2.0):
                     print(f"  403 fallback to Playwright: {url}", flush=True)
                 return fetch_html_playwright(url)
             if exc.code == 429 and attempt < retries:
-                delay = backoff * (attempt + 1)
+                retry_after = _parse_retry_after(getattr(exc, "headers", None))
+                if retry_after is not None:
+                    delay = retry_after
+                else:
+                    # Exponential backoff with a small jitter to reduce thundering herd.
+                    delay = backoff * (attempt + 1) + random.uniform(0.1, 0.5)
                 if VERBOSE:
                     print(f"  429 retry in {delay:.1f}s: {url}", flush=True)
                 time.sleep(delay)
@@ -1527,6 +1556,8 @@ def main():
                     spec_url = f"{href}specification/"
                 else:
                     spec_url = f"{href}/specification/"
+                if args.detail_delay and args.detail_delay > 0:
+                    time.sleep(args.detail_delay)
                 try:
                     spec_html = fetch_html(spec_url)
                 except Exception:
@@ -1554,6 +1585,8 @@ def main():
                     documents_url = f"{href}documents/"
                 else:
                     documents_url = f"{href}/documents/"
+                if args.detail_delay and args.detail_delay > 0:
+                    time.sleep(args.detail_delay)
                 try:
                     documents_html = fetch_html(documents_url)
                 except Exception:
