@@ -158,7 +158,7 @@ export default async function Home() {
       <ReviewsSection />
       <WhyUsSection />
       <RecentlyViewedSection />
-      <CompanyNewsSection />
+      {/* <CompanyNewsSection />*/}
       <CompanyDescription />
     </main>
   );
