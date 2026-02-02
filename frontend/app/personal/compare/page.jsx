@@ -102,7 +102,10 @@ export default function ComparePage() {
       setSelectedCategory(null);
       return;
     }
-    if (!selectedCategory || !categories.some((c) => c.slug === selectedCategory)) {
+    if (
+      !selectedCategory ||
+      !categories.some((c) => c.slug === selectedCategory)
+    ) {
       setSelectedCategory(categories[0].slug);
     }
   }, [categories, selectedCategory]);
@@ -145,7 +148,9 @@ export default function ComparePage() {
     });
 
     map.forEach((value) => rows.push(value));
-    rows.sort((a, b) => a.order - b.order || a.name.localeCompare(b.name, "ru-RU"));
+    rows.sort(
+      (a, b) => a.order - b.order || a.name.localeCompare(b.name, "ru-RU"),
+    );
     return rows;
   }, [filteredProducts]);
 
@@ -228,11 +233,6 @@ export default function ComparePage() {
             </span>{" "}
           </button>
         </div>{" "}
-        <div className="a-page-compare__auth">
-          <span className="a-page-compare__auth-link">Авторизуйтесь</span>,
-          чтобы сохранить список сравнения для просмотра на этом и других
-          устройствах
-        </div>{" "}
         {error && (
           <div className="a-page-cart__error a-page-cart__error--inline">
             {error}
@@ -249,7 +249,10 @@ export default function ComparePage() {
                 <div className="a-compare-sections__container">
                   <div className="a-compare-sections__list">
                     {categories.map((category) => (
-                      <div className="a-compare-sections__item" key={category.slug}>
+                      <div
+                        className="a-compare-sections__item"
+                        key={category.slug}
+                      >
                         <div
                           aria-label={`${category.name}: ${category.count}`}
                           className={`a-ellipse-button a-ellipse-button--remove a-ellipse-button--interactive a-ellipse-button--color-blue${
@@ -305,9 +308,15 @@ export default function ComparePage() {
                         style={{ transform: "translateX(0%)" }}
                       >
                         {filteredProducts.map((product) => (
-                          <div className="a-compare-products__item" key={product.id}>
+                          <div
+                            className="a-compare-products__item"
+                            key={product.id}
+                          >
                             <div className="a-product-card a-product-card--type-compare">
-                              <a className="a-product-card__preview" href={product.href}>
+                              <a
+                                className="a-product-card__preview"
+                                href={product.href}
+                              >
                                 <img
                                   alt={product.name}
                                   className="a-product-card__picture a-lazy-load a-is-loaded"
@@ -333,7 +342,10 @@ export default function ComparePage() {
                                   <div className="a-rating">
                                     <ul className="a-rating__list">
                                       {[1, 2, 3, 4, 5].map((star) => (
-                                        <li className="a-rating__item" key={star}>
+                                        <li
+                                          className="a-rating__item"
+                                          key={star}
+                                        >
                                           <svg className="a-svg a-rating__icon a-rating__icon--inactive a-rating__icon--color-grey">
                                             <use xlinkHref="#icon-star" />
                                           </svg>{" "}
@@ -357,7 +369,9 @@ export default function ComparePage() {
                                     className="a-main-compare__helper"
                                     title="Удалить"
                                     type="button"
-                                    onClick={() => handleRemoveProduct(product.id)}
+                                    onClick={() =>
+                                      handleRemoveProduct(product.id)
+                                    }
                                   >
                                     <span className="a-main-compare__icon">
                                       <svg className="a-svg">
@@ -397,7 +411,10 @@ export default function ComparePage() {
                                   </button>{" "}
                                 </div>
                               </div>{" "}
-                              <a className="a-product-card__link" href={product.href} />
+                              <a
+                                className="a-product-card__link"
+                                href={product.href}
+                              />
                             </div>
                           </div>
                         ))}
@@ -408,7 +425,9 @@ export default function ComparePage() {
               </div>{" "}
               <div className="a-compare-properties__wrapper">
                 <div className="a-compare-properties a-compare-properties__additional">
-                  <div className="a-compare-properties__title">Характеристики</div>{" "}
+                  <div className="a-compare-properties__title">
+                    Характеристики
+                  </div>{" "}
                   <div className="a-compare-properties__difference">
                     <span className="a-compare-properties__difference-text">
                       Показать только различия

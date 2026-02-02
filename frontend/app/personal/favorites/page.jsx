@@ -138,11 +138,7 @@ export default function FavoritesPage() {
                 display: "none",
               }}
             />
-            <div className="a-page-compare__auth">
-              <span className="a-page-compare__auth-link">Авторизуйтесь</span>,
-              чтобы сохранить список избранного для просмотра на этом и других
-              устройствах
-            </div>
+
             {error && (
               <div className="a-page-cart__error a-page-cart__error--inline">
                 {error}
