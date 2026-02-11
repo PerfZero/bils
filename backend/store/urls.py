@@ -33,7 +33,8 @@ router.register("leads", LeadRequestViewSet, basename="lead")
 router.register("delivery-methods", DeliveryMethodViewSet, basename="delivery-method")
 router.register("payment-methods", PaymentMethodViewSet, basename="payment-method")
 router.register("orders", OrderViewSet, basename="order")
-router.register("main-banners", MainBannerViewSet, basename="main-banner")
+router.register("hero-items", MainBannerViewSet, basename="hero-item")
+router.register("main-banners", MainBannerViewSet, basename="main-banner-legacy")
 
 urlpatterns = [
     path("search/", SearchView.as_view()),

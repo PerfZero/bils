@@ -503,9 +503,9 @@ class MainBanner(models.Model):
 
     title = models.CharField("Название", max_length=200, blank=True)
     href = models.CharField("Ссылка", max_length=500, blank=True)
-    image = models.ImageField("Изображение", upload_to="banners/")
+    image = models.ImageField("Изображение", upload_to="hero/")
     image_desktop = models.ImageField(
-        "Изображение (десктоп)", upload_to="banners/", blank=True
+        "Изображение (десктоп)", upload_to="hero/", blank=True
     )
     position = models.PositiveIntegerField("Порядок", default=0)
     is_active = models.BooleanField("Активен", default=True)
